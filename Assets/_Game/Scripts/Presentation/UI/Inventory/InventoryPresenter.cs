@@ -94,7 +94,7 @@ public class InventoryPresenter : MonoBehaviour
     private readonly List<InventorySlotData> _currentSlots = new List<InventorySlotData>();
 
     // 현재 카테고리에서 표시 중인 아이템 원본 데이터 스냅샷입니다.
-    private readonly List<ItemDataSO> _currentItems = new List<ItemDataSO>();
+    private readonly List<InventoryItemDisplayData> _currentItems = new List<InventoryItemDisplayData>();
 
     // 인벤토리 도메인 데이터 변경과 조회를 위임할 서비스입니다.
     private IInventoryService _inventoryService;
@@ -404,14 +404,14 @@ public class InventoryPresenter : MonoBehaviour
     /// </summary>
     /// <param name="slotData">조회할 슬롯 데이터입니다.</param>
     /// <returns>조회된 아이템 원본 데이터입니다. 찾지 못하면 null입니다.</returns>
-    private ItemDataSO GetItemData(InventorySlotData slotData)
+    private InventoryItemDisplayData GetItemData(InventorySlotData slotData)
     {
         if (_inventoryService == null || slotData == null || slotData.TryGetItemId(out string itemId) == false)
         {
             return null;
         }
 
-        return _inventoryService.TryGetItem(itemId, out ItemDataSO itemData) ? itemData : null;
+        return _inventoryService.TryGetItemDisplay(itemId, out InventoryItemDisplayData itemData) ? itemData : null;
     }
 
     /// <summary>
@@ -434,7 +434,7 @@ public class InventoryPresenter : MonoBehaviour
         }
 
         _selectedSlotData = slotData;
-        ItemDataSO itemData = GetItemData(slotData);
+        InventoryItemDisplayData itemData = GetItemData(slotData);
 
         if (_inventoryService != null && slotData.TryGetItemId(out string itemId))
         {

@@ -132,7 +132,7 @@ public class InventorySlotView : MonoBehaviour, IPointerClickHandler, IBeginDrag
     public void Bind(
         int slotIndex,
         InventorySlotData slotData,
-        ItemDataSO itemData,
+        InventoryItemDisplayData itemData,
         bool isSelected,
         bool canDrag,
         Action<int> slotClicked,
@@ -301,7 +301,7 @@ public class InventorySlotView : MonoBehaviour, IPointerClickHandler, IBeginDrag
     /// </summary>
     /// <param name="slotData">표시할 런타임 슬롯 데이터입니다.</param>
     /// <param name="itemData">표시에 사용할 아이템 원본 데이터입니다.</param>
-    private void ApplyItemDisplay(InventorySlotData slotData, ItemDataSO itemData)
+    private void ApplyItemDisplay(InventorySlotData slotData, InventoryItemDisplayData itemData)
     {
         bool hasSlotData = slotData != null && slotData.IsEmpty == false;
         Sprite icon = itemData != null ? itemData.Icon : null;

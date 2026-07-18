@@ -22,17 +22,20 @@ public class InventoryController : MonoBehaviour, IInventoryService
     // 직렬화 필드
     //==============================================================================
 
-    [Header("Inventory")]
-    [Tooltip("런타임에서 ID로 조회할 수 있는 아이템 원본 데이터 목록입니다.")]
+    [Header("Inventory Visual")]
+    [Tooltip("items.csv의 icon_id를 Unity Sprite로 연결하는 카탈로그입니다.")]
     [SerializeField]
-    private List<ItemDataSO> _itemDatabase = new List<ItemDataSO>();
+    private ItemVisualCatalogSO _visualCatalog;
 
     //==============================================================================
     // 내부 상태
     //==============================================================================
 
-    // 아이템 ID로 원본 데이터를 찾기 위한 캐시입니다.
-    private readonly Dictionary<string, ItemDataSO> _itemById = new Dictionary<string, ItemDataSO>();
+    // CSV에서 생성된 아이템 Definition을 조회할 게임 데이터 저장소입니다.
+    private IGameDataRepository _gameDataRepository;
+
+    // 아이템 이름과 설명 Localization Key를 현재 언어 문자열로 변환할 서비스입니다.
+    private ILocalizationService _localizationService;
 
     // 인벤토리가 현재 보관 중인 런타임 슬롯 목록입니다.
     private readonly List<InventorySlotData> _slots = new List<InventorySlotData>();
@@ -46,9 +49,6 @@ public class InventoryController : MonoBehaviour, IInventoryService
     // 같은 아이템을 다시 획득했을 때 최근 획득 순서로 옮기기 위한 임시 목록입니다.
     private readonly List<InventorySlotData> _movingSlots = new List<InventorySlotData>();
 
-    // 아이템 데이터베이스 캐시가 초기화되었는지 여부입니다.
-    private bool _isItemDatabaseBuilt;
-
     //==============================================================================
     // 초기화
     //==============================================================================
@@ -56,9 +56,12 @@ public class InventoryController : MonoBehaviour, IInventoryService
     /// <summary>
     /// GameRoot에서 호출하는 초기화 함수입니다.
     /// </summary>
-    public void Init()
+    public void Init(
+        IGameDataRepository gameDataRepository,
+        ILocalizationService localizationService)
     {
-        RebuildItemDatabase();
+        _gameDataRepository = gameDataRepository;
+        _localizationService = localizationService;
     }
 
     //==============================================================================
@@ -66,42 +69,33 @@ public class InventoryController : MonoBehaviour, IInventoryService
     //==============================================================================
 
     /// <summary>
-    /// 아이템 원본 데이터를 기준으로 인벤토리에 아이템을 추가합니다.
+    /// CSV 아이템 ID를 기준으로 인벤토리에 아이템을 추가합니다.
     /// </summary>
-    /// <param name="itemData">추가할 아이템 원본 데이터입니다.</param>
+    /// <param name="itemId">추가할 아이템 ID입니다.</param>
     /// <param name="amount">추가할 아이템 개수입니다.</param>
     /// <returns>아이템 데이터와 개수가 유효하고 추가에 성공하면 true입니다.</returns>
-    public bool TryAddItem(ItemDataSO itemData, int amount)
+    public bool TryAddItem(string itemId, int amount)
     {
-        EnsureItemDatabase();
-
-        if (itemData == null)
-        {
-            return false;
-        }
-
         if (amount < INVENTORY_MIN_ITEM_AMOUNT)
         {
             return false;
         }
 
-        if (!itemData.TryGetItemId(out string itemId))
+        if (!TryGetItem(itemId, out ItemDefinition itemData))
         {
             return false;
         }
 
-        RegisterItemData(itemData);
-
         int maxStackCount = GetSafeMaxStackCount(itemData);
-        bool isFirstAcquisition = GetItemCount(itemId) == 0;
+        bool isFirstAcquisition = GetItemCount(itemData.ItemId) == 0;
         int remainingAmount = amount;
 
-        FillExistingStacks(itemId, maxStackCount, ref remainingAmount);
-        CreateOverflowSlots(itemId, maxStackCount, isFirstAcquisition, ref remainingAmount);
+        FillExistingStacks(itemData.ItemId, maxStackCount, ref remainingAmount);
+        CreateOverflowSlots(itemData.ItemId, maxStackCount, isFirstAcquisition, ref remainingAmount);
 
         if (HasAnyManualSlotOrder() == false)
         {
-            MoveItemSlotsToRecentEnd(itemId);
+            MoveItemSlotsToRecentEnd(itemData.ItemId);
         }
 
         return remainingAmount == 0;
@@ -167,17 +161,46 @@ public class InventoryController : MonoBehaviour, IInventoryService
     /// <param name="itemId">조회할 아이템 고유 ID입니다.</param>
     /// <param name="itemData">조회된 아이템 원본 데이터입니다.</param>
     /// <returns>아이템 데이터를 찾으면 true입니다.</returns>
-    public bool TryGetItem(string itemId, out ItemDataSO itemData)
+    public bool TryGetItem(string itemId, out ItemDefinition itemData)
     {
-        EnsureItemDatabase();
         itemData = null;
 
-        if (!TryNormalizeItemId(itemId, out string normalizedItemId))
+        if (_gameDataRepository == null
+            || !TryNormalizeItemId(itemId, out string normalizedItemId))
         {
             return false;
         }
 
-        return _itemById.TryGetValue(normalizedItemId, out itemData);
+        return _gameDataRepository.TryGetItem(normalizedItemId, out itemData);
+    }
+
+    /// <summary>
+    /// CSV Definition에 현재 언어 문장과 아이콘을 결합한 UI 표시 데이터를 조회합니다.
+    /// </summary>
+    public bool TryGetItemDisplay(string itemId, out InventoryItemDisplayData displayData)
+    {
+        displayData = null;
+
+        if (!TryGetItem(itemId, out ItemDefinition itemData))
+        {
+            return false;
+        }
+
+        string displayName = _localizationService != null
+            ? _localizationService.GetText(itemData.DisplayNameKey)
+            : itemData.DisplayNameKey;
+        string description = _localizationService != null
+            ? _localizationService.GetText(itemData.DescriptionTextKey)
+            : itemData.DescriptionTextKey;
+        Sprite icon = null;
+
+        if (_visualCatalog != null && !string.IsNullOrWhiteSpace(itemData.IconId))
+        {
+            _visualCatalog.TryGetIcon(itemData.IconId, out icon);
+        }
+
+        displayData = new InventoryItemDisplayData(itemData, displayName, description, icon);
+        return true;
     }
 
     /// <summary>
@@ -214,7 +237,6 @@ public class InventoryController : MonoBehaviour, IInventoryService
     /// <returns>카테고리에 포함되는 슬롯 목록입니다.</returns>
     public IReadOnlyList<InventorySlotData> GetSlots(InventoryCategory category)
     {
-        EnsureItemDatabase();
         _visibleSlots.Clear();
 
         for (int i = 0; i < _slots.Count; i++)
@@ -342,60 +364,6 @@ public class InventoryController : MonoBehaviour, IInventoryService
     //==============================================================================
     // 내부 로직
     //==============================================================================
-
-    /// <summary>
-    /// 아이템 데이터베이스 캐시가 없으면 다시 구성합니다.
-    /// </summary>
-    private void EnsureItemDatabase()
-    {
-        if (_isItemDatabaseBuilt == false)
-        {
-            RebuildItemDatabase();
-        }
-    }
-
-    /// <summary>
-    /// 인스펙터에 등록된 아이템 데이터 목록을 ID 캐시로 재구성합니다.
-    /// </summary>
-    private void RebuildItemDatabase()
-    {
-        _itemById.Clear();
-        _isItemDatabaseBuilt = true;
-
-        if (_itemDatabase == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < _itemDatabase.Count; i++)
-        {
-            RegisterItemData(_itemDatabase[i]);
-        }
-    }
-
-    /// <summary>
-    /// 아이템 원본 데이터를 런타임 조회 캐시에 등록합니다.
-    /// </summary>
-    /// <param name="itemData">등록할 아이템 원본 데이터입니다.</param>
-    private void RegisterItemData(ItemDataSO itemData)
-    {
-        if (itemData == null || !itemData.TryGetItemId(out string itemId))
-        {
-            return;
-        }
-
-        if (_itemById.ContainsKey(itemId))
-        {
-            if (_itemById[itemId] != itemData)
-            {
-                Debug.LogWarning($"[InventoryController] 중복 ItemId가 있습니다. itemId={itemId}");
-            }
-
-            return;
-        }
-
-        _itemById.Add(itemId, itemData);
-    }
 
     /// <summary>
     /// 기존 슬롯에 같은 아이템을 최대 중첩 수까지 채웁니다.
@@ -540,7 +508,7 @@ public class InventoryController : MonoBehaviour, IInventoryService
     /// <returns>카테고리에 포함되면 true입니다.</returns>
     private bool IsSlotInCategory(InventorySlotData slotData, InventoryCategory category)
     {
-        if (slotData == null || !TryGetItem(slotData.ItemId, out ItemDataSO itemData))
+        if (slotData == null || !TryGetItem(slotData.ItemId, out ItemDefinition itemData))
         {
             return false;
         }
@@ -690,7 +658,7 @@ public class InventoryController : MonoBehaviour, IInventoryService
     /// <returns>아이템 타입 정렬 우선순위입니다.</returns>
     private int GetSlotSortPriority(InventorySlotData slotData)
     {
-        if (slotData == null || !TryGetItem(slotData.ItemId, out ItemDataSO itemData))
+        if (slotData == null || !TryGetItem(slotData.ItemId, out ItemDefinition itemData))
         {
             return (int)ItemTypeSortPriority.ITEM_TYPE_SORT_PRIORITY_DEFAULT;
         }
@@ -751,7 +719,7 @@ public class InventoryController : MonoBehaviour, IInventoryService
     /// </summary>
     /// <param name="itemData">조회할 아이템 원본 데이터입니다.</param>
     /// <returns>1 이상으로 보정된 최대 중첩 수입니다.</returns>
-    private int GetSafeMaxStackCount(ItemDataSO itemData)
+    private int GetSafeMaxStackCount(ItemDefinition itemData)
     {
         if (itemData == null || itemData.MaxStackCount < INVENTORY_MIN_ITEM_AMOUNT)
         {

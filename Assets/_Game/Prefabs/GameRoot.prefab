@@ -487,6 +487,7 @@ MonoBehaviour:
   _dialogueGraphsCsv: {fileID: 4900000, guid: 356b65da296c47b3a19886e0500180a6, type: 3}
   _dialogueNodesCsv: {fileID: 4900000, guid: 9adf76f4c84d474f90721aad52c8244f, type: 3}
   _dialogueChoicesCsv: {fileID: 4900000, guid: 58fb3e12631f488fa6fb61bf092de93c, type: 3}
+  _itemsCsv: {fileID: 4900000, guid: a8f3d2e1c4b5476a9e0f1a2b3c4d5e6f, type: 3}
   _questsCsv: {fileID: 4900000, guid: c1f36fd7ba2e4aa5b79c83d3c8a8fe5a, type: 3}
   _questObjectivesCsv: {fileID: 4900000, guid: 5f7a71454ce945f1b4dc9e4272dafcf2, type: 3}
   _questRewardsCsv: {fileID: 4900000, guid: cd3b903b12b34bcd91625ded3124dc28, type: 3}
@@ -2113,9 +2114,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be5adba16a474dbeab5bb5b5cf9bc7c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryController
-  _itemDatabase:
-  - {fileID: 11400000, guid: 66c8e0a2b4d64f1891a3c5e7f9b1d3a5, type: 2}
-  - {fileID: 11400000, guid: 77d9f1b3c5e74a2092b4d6f8a0c2e4b6, type: 2}
+  _visualCatalog: {fileID: 11400000, guid: e9a1c3d5f7b8402c4e6a8d1f3b5c7e9a, type: 2}
 --- !u!1 &9178882302522477949
 GameObject:
   m_ObjectHideFlags: 0

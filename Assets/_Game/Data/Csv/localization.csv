@@ -15,3 +15,7 @@ quest.restore_mural.objective.inspect,손상된 벽화를 조사한다.,Inspect 
 quest.restore_mural.objective.report,벽화의 손상 상태를 보고한다.,Report the mural's condition.,
 quest.restore_mural.reward.reputation,큐레이터의 신뢰를 얻는다.,Gain the curator's trust.,
 quest.restore_mural.reward.coins,보존 활동 지원금 100을 받는다.,Receive 100 conservation funds.,
+item.coin.name,코인,Coin,
+item.coin.description,퀘스트 보상으로 획득하는 코인입니다.,A coin received as a quest reward.,
+item.repair_kit.name,복원 도구,Restoration Tool,
+item.repair_kit.description,손상된 유물을 복원할 때 사용하는 퀘스트 도구입니다.,A quest tool used to restore damaged artifacts.,

@@ -49,6 +49,9 @@ public sealed class GameDataCsvSource
     // 대화 선택지 CSV 원본입니다.
     private readonly GameDataCsvFile _dialogueChoices;
 
+    // 인벤토리 아이템 CSV 원본입니다.
+    private readonly GameDataCsvFile _items;
+
     // 퀘스트 CSV 원본입니다.
     private readonly GameDataCsvFile _quests;
 
@@ -84,6 +87,9 @@ public sealed class GameDataCsvSource
 
     /// <summary>대화 선택지 CSV 원본입니다.</summary>
     public GameDataCsvFile DialogueChoices => _dialogueChoices;
+
+    /// <summary>인벤토리 아이템 CSV 원본입니다.</summary>
+    public GameDataCsvFile Items => _items;
 
     /// <summary>퀘스트 CSV 원본입니다.</summary>
     public GameDataCsvFile Quests => _quests;
@@ -127,6 +133,7 @@ public sealed class GameDataCsvSource
         GameDataCsvFile dialogueGraphs,
         GameDataCsvFile dialogueNodes,
         GameDataCsvFile dialogueChoices,
+        GameDataCsvFile items,
         GameDataCsvFile quests,
         GameDataCsvFile questObjectives,
         GameDataCsvFile questRewards,
@@ -140,6 +147,7 @@ public sealed class GameDataCsvSource
         _dialogueGraphs = dialogueGraphs;
         _dialogueNodes = dialogueNodes;
         _dialogueChoices = dialogueChoices;
+        _items = items;
         _quests = quests;
         _questObjectives = questObjectives;
         _questRewards = questRewards;

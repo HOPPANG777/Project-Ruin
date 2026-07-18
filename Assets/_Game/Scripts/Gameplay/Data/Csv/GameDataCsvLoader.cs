@@ -31,6 +31,10 @@ public static class GameDataCsvLoader
             source.Localization,
             out List<LocalizationEntryDefinition> localizationEntries,
             out loadError)
+            || !ItemCsvDefinitionLoader.TryLoad(
+                source.Items,
+                out List<ItemDefinition> items,
+                out loadError)
             || !QuestCsvDefinitionLoader.TryLoad(
                 source,
                 out List<QuestDefinition> quests,
@@ -52,6 +56,7 @@ public static class GameDataCsvLoader
         if (!GameDataRepository.TryCreate(
             dialogueActors,
             dialogueGraphs,
+            items,
             quests,
             localizationEntries,
             npcDialogueBindings,

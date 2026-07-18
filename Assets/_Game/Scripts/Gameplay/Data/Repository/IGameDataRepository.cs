@@ -12,6 +12,9 @@ public interface IGameDataRepository
     /// <summary>등록된 대화 그래프 개수입니다.</summary>
     int DialogueGraphCount { get; }
 
+    /// <summary>등록된 인벤토리 아이템 개수입니다.</summary>
+    int ItemCount { get; }
+
     /// <summary>등록된 퀘스트 개수입니다.</summary>
     int QuestCount { get; }
 
@@ -57,6 +60,11 @@ public interface IGameDataRepository
         string graphId,
         string nodeId,
         out DialogueNodeDefinition nodeDefinition);
+
+    /// <summary>
+    /// 아이템 ID로 인벤토리 아이템 정의를 조회합니다.
+    /// </summary>
+    bool TryGetItem(string itemId, out ItemDefinition itemDefinition);
 
     /// <summary>
     /// 퀘스트 ID로 퀘스트 정의를 조회합니다.

@@ -26,6 +26,9 @@ public sealed class GameDataRepository : IGameDataRepository
     // 저장소 생성 오류에서 사용하는 대화 선택지 데이터 종류 이름입니다.
     private const string DATA_TYPE_DIALOGUE_CHOICE = "DialogueChoice";
 
+    // 저장소 생성 오류에서 사용하는 인벤토리 아이템 데이터 종류 이름입니다.
+    private const string DATA_TYPE_ITEM = "Item";
+
     // 저장소 생성 오류에서 사용하는 퀘스트 데이터 종류 이름입니다.
     private const string DATA_TYPE_QUEST = "Quest";
 
@@ -63,6 +66,9 @@ public sealed class GameDataRepository : IGameDataRepository
     // 그래프 ID와 노드 ID별 대화 노드 정의 인덱스입니다.
     private readonly Dictionary<string, Dictionary<string, DialogueNodeDefinition>> _dialogueNodeByGraphId;
 
+    // 아이템 ID별 인벤토리 아이템 정의 인덱스입니다.
+    private readonly Dictionary<string, ItemDefinition> _itemById;
+
     // 퀘스트 ID별 퀘스트 정의 인덱스입니다.
     private readonly Dictionary<string, QuestDefinition> _questById;
 
@@ -85,6 +91,9 @@ public sealed class GameDataRepository : IGameDataRepository
     /// <summary>등록된 대화 그래프 개수입니다.</summary>
     public int DialogueGraphCount => _dialogueGraphById.Count;
 
+    /// <summary>등록된 인벤토리 아이템 개수입니다.</summary>
+    public int ItemCount => _itemById.Count;
+
     /// <summary>등록된 퀘스트 개수입니다.</summary>
     public int QuestCount => _questById.Count;
 
@@ -104,6 +113,7 @@ public sealed class GameDataRepository : IGameDataRepository
         _dialoguePortraitByActorId = new Dictionary<string, Dictionary<string, DialoguePortraitDefinition>>(StringComparer.Ordinal);
         _dialogueGraphById = new Dictionary<string, DialogueGraphDefinition>(StringComparer.Ordinal);
         _dialogueNodeByGraphId = new Dictionary<string, Dictionary<string, DialogueNodeDefinition>>(StringComparer.Ordinal);
+        _itemById = new Dictionary<string, ItemDefinition>(StringComparer.Ordinal);
         _questById = new Dictionary<string, QuestDefinition>(StringComparer.Ordinal);
         _localizationEntryByKey = new Dictionary<string, LocalizationEntryDefinition>(StringComparer.Ordinal);
         _npcDialogueBindingById = new Dictionary<string, NpcDialogueBindingDefinition>(StringComparer.Ordinal);
@@ -129,6 +139,7 @@ public sealed class GameDataRepository : IGameDataRepository
     public static bool TryCreate(
         IReadOnlyList<DialogueActorDefinition> dialogueActors,
         IReadOnlyList<DialogueGraphDefinition> dialogueGraphs,
+        IReadOnlyList<ItemDefinition> items,
         IReadOnlyList<QuestDefinition> quests,
         IReadOnlyList<LocalizationEntryDefinition> localizationEntries,
         IReadOnlyList<NpcDialogueBindingDefinition> npcDialogueBindings,
@@ -147,6 +158,11 @@ public sealed class GameDataRepository : IGameDataRepository
         }
 
         if (!candidateRepository.TryAddDialogueActors(dialogueActors, out buildError))
+        {
+            return false;
+        }
+
+        if (!candidateRepository.TryAddItems(items, out buildError))
         {
             return false;
         }
@@ -294,6 +310,21 @@ public sealed class GameDataRepository : IGameDataRepository
         }
 
         return _questById.TryGetValue(questId, out questDefinition);
+    }
+
+    /// <summary>
+    /// 아이템 ID로 인벤토리 아이템 정의를 조회합니다.
+    /// </summary>
+    public bool TryGetItem(string itemId, out ItemDefinition itemDefinition)
+    {
+        itemDefinition = null;
+
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            return false;
+        }
+
+        return _itemById.TryGetValue(itemId, out itemDefinition);
     }
 
     /// <summary>
@@ -475,11 +506,52 @@ public sealed class GameDataRepository : IGameDataRepository
     }
 
     /// <summary>
+    /// 아이템 정의를 검증하고 아이템 ID 인덱스에 추가합니다.
+    /// </summary>
+    /// <param name="items">추가할 아이템 정의 목록입니다.</param>
+    /// <param name="buildError">인덱스 구성을 중단시킨 첫 번째 오류입니다.</param>
+    /// <returns>모든 아이템 정의를 추가했으면 true입니다.</returns>
+    private bool TryAddItems(
+        IReadOnlyList<ItemDefinition> items,
+        out GameDataRepositoryBuildError buildError)
+    {
+        buildError = null;
+
+        if (items == null)
+        {
+            return true;
+        }
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            ItemDefinition item = items[i];
+
+            if (item == null || string.IsNullOrWhiteSpace(item.ItemId))
+            {
+                return FailBuild(DATA_TYPE_ITEM, string.Empty, "아이템 ID가 비어 있습니다.", out buildError);
+            }
+
+            if (string.IsNullOrWhiteSpace(item.DisplayNameKey)
+                || string.IsNullOrWhiteSpace(item.DescriptionTextKey)
+                || item.Price < 0
+                || !Enum.IsDefined(typeof(ItemType), item.ItemType)
+                || item.MaxStackCount < 1)
+            {
+                return FailBuild(DATA_TYPE_ITEM, item.ItemId, "아이템 필수 값이 유효하지 않습니다.", out buildError);
+            }
+
+            if (!_itemById.TryAdd(item.ItemId, item))
+            {
+                return FailBuild(DATA_TYPE_ITEM, item.ItemId, "중복 아이템 ID가 있습니다.", out buildError);
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// 퀘스트와 자식 정의의 구조를 검증하고 퀘스트 ID 인덱스에 추가합니다.
     /// </summary>
-    /// <param name="quests">추가할 퀘스트 정의 목록입니다.</param>
-    /// <param name="buildError">인덱스 구성을 중단시킨 첫 번째 오류입니다.</param>
-    /// <returns>모든 퀘스트 정의를 추가했으면 true입니다.</returns>
     private bool TryAddQuests(
         IReadOnlyList<QuestDefinition> quests,
         out GameDataRepositoryBuildError buildError)
@@ -855,12 +927,42 @@ public sealed class GameDataRepository : IGameDataRepository
             return false;
         }
 
+        if (!TryValidateItemReferences(out buildError))
+        {
+            return false;
+        }
+
         if (!TryValidateQuestReferences(out buildError))
         {
             return false;
         }
 
         return TryValidateNpcDialogueReferences(out buildError);
+    }
+
+    /// <summary>
+    /// 인벤토리 아이템의 이름과 설명 Localization Key를 검증합니다.
+    /// </summary>
+    private bool TryValidateItemReferences(out GameDataRepositoryBuildError buildError)
+    {
+        buildError = null;
+
+        foreach (KeyValuePair<string, ItemDefinition> itemPair in _itemById)
+        {
+            ItemDefinition item = itemPair.Value;
+
+            if (!_localizationEntryByKey.ContainsKey(item.DisplayNameKey)
+                || !_localizationEntryByKey.ContainsKey(item.DescriptionTextKey))
+            {
+                return FailBuild(
+                    DATA_TYPE_ITEM,
+                    item.ItemId,
+                    "아이템 이름 또는 설명 문장 키를 찾을 수 없습니다.",
+                    out buildError);
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -1092,9 +1194,25 @@ public sealed class GameDataRepository : IGameDataRepository
                 QuestRewardDefinition reward = quest.Rewards[i];
 
                 if (!_localizationEntryByKey.ContainsKey(reward.DescriptionTextKey)
-                    || !AreQuestRewardFieldsValid(reward))
+                    || !AreQuestRewardFieldsValid(reward)
+                    || (!string.IsNullOrWhiteSpace(reward.ItemId) && !_itemById.ContainsKey(reward.ItemId)))
                 {
-                    return FailBuild(DATA_TYPE_QUEST_REWARD, reward.RewardId, "보상 설명 키 또는 조건부 보상 필드가 유효하지 않습니다.", out buildError);
+                    return FailBuild(DATA_TYPE_QUEST_REWARD, reward.RewardId, "보상 설명 키, 아이템 ID 또는 조건부 보상 필드가 유효하지 않습니다.", out buildError);
+                }
+            }
+
+            for (int i = 0; i < quest.ConsumeItems.Count; i++)
+            {
+                QuestConsumeItemDefinition consumeItem = quest.ConsumeItems[i];
+
+                if (string.IsNullOrWhiteSpace(consumeItem.ItemId)
+                    || !_itemById.ContainsKey(consumeItem.ItemId))
+                {
+                    return FailBuild(
+                        DATA_TYPE_QUEST_CONSUME_ITEM,
+                        quest.QuestId,
+                        "소모 아이템 ID를 찾을 수 없습니다.",
+                        out buildError);
                 }
             }
         }

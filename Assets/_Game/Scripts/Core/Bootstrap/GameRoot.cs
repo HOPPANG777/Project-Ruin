@@ -98,7 +98,7 @@ public sealed class GameRoot : Singleton<GameRoot>
 
         if (_inventoryController != null)
         {
-            _inventoryController.Init();
+            _inventoryController.Init(GameData, _gameDataController);
         }
 
         if (_inventoryPresenter != null)

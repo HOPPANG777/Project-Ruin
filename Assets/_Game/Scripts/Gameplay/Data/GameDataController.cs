@@ -33,6 +33,15 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
     private TextAsset _dialogueChoicesCsv;
 
     //==============================================================================
+    // 직렬화 필드 - Inventory
+    //==============================================================================
+
+    [Header("Inventory CSV")]
+    [Tooltip("인벤토리 아이템 원본 데이터를 정의하는 items.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _itemsCsv;
+
+    //==============================================================================
     // 직렬화 필드 - Quest
     //==============================================================================
 
@@ -187,6 +196,7 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
             || !TryValidateRequiredAsset(_dialogueGraphsCsv, "dialogue_graphs.csv", out loadError)
             || !TryValidateRequiredAsset(_dialogueNodesCsv, "dialogue_nodes.csv", out loadError)
             || !TryValidateRequiredAsset(_dialogueChoicesCsv, "dialogue_choices.csv", out loadError)
+            || !TryValidateRequiredAsset(_itemsCsv, "items.csv", out loadError)
             || !TryValidateRequiredAsset(_questsCsv, "quests.csv", out loadError)
             || !TryValidateRequiredAsset(_questObjectivesCsv, "quest_objectives.csv", out loadError)
             || !TryValidateRequiredAsset(_questRewardsCsv, "quest_rewards.csv", out loadError)
@@ -202,6 +212,7 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
             CreateCsvFile(_dialogueGraphsCsv),
             CreateCsvFile(_dialogueNodesCsv),
             CreateCsvFile(_dialogueChoicesCsv),
+            CreateCsvFile(_itemsCsv),
             CreateCsvFile(_questsCsv),
             CreateCsvFile(_questObjectivesCsv),
             CreateCsvFile(_questRewardsCsv),

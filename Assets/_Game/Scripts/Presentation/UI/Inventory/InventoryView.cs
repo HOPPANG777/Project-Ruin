@@ -115,7 +115,7 @@ public class InventoryView : MonoBehaviour
     private readonly List<InventorySlotData> _currentSlots = new List<InventorySlotData>();
 
     // 현재 카테고리에서 표시 중인 아이템 원본 데이터 스냅샷입니다.
-    private readonly List<ItemDataSO> _currentItems = new List<ItemDataSO>();
+    private readonly List<InventoryItemDisplayData> _currentItems = new List<InventoryItemDisplayData>();
 
     // 슬롯 선택 입력 콜백입니다.
     private Action<int> _slotSelected;
@@ -186,7 +186,7 @@ public class InventoryView : MonoBehaviour
     /// <param name="slots">표시할 슬롯 목록입니다.</param>
     /// <param name="items">각 슬롯에 대응하는 아이템 원본 데이터 목록입니다.</param>
     /// <param name="selectedSlotData">현재 선택된 슬롯 데이터입니다.</param>
-    public void SetSlots(IReadOnlyList<InventorySlotData> slots, IReadOnlyList<ItemDataSO> items, InventorySlotData selectedSlotData)
+    public void SetSlots(IReadOnlyList<InventorySlotData> slots, IReadOnlyList<InventoryItemDisplayData> items, InventorySlotData selectedSlotData)
     {
         _currentSlots.Clear();
         _currentItems.Clear();
@@ -226,7 +226,7 @@ public class InventoryView : MonoBehaviour
     /// 선택한 아이템 상세 정보를 UI에 출력합니다.
     /// </summary>
     /// <param name="itemData">출력할 아이템 원본 데이터입니다.</param>
-    public void SetSelectedItem(ItemDataSO itemData)
+    public void SetSelectedItem(InventoryItemDisplayData itemData)
     {
         if (itemData == null)
         {
@@ -348,7 +348,7 @@ public class InventoryView : MonoBehaviour
             }
 
             InventorySlotData slotData = i < _currentSlots.Count ? _currentSlots[i] : null;
-            ItemDataSO itemData = i < _currentItems.Count ? _currentItems[i] : null;
+            InventoryItemDisplayData itemData = i < _currentItems.Count ? _currentItems[i] : null;
             bool isSelected = slotData != null && slotData == _selectedSlotData;
 
             slotView.Bind(

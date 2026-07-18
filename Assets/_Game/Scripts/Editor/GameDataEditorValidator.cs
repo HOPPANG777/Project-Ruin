@@ -26,8 +26,14 @@ internal static class GameDataEditorValidator
     // DialogueController의 비주얼 카탈로그 직렬화 필드 이름입니다.
     private const string PROPERTY_VISUAL_CATALOG = "_visualCatalog";
 
-    // InventoryController의 아이템 데이터베이스 직렬화 필드 이름입니다.
-    private const string PROPERTY_ITEM_DATABASE = "_itemDatabase";
+    // InventoryController의 아이템 비주얼 카탈로그 직렬화 필드 이름입니다.
+    private const string PROPERTY_ITEM_VISUAL_CATALOG = "_visualCatalog";
+
+    // 아이템 비주얼 카탈로그의 아이콘 목록 직렬화 필드 이름입니다.
+    private const string PROPERTY_ITEM_ICONS = "_icons";
+
+    // 아이템 비주얼 항목의 아이콘 ID 직렬화 필드 이름입니다.
+    private const string PROPERTY_ICON_ID = "_iconId";
 
     // 비주얼 카탈로그의 초상화 목록 직렬화 필드 이름입니다.
     private const string PROPERTY_PORTRAIT_SPRITES = "_portraitSprites";
@@ -91,13 +97,13 @@ internal static class GameDataEditorValidator
             gameDataController,
             out List<DialogueActorDefinition> actors,
             out List<DialogueGraphDefinition> graphs,
-            out List<QuestDefinition> quests))
+            out List<ItemDefinition> items))
         {
             return report;
         }
 
         ValidateDialogueVisuals(gameRootSerializedObject, actors, graphs, report);
-        ValidateQuestItems(gameRootSerializedObject, quests, report);
+        ValidateItemVisuals(gameRootSerializedObject, items, report);
         return report;
     }
 
@@ -204,6 +210,12 @@ internal static class GameDataEditorValidator
             out GameDataCsvFile dialogueChoices);
         hasAllRequiredFiles &= TryGetRequiredCsvFile(
             controllerSerializedObject,
+            "_itemsCsv",
+            "items.csv",
+            report,
+            out GameDataCsvFile items);
+        hasAllRequiredFiles &= TryGetRequiredCsvFile(
+            controllerSerializedObject,
             "_questsCsv",
             "quests.csv",
             report,
@@ -251,6 +263,7 @@ internal static class GameDataEditorValidator
             dialogueGraphs,
             dialogueNodes,
             dialogueChoices,
+            items,
             quests,
             questObjectives,
             questRewards,
@@ -337,14 +350,14 @@ internal static class GameDataEditorValidator
     //==============================================================================
 
     /// <summary>
-    /// 비주얼과 아이템 참조 검증에 필요한 대화 및 퀘스트 Definition 목록을 생성합니다.
+    /// Unity 비주얼 참조 검증에 필요한 대화 및 아이템 Definition 목록을 생성합니다.
     /// </summary>
     /// <param name="csvSource">검증된 전체 CSV 원본 묶음입니다.</param>
     /// <param name="report">문제를 추가할 검증 보고서입니다.</param>
     /// <param name="context">CSV를 소유한 게임 데이터 컨트롤러입니다.</param>
     /// <param name="actors">생성된 대화 화자 목록입니다.</param>
     /// <param name="graphs">생성된 대화 그래프 목록입니다.</param>
-    /// <param name="quests">생성된 퀘스트 목록입니다.</param>
+    /// <param name="items">생성된 아이템 목록입니다.</param>
     /// <returns>참조 검증용 Definition을 모두 생성했으면 true입니다.</returns>
     private static bool TryLoadUnityReferenceDefinitions(
         GameDataCsvSource csvSource,
@@ -352,11 +365,11 @@ internal static class GameDataEditorValidator
         Object context,
         out List<DialogueActorDefinition> actors,
         out List<DialogueGraphDefinition> graphs,
-        out List<QuestDefinition> quests)
+        out List<ItemDefinition> items)
     {
         actors = null;
         graphs = null;
-        quests = null;
+        items = null;
 
         if (!DialogueCsvDefinitionLoader.TryLoad(csvSource, out actors, out graphs, out GameDataCsvLoadError dialogueError))
         {
@@ -364,9 +377,9 @@ internal static class GameDataEditorValidator
             return false;
         }
 
-        if (!QuestCsvDefinitionLoader.TryLoad(csvSource, out quests, out GameDataCsvLoadError questError))
+        if (!ItemCsvDefinitionLoader.TryLoad(csvSource.Items, out items, out GameDataCsvLoadError itemError))
         {
-            AddCsvLoadError(report, questError, context);
+            AddCsvLoadError(report, itemError, context);
             return false;
         }
 
@@ -557,150 +570,115 @@ internal static class GameDataEditorValidator
     }
 
     //==============================================================================
-    // 퀘스트 아이템 검증
+    // 아이템 비주얼 검증
     //==============================================================================
 
     /// <summary>
-    /// 퀘스트 보상과 소모 아이템 ID가 실제 인벤토리 데이터베이스에 등록되어 있는지 검증합니다.
+    /// items.csv의 icon_id가 ItemVisualCatalog의 Sprite에 연결되는지 검증합니다.
     /// </summary>
     /// <param name="gameRootSerializedObject">GameRoot 직렬화 데이터입니다.</param>
-    /// <param name="quests">검증할 퀘스트 목록입니다.</param>
+    /// <param name="items">검증할 아이템 목록입니다.</param>
     /// <param name="report">문제를 추가할 검증 보고서입니다.</param>
-    private static void ValidateQuestItems(
+    private static void ValidateItemVisuals(
         SerializedObject gameRootSerializedObject,
-        IReadOnlyList<QuestDefinition> quests,
+        IReadOnlyList<ItemDefinition> items,
         GameDataValidationReport report)
     {
         InventoryController inventoryController = GetObjectReference<InventoryController>(
             gameRootSerializedObject,
             PROPERTY_INVENTORY_CONTROLLER);
 
-        HashSet<string> registeredItemIds = inventoryController != null
-            ? BuildRegisteredItemIds(inventoryController, report)
-            : new HashSet<string>(System.StringComparer.Ordinal);
-        HashSet<string> missingItemIds = new HashSet<string>(System.StringComparer.Ordinal);
-        Object itemContext = inventoryController != null
-            ? inventoryController
-            : gameRootSerializedObject.targetObject;
-
         if (inventoryController == null)
         {
             report.AddError(
                 GAME_ROOT_PREFAB_PATH,
                 "InventoryController가 GameRoot에 연결되지 않았습니다.",
-                itemContext);
-        }
-
-        for (int questIndex = 0; questIndex < quests.Count; questIndex++)
-        {
-            QuestDefinition quest = quests[questIndex];
-
-            for (int rewardIndex = 0; rewardIndex < quest.Rewards.Count; rewardIndex++)
-            {
-                ValidateQuestItemReference(
-                    quest.Rewards[rewardIndex].ItemId,
-                    "quest_rewards.csv",
-                    registeredItemIds,
-                    missingItemIds,
-                    itemContext,
-                    report);
-            }
-
-            for (int consumeIndex = 0; consumeIndex < quest.ConsumeItems.Count; consumeIndex++)
-            {
-                ValidateQuestItemReference(
-                    quest.ConsumeItems[consumeIndex].ItemId,
-                    "quest_consume_items.csv",
-                    registeredItemIds,
-                    missingItemIds,
-                    itemContext,
-                    report);
-            }
-        }
-    }
-
-    /// <summary>
-    /// InventoryController의 직렬화 데이터베이스를 검증하고 등록된 아이템 ID 집합을 생성합니다.
-    /// </summary>
-    /// <param name="inventoryController">검증할 인벤토리 컨트롤러입니다.</param>
-    /// <param name="report">문제를 추가할 검증 보고서입니다.</param>
-    /// <returns>유효한 인벤토리 아이템 ID 집합입니다.</returns>
-    private static HashSet<string> BuildRegisteredItemIds(
-        InventoryController inventoryController,
-        GameDataValidationReport report)
-    {
-        HashSet<string> itemIds = new HashSet<string>(System.StringComparer.Ordinal);
-        SerializedObject inventorySerializedObject = new SerializedObject(inventoryController);
-        SerializedProperty itemDatabaseProperty = inventorySerializedObject.FindProperty(PROPERTY_ITEM_DATABASE);
-
-        if (itemDatabaseProperty == null || !itemDatabaseProperty.isArray)
-        {
-            report.AddError("InventoryController", "아이템 데이터베이스 직렬화 목록을 읽을 수 없습니다.", inventoryController);
-            return itemIds;
-        }
-
-        for (int i = 0; i < itemDatabaseProperty.arraySize; i++)
-        {
-            SerializedProperty itemProperty = itemDatabaseProperty.GetArrayElementAtIndex(i);
-            ItemDataSO itemData = itemProperty.objectReferenceValue as ItemDataSO;
-
-            if (itemData == null)
-            {
-                report.AddError("InventoryController", $"아이템 데이터베이스 {i}번 항목이 비어 있습니다.", inventoryController);
-                continue;
-            }
-
-            if (!itemData.TryGetItemId(out string itemId))
-            {
-                report.AddError("InventoryController", $"ItemDataSO의 ItemId가 비어 있습니다. asset={itemData.name}", itemData);
-                continue;
-            }
-
-            if (!itemIds.Add(itemId))
-            {
-                report.AddError("InventoryController", $"아이템 데이터베이스 ItemId가 중복되었습니다. itemId={itemId}", itemData);
-            }
-
-            if (itemData.Icon == null)
-            {
-                report.AddWarning(
-                    "InventoryController",
-                    $"ItemDataSO 아이콘이 연결되지 않았습니다. itemId={itemId}",
-                    itemData);
-            }
-        }
-
-        return itemIds;
-    }
-
-    /// <summary>
-    /// 퀘스트에서 참조하는 아이템 ID 한 개가 인벤토리 데이터베이스에 등록되어 있는지 검증합니다.
-    /// </summary>
-    /// <param name="itemId">검증할 퀘스트 아이템 ID입니다.</param>
-    /// <param name="sourceName">아이템 ID가 작성된 CSV 이름입니다.</param>
-    /// <param name="registeredItemIds">등록된 인벤토리 아이템 ID 집합입니다.</param>
-    /// <param name="missingItemIds">이미 보고한 누락 아이템 ID 집합입니다.</param>
-    /// <param name="context">검증한 인벤토리 컨트롤러 또는 GameRoot입니다.</param>
-    /// <param name="report">문제를 추가할 검증 보고서입니다.</param>
-    private static void ValidateQuestItemReference(
-        string itemId,
-        string sourceName,
-        HashSet<string> registeredItemIds,
-        HashSet<string> missingItemIds,
-        Object context,
-        GameDataValidationReport report)
-    {
-        if (string.IsNullOrWhiteSpace(itemId)
-            || registeredItemIds.Contains(itemId)
-            || !missingItemIds.Add(itemId))
-        {
+                gameRootSerializedObject.targetObject);
             return;
         }
 
-        report.AddError(
-            sourceName,
-            $"item_id가 InventoryController 데이터베이스에 등록되지 않았습니다. item_id={itemId}",
-            context);
+        SerializedObject controllerSerializedObject = new SerializedObject(inventoryController);
+        ItemVisualCatalogSO visualCatalog = GetObjectReference<ItemVisualCatalogSO>(
+            controllerSerializedObject,
+            PROPERTY_ITEM_VISUAL_CATALOG);
+
+        if (visualCatalog == null)
+        {
+            report.AddWarning(
+                "ItemVisualCatalog",
+                "아이템 비주얼 카탈로그가 연결되지 않아 아이콘이 표시되지 않습니다.",
+                inventoryController);
+            return;
+        }
+
+        ValidateItemVisualCatalogEntries(visualCatalog, report);
+        HashSet<string> missingIconIds = new HashSet<string>(System.StringComparer.Ordinal);
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            ItemDefinition item = items[i];
+
+            if (item == null
+                || string.IsNullOrWhiteSpace(item.IconId)
+                || visualCatalog.TryGetIcon(item.IconId, out _)
+                || !missingIconIds.Add(item.IconId))
+            {
+                continue;
+            }
+
+            report.AddWarning(
+                "items.csv",
+                $"icon_id가 아이템 비주얼 카탈로그에 없습니다. icon_id={item.IconId}",
+                visualCatalog);
+        }
+    }
+
+    /// <summary>
+    /// 아이템 비주얼 카탈로그의 빈 ID, 중복 ID, Sprite 누락을 검증합니다.
+    /// </summary>
+    /// <param name="visualCatalog">검증할 아이템 비주얼 카탈로그입니다.</param>
+    /// <param name="report">문제를 추가할 검증 보고서입니다.</param>
+    private static void ValidateItemVisualCatalogEntries(
+        ItemVisualCatalogSO visualCatalog,
+        GameDataValidationReport report)
+    {
+        SerializedObject catalogSerializedObject = new SerializedObject(visualCatalog);
+        SerializedProperty iconsProperty = catalogSerializedObject.FindProperty(PROPERTY_ITEM_ICONS);
+
+        if (iconsProperty == null || !iconsProperty.isArray)
+        {
+            report.AddWarning("ItemVisualCatalog", "아이콘 목록을 읽을 수 없습니다.", visualCatalog);
+            return;
+        }
+
+        HashSet<string> iconIds = new HashSet<string>(System.StringComparer.Ordinal);
+
+        for (int i = 0; i < iconsProperty.arraySize; i++)
+        {
+            SerializedProperty entryProperty = iconsProperty.GetArrayElementAtIndex(i);
+            SerializedProperty iconIdProperty = entryProperty.FindPropertyRelative(PROPERTY_ICON_ID);
+            SerializedProperty spriteProperty = entryProperty.FindPropertyRelative(PROPERTY_SPRITE);
+            string iconId = iconIdProperty != null ? iconIdProperty.stringValue.Trim() : string.Empty;
+
+            if (string.IsNullOrWhiteSpace(iconId))
+            {
+                report.AddWarning("ItemVisualCatalog", $"아이콘 목록 {i}번 항목의 ID가 비어 있습니다.", visualCatalog);
+                continue;
+            }
+
+            if (!iconIds.Add(iconId))
+            {
+                report.AddWarning("ItemVisualCatalog", $"아이콘 ID가 중복되었습니다. icon_id={iconId}", visualCatalog);
+            }
+
+            if (spriteProperty == null || spriteProperty.objectReferenceValue == null)
+            {
+                report.AddWarning(
+                    "ItemVisualCatalog",
+                    $"아이콘 Sprite가 연결되지 않았습니다. icon_id={iconId}",
+                    visualCatalog);
+            }
+        }
     }
 
     //==============================================================================

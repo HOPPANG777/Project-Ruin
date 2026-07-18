@@ -495,8 +495,7 @@ public sealed class QuestController : MonoBehaviour, IQuestService
 
             if (!string.IsNullOrWhiteSpace(reward.ItemId))
             {
-                if (!_inventoryService.TryGetItem(reward.ItemId, out ItemDataSO itemData)
-                    || !_inventoryService.TryAddItem(itemData, reward.ItemAmount.Value))
+                if (!_inventoryService.TryAddItem(reward.ItemId, reward.ItemAmount.Value))
                 {
                     return false;
                 }

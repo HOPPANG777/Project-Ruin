@@ -6,7 +6,7 @@ using System.Collections.Generic;
 //==============================================================================
 // NOTE:
 //  - 외부는 GameRoot.Instance.Inventory를 통해서만 접근합니다.
-//  - 런타임 슬롯 저장 데이터는 ItemDataSO 참조가 아닌 ItemId 중심으로 유지합니다.
+//  - 런타임 슬롯 저장 데이터는 ItemDefinition 참조가 아닌 ItemId 중심으로 유지합니다.
 //  - 플레이어 수동 드랍/삭제는 제공하지 않고, 퀘스트 완료 또는 재료 사용 시 자동 소모만 허용합니다.
 //==============================================================================
 
@@ -21,7 +21,7 @@ public interface IInventoryService
     /// <param name="itemData">추가할 아이템 원본 데이터입니다.</param>
     /// <param name="amount">추가할 아이템 개수입니다.</param>
     /// <returns>아이템 데이터와 개수가 유효하고 추가에 성공하면 true입니다.</returns>
-    bool TryAddItem(ItemDataSO itemData, int amount);
+    bool TryAddItem(string itemId, int amount);
 
     /// <summary>
     /// 퀘스트 완료 또는 재료 사용 조건이 만족되었을 때 인벤토리 아이템을 자동 소모합니다.
@@ -37,7 +37,10 @@ public interface IInventoryService
     /// <param name="itemId">조회할 아이템 고유 ID입니다.</param>
     /// <param name="itemData">조회된 아이템 원본 데이터입니다.</param>
     /// <returns>아이템 데이터를 찾으면 true입니다.</returns>
-    bool TryGetItem(string itemId, out ItemDataSO itemData);
+    bool TryGetItem(string itemId, out ItemDefinition itemData);
+
+    /// <summary>아이템 ID로 현재 언어 문장과 아이콘이 결합된 UI 표시 데이터를 조회합니다.</summary>
+    bool TryGetItemDisplay(string itemId, out InventoryItemDisplayData displayData);
 
     /// <summary>
     /// 아이템 ID에 해당하는 현재 보유 수량을 조회합니다.

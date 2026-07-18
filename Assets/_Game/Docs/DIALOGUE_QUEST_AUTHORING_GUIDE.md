@@ -2,7 +2,7 @@
 
 ## 1. 현재 데이터 구조
 
-Dialogue와 Quest의 기획 데이터는 ScriptableObject가 아니라 CSV를 원본으로 사용합니다.
+Dialogue, Quest, Inventory의 기획 데이터는 ScriptableObject가 아니라 CSV를 원본으로 사용합니다.
 
 ```text
 Excel 작성본
@@ -13,12 +13,12 @@ Excel 작성본
 -> DialogueController / QuestController
 ```
 
-`DialogueActorSO`, `DialogueGraphSO`, `QuestDataSO`는 더 이상 사용하지 않습니다.
+`DialogueActorSO`, `DialogueGraphSO`, `QuestDataSO`, `ItemDataSO`는 더 이상 사용하지 않습니다.
 
 Unity 에셋 참조가 필요한 다음 데이터만 ScriptableObject로 유지합니다.
 
 - `DialogueVisualCatalogSO`: CSV의 초상화·배경 ID를 Unity Sprite에 연결
-- `ItemDataSO`: 아이템 아이콘과 인벤토리 표시 데이터 보관
+- `ItemVisualCatalogSO`: `items.csv`의 아이콘 ID를 Unity Sprite에 연결
 - `SceneCatalogSO`: 씬 참조 보관
 
 ## 2. 작업 파일
@@ -69,7 +69,7 @@ ID는 저장 데이터와 참조에 사용하므로 출시 후 의미 없이 변
 - `quest_id`: 프로젝트 전체에서 고유한 퀘스트 ID
 - `objective_id`: 같은 퀘스트 안에서 고유한 목표 ID
 - `reward_id`: 같은 퀘스트 안에서 고유한 보상 ID
-- `item_id`: `InventoryController`의 Item Database에 등록된 `ItemDataSO.ItemId`와 일치하는 ID
+- `item_id`: `items.csv`에 존재하는 아이템 ID
 - `progress_flag_id`: `ProgressController`에서 사용하는 진행 플래그 ID
 
 아이템 보상은 `item_id`와 `item_amount`를 함께 작성합니다. 아이템 보상이 없으면 두 칸을 모두 비웁니다.
@@ -132,22 +132,21 @@ dialogue_graphs.csv 또는 dialogue_nodes.csv의 background_id
 
 ## 8. 아이템 연결
 
-퀘스트 CSV의 `item_id`는 Unity의 `ItemDataSO` 에셋을 직접 참조하지 않습니다.
+퀘스트 CSV의 `item_id`는 `items.csv`의 아이템 정의를 참조합니다.
 
 ```text
 quest_rewards.csv / quest_consume_items.csv의 item_id
--> InventoryController Item Database
--> 같은 ItemId의 ItemDataSO
--> 아이콘과 인벤토리 표시 데이터
+-> GameDataRepository의 ItemDefinition
+-> InventoryController
+-> ItemVisualCatalogSO의 아이콘과 localization.csv의 표시 문장
 ```
 
 새 퀘스트 아이템을 추가할 때:
 
-1. `ItemDataSO`를 생성합니다.
-2. `Item Id`를 CSV의 `item_id`와 동일하게 입력합니다.
-3. 아이콘과 표시 데이터를 입력합니다.
-4. `InventoryController`의 Item Database에 등록합니다.
-5. CSV 데이터 검증기를 실행합니다.
+1. `items.csv`에 같은 `item_id`의 행을 추가합니다.
+2. `localization.csv`에 이름과 설명 Key를 추가합니다.
+3. 아이콘이 있으면 `ItemVisualCatalogSO`에 `icon_id`와 Sprite를 등록합니다.
+4. CSV 데이터 검증기를 실행합니다.
 
 ## 9. Dialogue Choice 액션
 
@@ -185,7 +184,7 @@ Play Mode 진입 직전과 플레이어 빌드 직전에 동일한 검증기가 
 - 중복 ID가 없는가?
 - 모든 `text_key`가 `localization.csv`에 존재하는가?
 - 모든 `sprite_id`와 `background_id`가 비주얼 카탈로그에 등록되어 있는가?
-- 모든 퀘스트 `item_id`가 Inventory Item Database에 등록되어 있는가?
+- 모든 퀘스트 `item_id`가 `items.csv`에 존재하는가?
 - `NpcDialogueInteractable.Npc Id`가 NPC CSV와 일치하는가?
 - CSV 데이터 검증기의 오류가 0개인가?
 - Edit Mode 회귀 테스트가 통과하는가?

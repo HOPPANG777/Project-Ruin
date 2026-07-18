@@ -21,21 +21,24 @@ public sealed class GameDataCsvRegressionTests
     // 잘못된 헤더 테스트에서 정상 헤더를 대체하는 잘못된 이름입니다.
     private const string INVALID_ACTOR_ID_HEADER = "actor_code";
 
-    // 제거된 레거시 Dialogue와 Quest ScriptableObject 타입 이름 목록입니다.
+    // 제거된 레거시 Dialogue, Quest, Inventory ScriptableObject 타입 이름 목록입니다.
     private static readonly string[] LEGACY_TYPE_NAMES =
     {
         "DialogueActorSO",
         "DialogueGraphSO",
-        "QuestDataSO"
+        "QuestDataSO",
+        "ItemDataSO"
     };
 
-    // 제거된 레거시 Dialogue와 Quest 테스트 에셋 경로 목록입니다.
+    // 제거된 레거시 Dialogue, Quest, Inventory 에셋 경로 목록입니다.
     private static readonly string[] LEGACY_ASSET_PATHS =
     {
         "Assets/_Game/Data/DialogueData/TestNPC/PlayerDialogueActor.asset",
         "Assets/_Game/Data/DialogueData/TestNPC/TestDialogueActor.asset",
         "Assets/_Game/Data/DialogueData/TestNPC/TestDialogueGraph.asset",
-        "Assets/_Game/Data/QuestData/QuestData.asset"
+        "Assets/_Game/Data/QuestData/QuestData.asset",
+        "Assets/_Game/Data/InventoryData/Coin.asset",
+        "Assets/_Game/Data/InventoryData/RepairKit.asset"
     };
 
     //==============================================================================
@@ -43,7 +46,7 @@ public sealed class GameDataCsvRegressionTests
     //==============================================================================
 
     /// <summary>
-    /// GameRoot가 사용하는 실제 CSV 12개가 유효한 게임 데이터 저장소로 변환되는지 검증합니다.
+    /// GameRoot가 사용하는 실제 CSV 13개가 유효한 게임 데이터 저장소로 변환되는지 검증합니다.
     /// </summary>
     [Test]
     public void RuntimeCsvFilesCreateRepository()
@@ -58,6 +61,7 @@ public sealed class GameDataCsvRegressionTests
         Assert.That(repository, Is.Not.Null);
         Assert.That(repository.DialogueActorCount, Is.GreaterThan(0));
         Assert.That(repository.DialogueGraphCount, Is.GreaterThan(0));
+        Assert.That(repository.ItemCount, Is.GreaterThan(0));
         Assert.That(repository.QuestCount, Is.GreaterThan(0));
         Assert.That(repository.LocalizationEntryCount, Is.GreaterThan(0));
     }
@@ -70,6 +74,25 @@ public sealed class GameDataCsvRegressionTests
     {
         GameDataCsvSource runtimeSource = CreateRuntimeSource();
         GameDataCsvSource missingSource = CopySourceWithDialogueActors(runtimeSource, null);
+        bool didLoad = GameDataCsvLoader.TryLoad(
+            missingSource,
+            out _,
+            out GameDataCsvLoadError loadError);
+
+        Assert.That(didLoad, Is.False);
+        Assert.That(loadError, Is.Not.Null);
+        Assert.That(loadError.SourceName, Is.EqualTo(MISSING_SOURCE_NAME));
+    }
+
+    /// <summary>
+    /// 필수 Items CSV가 없으면 저장소 생성을 거부하는지 검증합니다.
+    /// </summary>
+    [Test]
+    public void MissingItemsCsvReturnsMissingSourceError()
+    {
+        GameDataCsvSource runtimeSource = CreateRuntimeSource();
+        GameDataCsvSource missingSource = CopySourceWithItems(runtimeSource, null);
+
         bool didLoad = GameDataCsvLoader.TryLoad(
             missingSource,
             out _,
@@ -109,10 +132,10 @@ public sealed class GameDataCsvRegressionTests
     }
 
     /// <summary>
-    /// CSV 전환이 끝난 Dialogue와 Quest 레거시 ScriptableObject 타입이 런타임 어셈블리에 없는지 검증합니다.
+    /// CSV 전환이 끝난 Dialogue, Quest, Inventory 레거시 ScriptableObject 타입이 런타임 어셈블리에 없는지 검증합니다.
     /// </summary>
     [Test]
-    public void LegacyDialogueAndQuestTypesAreRemoved()
+    public void LegacyGameDataTypesAreRemoved()
     {
         System.Reflection.Assembly runtimeAssembly = typeof(GameDataController).Assembly;
 
@@ -128,10 +151,10 @@ public sealed class GameDataCsvRegressionTests
     }
 
     /// <summary>
-    /// 제거된 Dialogue와 Quest 레거시 테스트 에셋이 프로젝트에 다시 포함되지 않았는지 검증합니다.
+    /// 제거된 Dialogue, Quest, Inventory 레거시 에셋이 프로젝트에 다시 포함되지 않았는지 검증합니다.
     /// </summary>
     [Test]
-    public void LegacyDialogueAndQuestAssetsAreRemoved()
+    public void LegacyGameDataAssetsAreRemoved()
     {
         for (int i = 0; i < LEGACY_ASSET_PATHS.Length; i++)
         {
@@ -149,7 +172,7 @@ public sealed class GameDataCsvRegressionTests
     //==============================================================================
 
     /// <summary>
-    /// 프로젝트의 실제 런타임 CSV TextAsset 12개를 전체 게임 데이터 원본 묶음으로 생성합니다.
+    /// 프로젝트의 실제 런타임 CSV TextAsset 13개를 전체 게임 데이터 원본 묶음으로 생성합니다.
     /// </summary>
     /// <returns>실제 런타임 CSV 원본 묶음입니다.</returns>
     private static GameDataCsvSource CreateRuntimeSource()
@@ -160,6 +183,7 @@ public sealed class GameDataCsvRegressionTests
             LoadRequiredCsv("dialogue_graphs.csv"),
             LoadRequiredCsv("dialogue_nodes.csv"),
             LoadRequiredCsv("dialogue_choices.csv"),
+            LoadRequiredCsv("items.csv"),
             LoadRequiredCsv("quests.csv"),
             LoadRequiredCsv("quest_objectives.csv"),
             LoadRequiredCsv("quest_rewards.csv"),
@@ -185,6 +209,30 @@ public sealed class GameDataCsvRegressionTests
             source.DialogueGraphs,
             source.DialogueNodes,
             source.DialogueChoices,
+            source.Items,
+            source.Quests,
+            source.QuestObjectives,
+            source.QuestRewards,
+            source.QuestConsumeItems,
+            source.Localization,
+            source.NpcDialogueBindings,
+            source.NpcQuestDialogueRoutes);
+    }
+
+    /// <summary>
+    /// 런타임 CSV 원본을 복사하면서 Items 원본만 교체합니다.
+    /// </summary>
+    private static GameDataCsvSource CopySourceWithItems(
+        GameDataCsvSource source,
+        GameDataCsvFile items)
+    {
+        return new GameDataCsvSource(
+            source.DialogueActors,
+            source.DialoguePortraits,
+            source.DialogueGraphs,
+            source.DialogueNodes,
+            source.DialogueChoices,
+            items,
             source.Quests,
             source.QuestObjectives,
             source.QuestRewards,
