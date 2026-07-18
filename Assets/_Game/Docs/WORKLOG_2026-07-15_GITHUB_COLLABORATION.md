@@ -10,7 +10,7 @@
 | 작업 목적 | GitHub를 모르는 기획자와 개발자도 같은 방식으로 업무를 등록하고 작업 결과를 검토할 수 있는 기준 마련 |
 | 대상 저장소 | `HOPPANG777/Project-Ruin` |
 | 핵심 산출물 | `Assets/_Game/Docs/GITHUB_COLLABORATION_GUIDE.md` |
-| 관련 산출물 | `CODING_CONVENTIONS.md` |
+| 관련 산출물 | `CONVENTIONS.md` |
 | 결과 Commit | `a698db0` — `깃허브 관리 문서 작성완료` |
 | 현재 기준 Branch | `release` |
 
@@ -473,7 +473,7 @@ Commit에 포함된 파일:
 | 파일 | 변경 내용 |
 | --- | --- |
 | `Assets/_Game/Docs/GITHUB_COLLABORATION_GUIDE.md` | GitHub 협업·관리 가이드 추가 |
-| `CODING_CONVENTIONS.md` | Unity 개발 코딩 컨벤션 추가 |
+| `CONVENTIONS.md` | Unity 개발 코딩 컨벤션 추가 |
 | `Assets/Resources/DOTweenSettings.asset` | UI Toolkit, TextMeshPro DOTween 모듈 활성화 |
 | `ProjectSettings/ProjectSettings.asset` | 여러 플랫폼에 DOTween 관련 Scripting Define 추가 |
 
@@ -500,7 +500,7 @@ Commit 제목과 본문은 GitHub 관리 문서만 설명하지만 실제로는 
 
 ## 11. 함께 추가된 코딩 컨벤션
 
-`CODING_CONVENTIONS.md`에는 다음 개발 기준이 정리되어 있습니다.
+`CONVENTIONS.md`에는 다음 개발 기준이 정리되어 있습니다.
 
 - 사용 기술 스택
 - 의존성 주입과 낮은 결합도
@@ -523,7 +523,7 @@ GitHub 협업 가이드는 작업을 어떻게 공유하고 검토할지를 설�
 GITHUB_COLLABORATION_GUIDE.md
 -> Issue, Branch, Commit, PR, Review, Merge 기준
 
-CODING_CONVENTIONS.md
+CONVENTIONS.md
 -> Architecture, Code, Naming, Comment, Optimization 기준
 ```
 
