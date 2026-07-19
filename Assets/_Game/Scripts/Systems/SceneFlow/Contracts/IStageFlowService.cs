@@ -1,3 +1,4 @@
+using System;
 using Cysharp.Threading.Tasks;
 
 //==============================================================================
@@ -15,6 +16,11 @@ public interface IStageFlowService
 {
     /// <summary>현재 스테이지 전환(페이드/로드)이 진행 중인지 여부입니다.</summary>
     bool IsTransitioning { get; }
+
+    /// <summary>화면을 암전한 동안 지정한 작업을 실행한 뒤 화면을 복귀시킵니다.</summary>
+    /// <param name="coveredAction">화면이 완전히 가려진 상태에서 실행할 작업입니다.</param>
+    /// <returns>페이드 전환 완료를 await 할 수 있는 UniTask입니다.</returns>
+    UniTask FadeThroughAsync(Action coveredAction);
 
     /// <summary>
     /// 지정한 스테이지 번호로 전환합니다. (페이드 인 → Capture → 이전 씬 언로드 → 새 씬 Additive 로드 → Restore → 페이드 아웃)

@@ -115,6 +115,54 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
     // 공개 API (IStageFlowService)
     //==============================================================================
 
+    //=============================================================================
+    // StageFlowController.FadeThroughAsync
+    //=============================================================================
+    // Description: 화면을 암전한 동안 지정한 작업을 실행한 뒤 화면을 복귀시킨다.
+    //
+    // Parameters:  ( Action coveredAction )
+    //
+    // Return:      UniTask — 페이드 전환 작업
+    //
+    //=============================================================================
+    /// <summary>화면을 암전한 동안 지정한 작업을 실행한 뒤 화면을 복귀시킵니다.</summary>
+    /// <param name="coveredAction">화면이 완전히 가려진 상태에서 실행할 작업입니다.</param>
+    /// <returns>페이드 전환 완료를 await 할 수 있는 UniTask입니다.</returns>
+    public async UniTask FadeThroughAsync(Action coveredAction)
+    {
+        if (coveredAction == null)
+        {
+            Debug.LogWarning("[StageFlowController] 암전 중 실행할 작업이 없습니다.");
+            return;
+        }
+
+        if (!TryBeginTransition())
+        {
+            return;
+        }
+
+        CancellationToken token = this.GetCancellationTokenOnDestroy();
+
+        try
+        {
+            await _sceneTransition.FadeInAsync(token);
+
+            try
+            {
+                coveredAction.Invoke();
+            }
+            finally
+            {
+                // 암전 중 작업이 실패해도 화면이 검게 고정되지 않도록 복귀를 보장합니다.
+                await _sceneTransition.FadeOutAsync(token);
+            }
+        }
+        finally
+        {
+            IsTransitioning = false;
+        }
+    }
+
     /// <summary>
     /// 지정한 스테이지 번호로 전환합니다. (카탈로그 조회 → 페이드 인 → 언로드 → Additive 로드 → 데이터 복구 → 페이드 아웃)
     /// </summary>
@@ -206,12 +254,6 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
         int destinationStageNumber,
         CancellationToken token)
     {
-        // 전환이 이미 진행 중이면 중복 호출을 막아 경쟁 상태를 방지합니다.
-        if (_isTransitioning)
-        {
-            return;
-        }
-
         // 비어 있는 씬 이름은 Unity 로드 요청이 실패하므로 사전에 차단합니다.
         if (string.IsNullOrWhiteSpace(sceneName))
         {
@@ -219,14 +261,10 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
             return;
         }
 
-        // Presenter가 연결되지 않았으면 시각 연출 없이 전환할 수 없으므로 중단합니다.
-        if (_sceneTransition == null)
+        if (!TryBeginTransition())
         {
-            Debug.LogWarning("[StageFlowController] SceneTransitionPresenter가 연결되지 않았습니다.");
             return;
         }
-
-        IsTransitioning = true;
 
         try
         {
@@ -267,6 +305,28 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
             // 예외/취소 여부와 무관하게 전환 플래그를 반드시 해제합니다.
             IsTransitioning = false;
         }
+    }
+
+    /// <summary>
+    /// 전환 중복과 Presenter 연결 상태를 검사하고 전환 상태를 선점합니다.
+    /// </summary>
+    /// <returns>새 전환을 시작할 수 있으면 true입니다.</returns>
+    private bool TryBeginTransition()
+    {
+        // 먼저 시작한 전환만 상태를 선점해 다중 트리거의 경쟁 상태를 막습니다.
+        if (_isTransitioning)
+        {
+            return false;
+        }
+
+        if (_sceneTransition == null)
+        {
+            Debug.LogWarning("[StageFlowController] SceneTransitionPresenter가 연결되지 않았습니다.");
+            return false;
+        }
+
+        IsTransitioning = true;
+        return true;
     }
 
     /// <summary>
