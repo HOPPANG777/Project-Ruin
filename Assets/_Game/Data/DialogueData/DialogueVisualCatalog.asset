@@ -16,11 +16,11 @@ MonoBehaviour:
   - _assetId: SPR_PLAYER_NORMAL
     _sprite: {fileID: 21300000, guid: 3da0a419fdee1864b85f38c48560a58d, type: 3}
   - _assetId: SPR_CURATOR_NORMAL
-    _sprite: {fileID: 21300000, guid: f5b62535ac7882b4db35684896240c1a, type: 3}
+    _sprite: {fileID: 21300000, guid: a576ca97edf0ea749a7e27762f333b8e, type: 3}
   - _assetId: SPR_CURATOR_WORRIED
-    _sprite: {fileID: 21300000, guid: f5b62535ac7882b4db35684896240c1a, type: 3}
+    _sprite: {fileID: 21300000, guid: a576ca97edf0ea749a7e27762f333b8e, type: 3}
   - _assetId: SPR_CURATOR_HAPPY
-    _sprite: {fileID: 21300000, guid: f5b62535ac7882b4db35684896240c1a, type: 3}
+    _sprite: {fileID: 21300000, guid: a576ca97edf0ea749a7e27762f333b8e, type: 3}
   _backgroundSprites:
-  - _assetId: 
-    _sprite: {fileID: 0}
+  - _assetId: BG_MUSEUM_HALL
+    _sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
