@@ -403,6 +403,10 @@ FodyWeavers.xsd
 # config dir
 .obsidian/
 
+### ChatGPT ###
+.codex/
+.codex-doc-review/
+
 ### Unity ###
 # This .gitignore file should be placed at the root of your Unity project directory
 #
