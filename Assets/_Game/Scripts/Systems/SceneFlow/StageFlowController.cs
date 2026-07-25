@@ -46,6 +46,9 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
     // 시각 연출 서비스에 대한 캐시 참조입니다. (인터페이스 경유 접근용)
     private ISceneTransitionService _sceneTransition;
 
+    // 씬 전환 직전 Dirty 진행 상태를 저장할 서비스입니다.
+    private IProgressService _progressService;
+
     // 현재 로드되어 있는 스테이지 번호입니다. 스테이지가 없으면 -1입니다.
     private int _currentStageNumber = -1;
 
@@ -98,10 +101,13 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
     //==============================================================================
 
     /// <summary>
-    /// GameRoot에서 호출하는 초기화 함수입니다. Presenter의 페이드/로딩 UI를 초기 상태로 정렬합니다.
+    /// GameRoot에서 호출하는 초기화 함수입니다. 저장 서비스와 Presenter를 준비합니다.
     /// </summary>
-    public void Init()
+    /// <param name="progressService">씬 전환 체크포인트에서 사용할 진행 상태 서비스입니다.</param>
+    public void Init(IProgressService progressService)
     {
+        _progressService = progressService;
+
         // Presenter가 연결되지 않았으면 초기화할 대상이 없으므로 종료합니다.
         if (_sceneTransition == null)
         {
@@ -275,6 +281,16 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
             if (loadMode == LoadSceneMode.Additive)
             {
                 ExecuteStageCapture();
+            }
+
+            // Dirty가 없다면 실제 파일 쓰기 없이 즉시 통과합니다.
+            if (_progressService != null)
+            {
+                await _progressService.SaveAsync(token);
+            }
+
+            if (loadMode == LoadSceneMode.Additive)
+            {
                 await UnloadActiveSceneIfNeededAsync(token);
             }
 

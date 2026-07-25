@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 //==============================================================================
@@ -34,6 +36,10 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     // Dictionary를 수정하며 순회하지 않도록 재사용하는 퀘스트 ID 버퍼입니다.
     private readonly List<string> _questIdBuffer = new List<string>();
 
+    // 같은 아이템의 필요 수량을 할당 없이 합산하는 재사용 버퍼입니다.
+    private readonly Dictionary<string, int> _consumeAmountBuffer =
+        new Dictionary<string, int>(StringComparer.Ordinal);
+
     // 퀘스트 정의를 ID로 조회할 읽기 전용 게임 데이터 저장소입니다.
     private IGameDataRepository _gameDataRepository;
 
@@ -42,6 +48,9 @@ public sealed class QuestController : MonoBehaviour, IQuestService
 
     // 자동 소모와 아이템 보상을 처리할 인벤토리 서비스입니다.
     private IInventoryService _inventoryService;
+
+    // 기술 보상을 단일 획득 진입점으로 전달할 재건 서비스입니다.
+    private IRelicRestorationService _relicRestorationService;
 
     //==============================================================================
     // 초기화
@@ -53,14 +62,17 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     /// <param name="gameDataRepository">CSV에서 생성된 읽기 전용 게임 데이터 저장소입니다.</param>
     /// <param name="progressService">목표와 상태 Flag에 사용할 진행 상태 서비스입니다.</param>
     /// <param name="inventoryService">아이템 소모와 보상에 사용할 인벤토리 서비스입니다.</param>
+    /// <param name="relicRestorationService">기술 획득 보상을 처리할 재건 서비스입니다.</param>
     public void Init(
         IGameDataRepository gameDataRepository,
         IProgressService progressService,
-        IInventoryService inventoryService = null)
+        IInventoryService inventoryService = null,
+        IRelicRestorationService relicRestorationService = null)
     {
         _gameDataRepository = gameDataRepository;
         _progressService = progressService;
         _inventoryService = inventoryService;
+        _relicRestorationService = relicRestorationService;
 
         if (_gameDataRepository == null)
         {
@@ -81,13 +93,8 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     public bool TryGetQuestDefinition(string questId, out QuestDefinition questDefinition)
     {
         questDefinition = null;
-
-        if (_gameDataRepository == null || string.IsNullOrWhiteSpace(questId))
-        {
-            return false;
-        }
-
-        return _gameDataRepository.TryGetQuest(questId, out questDefinition);
+        return _gameDataRepository != null && !string.IsNullOrWhiteSpace(questId)
+            && _gameDataRepository.TryGetQuest(questId, out questDefinition);
     }
 
     /// <summary>
@@ -95,17 +102,10 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     /// </summary>
     /// <param name="questId">조회할 퀘스트 ID입니다.</param>
     /// <returns>현재 퀘스트 상태이며 등록되지 않은 ID는 미시작 상태입니다.</returns>
-    public QuestState GetQuestState(string questId)
-    {
-        if (string.IsNullOrWhiteSpace(questId))
-        {
-            return QuestState.QUEST_NOT_STARTED;
-        }
-
-        return _questStates.TryGetValue(questId, out QuestState state)
+    public QuestState GetQuestState(string questId) => !string.IsNullOrWhiteSpace(questId)
+        && _questStates.TryGetValue(questId, out QuestState state)
             ? state
             : QuestState.QUEST_NOT_STARTED;
-    }
 
     /// <summary>
     /// 퀘스트를 진행 중 상태로 변경합니다.
@@ -114,12 +114,8 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     /// <returns>상태 변경에 성공하면 true입니다.</returns>
     public bool TryAcceptQuest(string questId)
     {
-        if (!TryGetQuestDefinition(questId, out QuestDefinition questDefinition))
-        {
-            return false;
-        }
-
-        if (GetQuestState(questId) != QuestState.QUEST_NOT_STARTED)
+        if (!TryGetQuestDefinition(questId, out QuestDefinition questDefinition)
+            || GetQuestState(questId) != QuestState.QUEST_NOT_STARTED)
         {
             return false;
         }
@@ -134,11 +130,9 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     /// </summary>
     /// <param name="questId">갱신할 퀘스트 ID입니다.</param>
     /// <returns>이번 호출로 완료 상태가 되었으면 true입니다.</returns>
-    public bool RefreshQuestProgress(string questId)
-    {
-        return TryGetQuestDefinition(questId, out QuestDefinition questDefinition)
-            && RefreshQuestProgress(questDefinition);
-    }
+    public bool RefreshQuestProgress(string questId) =>
+        TryGetQuestDefinition(questId, out QuestDefinition questDefinition)
+        && RefreshQuestProgress(questDefinition);
 
     /// <summary>
     /// 진행 중인 모든 퀘스트의 목표 달성 여부를 갱신합니다.
@@ -176,7 +170,8 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     /// <returns>완료 상태가 되었거나 이미 완료 상태면 true입니다.</returns>
     public bool TryCompleteQuest(string questId)
     {
-        if (!TryGetQuestDefinition(questId, out QuestDefinition questDefinition))
+        if (_progressService == null
+            || !TryGetQuestDefinition(questId, out QuestDefinition questDefinition))
         {
             return false;
         }
@@ -206,34 +201,32 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     /// <returns>이번 호출로 보상을 지급했으면 true입니다.</returns>
     public bool TryClaimReward(string questId)
     {
-        if (!TryGetQuestDefinition(questId, out QuestDefinition questDefinition))
+        if (_progressService == null
+            || !TryGetQuestDefinition(questId, out QuestDefinition questDefinition))
         {
             return false;
         }
 
         QuestState currentState = GetQuestState(questId);
 
-        if (currentState == QuestState.QUEST_REWARDED)
+        if (currentState == QuestState.QUEST_REWARDED || !CanApplyRewards(questDefinition))
         {
             return false;
         }
 
-        if (currentState == QuestState.QUEST_IN_PROGRESS)
+        if (currentState == QuestState.QUEST_IN_PROGRESS && !TryCompleteQuest(questId))
         {
-            if (!CanApplyRewards(questDefinition) || !TryCompleteQuest(questId))
-            {
-                return false;
-            }
-
-            currentState = GetQuestState(questId);
+            return false;
         }
 
-        if (currentState != QuestState.QUEST_COMPLETED || !TryApplyRewards(questDefinition))
+        if (GetQuestState(questId) != QuestState.QUEST_COMPLETED
+            || !TryApplyRewards(questDefinition))
         {
             return false;
         }
 
         SetQuestState(questDefinition.QuestId, QuestState.QUEST_REWARDED);
+        _progressService.SaveAsync(this.GetCancellationTokenOnDestroy()).Forget();
         return true;
     }
 
@@ -249,6 +242,7 @@ public sealed class QuestController : MonoBehaviour, IQuestService
 
         _questStates.Clear();
         _questIdBuffer.Clear();
+        _consumeAmountBuffer.Clear();
     }
 
     //==============================================================================
@@ -317,17 +311,14 @@ public sealed class QuestController : MonoBehaviour, IQuestService
             return true;
         }
 
-        if (_inventoryService == null || !CanConsumeRequiredItems(questDefinition))
+        if (_inventoryService == null || !TryBuildConsumeAmounts(questDefinition))
         {
             return false;
         }
 
-        for (int i = 0; i < questDefinition.ConsumeItems.Count; i++)
+        foreach (KeyValuePair<string, int> consumeAmount in _consumeAmountBuffer)
         {
-            QuestConsumeItemDefinition consumeItem = questDefinition.ConsumeItems[i];
-
-            if (consumeItem == null
-                || !_inventoryService.TryConsumeItem(consumeItem.ItemId, consumeItem.ItemAmount))
+            if (!_inventoryService.TryConsumeItem(consumeAmount.Key, consumeAmount.Value))
             {
                 return false;
             }
@@ -336,93 +327,36 @@ public sealed class QuestController : MonoBehaviour, IQuestService
         return true;
     }
 
-    /// <summary>
-    /// 같은 아이템 ID의 소모 수량을 합산해 필요한 전체 수량을 보유했는지 확인합니다.
-    /// </summary>
-    /// <param name="questDefinition">확인할 퀘스트 정의입니다.</param>
-    /// <returns>모든 자동 소모 항목이 유효하고 필요한 수량을 보유했으면 true입니다.</returns>
-    private bool CanConsumeRequiredItems(QuestDefinition questDefinition)
+    /// <summary>같은 아이템의 필요 수량을 한 번 합산하고 보유량을 선검증합니다.</summary>
+    private bool TryBuildConsumeAmounts(QuestDefinition questDefinition)
     {
-        for (int i = 0; i < questDefinition.ConsumeItems.Count; i++)
-        {
-            QuestConsumeItemDefinition consumeItem = questDefinition.ConsumeItems[i];
-
-            if (consumeItem == null
-                || string.IsNullOrWhiteSpace(consumeItem.ItemId)
-                || consumeItem.ItemAmount <= 0)
-            {
-                return false;
-            }
-
-            if (!IsFirstConsumeItemId(questDefinition, consumeItem.ItemId, i))
-            {
-                continue;
-            }
-
-            if (!TryGetRequiredConsumeAmount(questDefinition, consumeItem.ItemId, out int requiredAmount)
-                || _inventoryService.GetItemCount(consumeItem.ItemId) < requiredAmount)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// 현재 위치 이전에 같은 자동 소모 아이템 ID가 있는지 확인합니다.
-    /// </summary>
-    /// <param name="questDefinition">확인할 퀘스트 정의입니다.</param>
-    /// <param name="itemId">확인할 아이템 ID입니다.</param>
-    /// <param name="currentIndex">현재 자동 소모 항목 인덱스입니다.</param>
-    /// <returns>이전에 같은 아이템 ID가 없으면 true입니다.</returns>
-    private static bool IsFirstConsumeItemId(
-        QuestDefinition questDefinition,
-        string itemId,
-        int currentIndex)
-    {
-        for (int i = 0; i < currentIndex; i++)
-        {
-            QuestConsumeItemDefinition consumeItem = questDefinition.ConsumeItems[i];
-
-            if (consumeItem != null && consumeItem.ItemId == itemId)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// 같은 아이템 ID의 자동 소모 수량 합계를 오버플로 없이 계산합니다.
-    /// </summary>
-    /// <param name="questDefinition">계산할 퀘스트 정의입니다.</param>
-    /// <param name="itemId">합산할 아이템 ID입니다.</param>
-    /// <param name="requiredAmount">계산된 전체 필요 수량입니다.</param>
-    /// <returns>수량을 안전하게 계산했으면 true입니다.</returns>
-    private static bool TryGetRequiredConsumeAmount(
-        QuestDefinition questDefinition,
-        string itemId,
-        out int requiredAmount)
-    {
-        requiredAmount = 0;
+        _consumeAmountBuffer.Clear();
 
         for (int i = 0; i < questDefinition.ConsumeItems.Count; i++)
         {
-            QuestConsumeItemDefinition consumeItem = questDefinition.ConsumeItems[i];
+            QuestConsumeItemDefinition item = questDefinition.ConsumeItems[i];
 
-            if (consumeItem == null || consumeItem.ItemId != itemId)
-            {
-                continue;
-            }
-
-            if (int.MaxValue - requiredAmount < consumeItem.ItemAmount)
+            if (item == null || string.IsNullOrWhiteSpace(item.ItemId) || item.ItemAmount <= 0)
             {
                 return false;
             }
 
-            requiredAmount += consumeItem.ItemAmount;
+            _consumeAmountBuffer.TryGetValue(item.ItemId, out int currentAmount);
+
+            if (int.MaxValue - currentAmount < item.ItemAmount)
+            {
+                return false;
+            }
+
+            _consumeAmountBuffer[item.ItemId] = currentAmount + item.ItemAmount;
+        }
+
+        foreach (KeyValuePair<string, int> requiredAmount in _consumeAmountBuffer)
+        {
+            if (_inventoryService.GetItemCount(requiredAmount.Key) < requiredAmount.Value)
+            {
+                return false;
+            }
         }
 
         return true;
@@ -439,37 +373,28 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     /// <returns>모든 보상을 지급할 수 있으면 true입니다.</returns>
     private bool CanApplyRewards(QuestDefinition questDefinition)
     {
-        if (questDefinition == null)
-        {
-            return false;
-        }
-
         for (int i = 0; i < questDefinition.Rewards.Count; i++)
         {
-            QuestRewardDefinition reward = questDefinition.Rewards[i];
-
-            if (reward == null)
-            {
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(reward.ProgressFlagId)
-                && (_progressService == null || !reward.FlagValue.HasValue))
-            {
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(reward.ItemId)
-                && (_inventoryService == null
-                    || !reward.ItemAmount.HasValue
-                    || reward.ItemAmount.Value <= 0
-                    || !_inventoryService.TryGetItem(reward.ItemId, out _)))
+            if (!CanApplyReward(questDefinition.Rewards[i]))
             {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private bool CanApplyReward(QuestRewardDefinition reward)
+    {
+        return reward != null
+            && (string.IsNullOrWhiteSpace(reward.ProgressFlagId) || reward.FlagValue.HasValue)
+            && (!IsSkillRewardFlag(reward.ProgressFlagId)
+                || (TryGetSkillRewardId(reward, out string skillId)
+                    && _relicRestorationService != null && _relicRestorationService.IsKnownSkill(skillId)))
+            && (string.IsNullOrWhiteSpace(reward.ItemId)
+                || (_inventoryService != null
+                    && reward.ItemAmount.HasValue && reward.ItemAmount.Value > 0
+                    && _inventoryService.TryGetItem(reward.ItemId, out _)));
     }
 
     /// <summary>
@@ -479,30 +404,57 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     /// <returns>모든 보상을 지급했으면 true입니다.</returns>
     private bool TryApplyRewards(QuestDefinition questDefinition)
     {
-        if (!CanApplyRewards(questDefinition))
-        {
-            return false;
-        }
-
         for (int i = 0; i < questDefinition.Rewards.Count; i++)
         {
             QuestRewardDefinition reward = questDefinition.Rewards[i];
 
-            if (!string.IsNullOrWhiteSpace(reward.ProgressFlagId))
+            if (!TryApplyProgressReward(reward))
             {
-                _progressService.SetFlag(reward.ProgressFlagId, reward.FlagValue.Value);
+                return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(reward.ItemId))
+            if (!string.IsNullOrWhiteSpace(reward.ItemId)
+                && !_inventoryService.TryAddItem(reward.ItemId, reward.ItemAmount.Value))
             {
-                if (!_inventoryService.TryAddItem(reward.ItemId, reward.ItemAmount.Value))
-                {
-                    return false;
-                }
+                return false;
             }
         }
 
         return true;
+    }
+
+    /// <summary>일반 Flag는 Progress에, 기술 Flag는 재건 서비스에 전달합니다.</summary>
+    private bool TryApplyProgressReward(QuestRewardDefinition reward)
+    {
+        if (IsSkillRewardFlag(reward.ProgressFlagId))
+        {
+            return TryGetSkillRewardId(reward, out string skillId)
+                && (_relicRestorationService.IsAcquired(skillId) ||
+                    _relicRestorationService.TryAcquireSkill(skillId, out _));
+        }
+
+        if (!string.IsNullOrWhiteSpace(reward.ProgressFlagId))
+        {
+            _progressService.SetFlag(reward.ProgressFlagId, reward.FlagValue.Value);
+        }
+
+        return true;
+    }
+
+    private static bool IsSkillRewardFlag(string flagId) => !string.IsNullOrWhiteSpace(flagId)
+        && flagId.StartsWith(IRelicRestorationService.SKILL_ACQUIRED_FLAG_PREFIX, StringComparison.Ordinal);
+
+    private static bool TryGetSkillRewardId(QuestRewardDefinition reward, out string skillId)
+    {
+        skillId = null;
+
+        if (reward == null || reward.FlagValue != true || !IsSkillRewardFlag(reward.ProgressFlagId))
+        {
+            return false;
+        }
+
+        skillId = reward.ProgressFlagId.Substring(IRelicRestorationService.SKILL_ACQUIRED_FLAG_PREFIX.Length);
+        return !string.IsNullOrWhiteSpace(skillId);
     }
 
     //==============================================================================

@@ -1,3 +1,5 @@
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 //==============================================================================
@@ -22,6 +24,14 @@ public sealed class GameRoot : Singleton<GameRoot>
     [Tooltip("게임 진행 상태와 플래그를 보관하는 컨트롤러입니다.")]
     [SerializeField]
     private ProgressController _progressController;
+
+    [Tooltip("기술 획득·반납과 유적 재건 상태를 관리하는 컨트롤러입니다.")]
+    [SerializeField]
+    private RelicRestorationController _relicRestorationController;
+
+    [Tooltip("제단 기술 목록과 반납 확인 UI를 중개하는 Presenter입니다.")]
+    [SerializeField]
+    private AltarPresenter _altarPresenter;
 
     [Tooltip("퀘스트 상태 전환과 목표 및 보상 처리를 관리하는 컨트롤러입니다.")]
     [SerializeField]
@@ -65,6 +75,9 @@ public sealed class GameRoot : Singleton<GameRoot>
     /// <summary>게임 진행 상태 시스템의 외부 공개 계약입니다.</summary>
     public IProgressService Progress => _progressController;
 
+    /// <summary>유적 재건 시스템의 외부 공개 계약입니다.</summary>
+    public IRelicRestorationService RelicRestoration => _relicRestorationController;
+
     /// <summary>퀘스트 시스템의 외부 공개 계약입니다.</summary>
     public IQuestService Quest => _questController;
 
@@ -86,6 +99,15 @@ public sealed class GameRoot : Singleton<GameRoot>
     /// </summary>
     private void Start()
     {
+        InitializeAsync(this.GetCancellationTokenOnDestroy()).Forget();
+    }
+
+    /// <summary>
+    /// 저장 데이터를 먼저 불러온 뒤 나머지 전역 컨트롤러를 순서대로 초기화합니다.
+    /// </summary>
+    /// <param name="cancellationToken">GameRoot 생명주기와 연결된 취소 토큰입니다.</param>
+    private async UniTask InitializeAsync(CancellationToken cancellationToken)
+    {
         if (!TryInitializeGameData())
         {
             return;
@@ -93,7 +115,20 @@ public sealed class GameRoot : Singleton<GameRoot>
 
         if (_progressController != null)
         {
-            _progressController.Init();
+            await _progressController.LoadAsync(cancellationToken);
+        }
+
+        if (_relicRestorationController != null && _progressController != null)
+        {
+            _relicRestorationController.Init(_progressController);
+        }
+
+        if (_altarPresenter != null)
+        {
+            _altarPresenter.Init(
+                _relicRestorationController,
+                _progressController,
+                _gameDataController);
         }
 
         if (_inventoryController != null)
@@ -108,7 +143,11 @@ public sealed class GameRoot : Singleton<GameRoot>
 
         if (_questController != null)
         {
-            _questController.Init(GameData, _progressController, _inventoryController);
+            _questController.Init(
+                GameData,
+                _progressController,
+                _inventoryController,
+                _relicRestorationController);
         }
 
         if (_dialogueController != null)
@@ -126,7 +165,7 @@ public sealed class GameRoot : Singleton<GameRoot>
             return;
         }
 
-        _stageFlowController.Init();
+        _stageFlowController.Init(_progressController);
 
         if (_sceneStateBridge != null && _progressController != null)
         {
