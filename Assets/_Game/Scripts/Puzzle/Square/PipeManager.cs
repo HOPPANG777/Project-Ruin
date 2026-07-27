@@ -1,350 +1,494 @@
-using UnityEngine;
 using System.Collections.Generic;
-using System.IO;
+using UnityEngine;
 
-public class PipeManager : BasePuzzleManager
+//=============================================================================
+// File:        PipeManager.cs
+//
+// Description: CSV 파이프 퍼즐 정의로 격자를 생성하고 이동, 회전 및 물 연결을 판정한다.
+//
+// History:     07/26/2026 + CSV Definition 기반 생성으로 전환 -- VicZero
+//
+//=============================================================================
+public sealed class PipeManager : BasePuzzleManager
 {
-    [Header("Text File Path Settings")]
-    [SerializeField] private string stageFileName = "Stage01";
+    [Header("UI References")]
+    [Tooltip("생성한 파이프 타일이 배치될 UI 부모입니다.")]
+    [SerializeField]
+    private RectTransform _gridParent;
 
-    [Header("UI Grid Parent Settings")]
-    [SerializeField] private RectTransform gridParent;
+    [Header("Drag")]
+    [Tooltip("드래그 방향을 확정하기 위해 필요한 최소 화면 이동 거리입니다.")]
+    [SerializeField]
+    private float _moveThreshold = 20f;
 
-    [Header("UI Drag Settings")]
-    [SerializeField] private float moveThreshold = 20f;
+    [Header("Tile Prefabs")]
+    [Tooltip("빈 칸 타일 프리팹입니다.")]
+    [SerializeField]
+    private GameObject _emptyTilePrefab;
 
-    [Header("UI Tile Prefabs)")]
-    [SerializeField] private GameObject emptyTilePrefab;
-    [SerializeField] private GameObject startTilePrefab;
-    [SerializeField] private GameObject endTilePrefab;
-    [SerializeField] private GameObject pipeStraightPrefab;
-    [SerializeField] private GameObject pipeCornerPrefab;
-    [SerializeField] private GameObject pipeTPrefab;
-    [SerializeField] private GameObject pipeCrossPrefab;
+    [Tooltip("물 시작 타일 프리팹입니다.")]
+    [SerializeField]
+    private GameObject _startTilePrefab;
 
-    private int rows;
-    private int cols;
-    private PipeComponent[,] grid;
+    [Tooltip("물 도착 타일 프리팹입니다.")]
+    [SerializeField]
+    private GameObject _endTilePrefab;
 
-    // 드래그 조작 내부 UI 변수들
-    private PipeComponent selectedTile;
-    private PipeComponent targetEmptyTile;
-    private Vector3 originalLocalPos;
-    private Vector3 emptyTileLocalPos;
-    private bool isDragging = false;
-    private bool isDirectionSet = false;
-    private Vector2 dragStartScreenPos;
+    [Tooltip("직선 파이프 타일 프리팹입니다.")]
+    [SerializeField]
+    private GameObject _pipeStraightPrefab;
 
+    [Tooltip("곡선 파이프 타일 프리팹입니다.")]
+    [SerializeField]
+    private GameObject _pipeCornerPrefab;
+
+    [Tooltip("T자 파이프 타일 프리팹입니다.")]
+    [SerializeField]
+    private GameObject _pipeTPrefab;
+
+    [Tooltip("십자 파이프 타일 프리팹입니다.")]
+    [SerializeField]
+    private GameObject _pipeCrossPrefab;
+
+    private int _rows;
+    private int _columns;
+    private PipeComponent[,] _grid;
+    private PipeComponent _selectedTile;
+    private PipeComponent _targetEmptyTile;
+    private Vector3 _originalLocalPosition;
+    private Vector3 _emptyTileLocalPosition;
+    private bool _isDragging;
+    private bool _isDirectionSet;
+    private Vector2 _dragStartScreenPosition;
+
+    /// <summary>CSV에서 현재 파이프 퍼즐을 조회하고 UI 격자를 다시 생성합니다.</summary>
     public override void InitializePuzzle()
     {
-        LoadAndGeneratePuzzle();
-    }
+        ClearGrid();
+        IsClear = false;
+        ResetDragState();
 
-    private void LoadAndGeneratePuzzle()
-    {
-        if (grid != null)
+        if (!AreRequiredReferencesAssigned())
         {
-            foreach (var tile in grid) if (tile != null) Destroy(tile.gameObject);
-        }
-
-        string finalFileName = stageFileName;
-        if (!finalFileName.EndsWith(".txt")) finalFileName += ".txt";
-
-        string fullPath = Path.Combine(Application.dataPath, "Resources", "PuzzleData", "Pipe", finalFileName);
-
-        if (!File.Exists(fullPath))
-        {
-            Debug.LogError($"[UiPipeSpawner] 파일을 찾을 수 없습니다! 경로: {fullPath}");
+            Debug.LogError("[PipeManager] Grid Parent 또는 파이프 타일 프리팹 연결이 누락되었습니다.");
             return;
         }
 
-        string rawStageText = File.ReadAllText(fullPath);
-        PipeStageParsedData parsedData = PipeParser.Parse(rawStageText);
-        if (parsedData == null) return;
-
-        rows = parsedData.rows;
-        cols = parsedData.cols;
-        grid = new PipeComponent[rows, cols];
-
-        // UI 좌표계 배치: 패널 중심 기준 정렬 계산
-        Vector3 startLocalPos = new Vector3(-(cols - 1) * itemSpacing / 2f, (rows - 1) * itemSpacing / 2f, 0);
-
-        int dataIndex = 0;
-        for (int r = 0; r < rows; r++)
+        if (!TryGetPuzzleDefinition(
+            PuzzleType.PUZZLE_TYPE_PIPE,
+            out PuzzleDefinition puzzleDefinition))
         {
-            for (int c = 0; c < cols; c++)
-            {
-                if (dataIndex >= parsedData.tileDataList.Count) break;
-
-                PipeTileRawData rawData = parsedData.tileDataList[dataIndex];
-
-                PipeData tileData = new PipeData();
-                tileData.rotationIndex = rawData.rotationIndex;
-                tileData.type = rawData.typeStr switch
-                {
-                    "0" => PipeType.Empty,
-                    "S" => PipeType.Start,
-                    "E" => PipeType.End,
-                    "1S" => PipeType.Pipe_1_Straight,
-                    "1C" => PipeType.Pipe_1_Corner,
-                    "2" => PipeType.Pipe_2_T,
-                    "3" => PipeType.Pipe_3_Cross,
-                    _ => PipeType.Empty
-                };
-
-                GameObject prefab = GetTilePrefab(tileData.type);
-                if (prefab != null && gridParent != null)
-                {
-                    GameObject spawnedObj = Instantiate(prefab, gridParent);
-                    spawnedObj.name = $"UI_Tile_[{r},{c}]_{tileData.type}";
-
-                    RectTransform tileRect = spawnedObj.GetComponent<RectTransform>();
-                    Vector3 spawnLocalPos = startLocalPos + new Vector3(c * itemSpacing, -r * itemSpacing, 0);
-                    tileRect.localPosition = spawnLocalPos;
-
-                    PipeComponent tileComp = spawnedObj.GetComponent<PipeComponent>() ?? spawnedObj.AddComponent<PipeComponent>();
-                    tileComp.Setup(tileData, r, c, this);
-                    grid[r, c] = tileComp;
-                }
-                dataIndex++;
-            }
+            return;
         }
 
-        IsClear = false;
-        ResetDragState();
+        _rows = puzzleDefinition.Rows;
+        _columns = puzzleDefinition.Columns;
+        _grid = new PipeComponent[_rows, _columns];
+        Vector3 startLocalPosition = new Vector3(
+            -(_columns - 1) * ItemSpacing / 2f,
+            (_rows - 1) * ItemSpacing / 2f,
+            0f);
+
+        for (int i = 0; i < puzzleDefinition.PipeTiles.Count; i++)
+        {
+            PuzzlePipeTileDefinition tileDefinition = puzzleDefinition.PipeTiles[i];
+            PipeData tileData = new PipeData
+            {
+                type = ConvertTileType(tileDefinition.TileType),
+                rotationIndex = tileDefinition.Rotation
+            };
+            GameObject prefab = GetTilePrefab(tileData.type);
+            GameObject tileObject = Instantiate(prefab, _gridParent);
+            tileObject.name = $"UI_PipeTile_{tileDefinition.Row}_{tileDefinition.Column}_{tileData.type}";
+
+            RectTransform tileRect = tileObject.GetComponent<RectTransform>();
+            tileRect.localPosition = startLocalPosition + new Vector3(
+                tileDefinition.Column * ItemSpacing,
+                -tileDefinition.Row * ItemSpacing,
+                0f);
+
+            PipeComponent tileComponent = tileObject.GetComponent<PipeComponent>();
+
+            if (tileComponent == null)
+            {
+                Debug.LogError("[PipeManager] 파이프 타일 프리팹에 PipeComponent가 없습니다.");
+                Destroy(tileObject);
+                ClearGrid();
+                return;
+            }
+
+            tileComponent.Setup(
+                tileData,
+                tileDefinition.Row,
+                tileDefinition.Column,
+                this);
+            _grid[tileDefinition.Row, tileDefinition.Column] = tileComponent;
+        }
+
         UpdateWaterFlow();
+        Debug.Log(
+            $"[PipeManager] CSV 퍼즐 배치 완료. id={PuzzleId}, rows={_rows}, columns={_columns}");
     }
 
-    // 타일 에서 호출하는 인터페이스 포워딩 시스템 
-
-    public void OnTileBeginDrag(PipeComponent tile, Vector2 screenPos)
+    /// <summary>파이프 타일의 드래그 시작 상태를 기록합니다.</summary>
+    public void OnTileBeginDrag(PipeComponent tile, Vector2 screenPosition)
     {
-        if (tile.Data.type == PipeType.Empty || tile.Data.type == PipeType.Start || tile.Data.type == PipeType.End) return;
+        if (tile == null
+            || tile.Data.type == PipeType.Empty
+            || tile.Data.type == PipeType.Start
+            || tile.Data.type == PipeType.End)
+        {
+            return;
+        }
 
-        selectedTile = tile;
-        originalLocalPos = tile.GetComponent<RectTransform>().localPosition;
-        dragStartScreenPos = screenPos;
-        isDragging = true;
-        isDirectionSet = false;
-        targetEmptyTile = null;
+        _selectedTile = tile;
+        _originalLocalPosition = tile.GetComponent<RectTransform>().localPosition;
+        _dragStartScreenPosition = screenPosition;
+        _isDragging = true;
+        _isDirectionSet = false;
+        _targetEmptyTile = null;
     }
 
-    public void OnTileDrag(Vector2 currentScreenPos)
+    /// <summary>드래그 방향의 인접 빈 칸까지 선택 타일을 이동해 보여줍니다.</summary>
+    public void OnTileDrag(Vector2 currentScreenPosition)
     {
-        if (!isDragging || selectedTile == null) return;
-
-        if (!isDirectionSet)
+        if (!_isDragging || _selectedTile == null)
         {
-            Vector2 mouseDelta = currentScreenPos - dragStartScreenPos;
-            if (mouseDelta.magnitude > moveThreshold)
-            {
-                int checkRow = selectedTile.Row;
-                int checkCol = selectedTile.Col;
-
-                if (Mathf.Abs(mouseDelta.x) > Mathf.Abs(mouseDelta.y))
-                    checkCol += (mouseDelta.x > 0) ? 1 : -1;
-                else
-                    checkRow += (mouseDelta.y > 0) ? -1 : 1;
-
-                PipeComponent neighbor = GetSpecificTile(checkRow, checkCol);
-                if (neighbor != null && neighbor.Data.type == PipeType.Empty)
-                {
-                    targetEmptyTile = neighbor;
-                    emptyTileLocalPos = targetEmptyTile.GetComponent<RectTransform>().localPosition;
-                    isDirectionSet = true;
-                }
-                else
-                {
-                    isDragging = false;
-                    selectedTile = null;
-                }
-            }
+            return;
         }
-        else if (targetEmptyTile != null)
+
+        if (!_isDirectionSet)
         {
-            // UI 로컬 벡터 기준 이동 거리 계산
-            Vector3 dragAxis = emptyTileLocalPos - originalLocalPos;
-            float maxDistance = dragAxis.magnitude;
-            Vector3 moveDir = dragAxis.normalized;
-
-            // 스크린 델타 투영 연산
-            Vector3 mouseMoveVector = (Vector3)(currentScreenPos - dragStartScreenPos);
-            float dragProgress = Vector3.Dot(mouseMoveVector, moveDir);
-
-            // UI 캔버스 스케일링 보정 유연화 처리 
-            dragProgress = Mathf.Clamp(dragProgress, 0f, maxDistance);
-            selectedTile.GetComponent<RectTransform>().localPosition = originalLocalPos + moveDir * dragProgress;
+            TrySetDragDirection(currentScreenPosition);
+            return;
         }
+
+        if (_targetEmptyTile == null)
+        {
+            return;
+        }
+
+        Vector3 dragAxis = _emptyTileLocalPosition - _originalLocalPosition;
+        float maximumDistance = dragAxis.magnitude;
+        Vector3 moveDirection = dragAxis.normalized;
+        Vector3 mouseMoveVector = currentScreenPosition - _dragStartScreenPosition;
+        float dragProgress = Vector3.Dot(mouseMoveVector, moveDirection);
+        dragProgress = Mathf.Clamp(dragProgress, 0f, maximumDistance);
+        _selectedTile.GetComponent<RectTransform>().localPosition =
+            _originalLocalPosition + moveDirection * dragProgress;
     }
 
+    /// <summary>드래그 거리에 따라 선택 타일과 빈 칸을 교환하거나 원위치로 되돌립니다.</summary>
     public void OnTileEndDrag()
     {
-        if (!isDragging || selectedTile == null) return;
-
-        isDragging = false;
-        RectTransform selectedRect = selectedTile.GetComponent<RectTransform>();
-
-        if (isDirectionSet && targetEmptyTile != null)
+        if (!_isDragging || _selectedTile == null)
         {
-            float currentDist = Vector3.Distance(selectedRect.localPosition, originalLocalPos);
-            float totalDist = Vector3.Distance(originalLocalPos, emptyTileLocalPos);
+            return;
+        }
 
-            if (currentDist > totalDist * 0.4f)
+        _isDragging = false;
+        RectTransform selectedRect = _selectedTile.GetComponent<RectTransform>();
+
+        if (_isDirectionSet && _targetEmptyTile != null)
+        {
+            float currentDistance = Vector3.Distance(selectedRect.localPosition, _originalLocalPosition);
+            float totalDistance = Vector3.Distance(_originalLocalPosition, _emptyTileLocalPosition);
+
+            if (currentDistance > totalDistance * 0.4f)
             {
-                ExecuteGridSwap(selectedTile, targetEmptyTile);
+                ExecuteGridSwap(_selectedTile, _targetEmptyTile);
             }
             else
             {
-                selectedRect.localPosition = originalLocalPos;
+                selectedRect.localPosition = _originalLocalPosition;
             }
         }
         else
         {
-            selectedRect.localPosition = originalLocalPos;
+            selectedRect.localPosition = _originalLocalPosition;
         }
 
         ResetDragState();
     }
 
-    private void ResetDragState()
-    {
-        selectedTile = null;
-        targetEmptyTile = null;
-        isDragging = false;
-        isDirectionSet = false;
-    }
-
+    /// <summary>타일 회전 뒤 물 연결 상태를 다시 계산합니다.</summary>
     public void OnTileStateChanged()
     {
         UpdateWaterFlow();
     }
 
+    /// <summary>드래그한 파이프와 인접 빈 칸의 논리 좌표 및 UI 위치를 교환합니다.</summary>
     public void ExecuteGridSwap(PipeComponent draggedTile, PipeComponent emptyTile)
     {
-        int dRow = draggedTile.Row, dCol = draggedTile.Col;
-        int eRow = emptyTile.Row, eCol = emptyTile.Col;
+        int draggedRow = draggedTile.Row;
+        int draggedColumn = draggedTile.Col;
+        int emptyRow = emptyTile.Row;
+        int emptyColumn = emptyTile.Col;
 
-        grid[dRow, dCol] = emptyTile;
-        grid[eRow, eCol] = draggedTile;
-
-        draggedTile.Row = eRow; draggedTile.Col = eCol;
-        emptyTile.Row = dRow; emptyTile.Col = dCol;
-
-        draggedTile.GetComponent<RectTransform>().localPosition = GetGridLocalPosition(eRow, eCol);
-        emptyTile.GetComponent<RectTransform>().localPosition = GetGridLocalPosition(dRow, dCol);
-
+        _grid[draggedRow, draggedColumn] = emptyTile;
+        _grid[emptyRow, emptyColumn] = draggedTile;
+        draggedTile.Row = emptyRow;
+        draggedTile.Col = emptyColumn;
+        emptyTile.Row = draggedRow;
+        emptyTile.Col = draggedColumn;
+        draggedTile.GetComponent<RectTransform>().localPosition = GetGridLocalPosition(emptyRow, emptyColumn);
+        emptyTile.GetComponent<RectTransform>().localPosition = GetGridLocalPosition(draggedRow, draggedColumn);
         UpdateWaterFlow();
     }
 
-    private void UpdateWaterFlow()
-    {
-        if (grid == null) return;
-
-        PipeComponent startTile = null;
-        foreach (var tile in grid)
-        {
-            if (tile == null) continue;
-            tile.IsWatered = false;
-            if (tile.Data.type == PipeType.Start) startTile = tile;
-        }
-
-        if (startTile == null) return;
-
-        Queue<PipeComponent> queue = new Queue<PipeComponent>();
-        HashSet<PipeComponent> visited = new HashSet<PipeComponent>();
-
-        queue.Enqueue(startTile);
-        visited.Add(startTile);
-
-        int[] dRow = { -1, 1, 0, 0 };
-        int[] dCol = { 0, 0, -1, 1 };
-        bool stageClearDetected = false;
-
-        while (queue.Count > 0)
-        {
-            PipeComponent current = queue.Dequeue();
-            current.IsWatered = true;
-
-            if (current.Data.type == PipeType.End) stageClearDetected = true;
-
-            for (int i = 0; i < 4; i++)
-            {
-                int nRow = current.Row + dRow[i];
-                int nCol = current.Col + dCol[i];
-
-                if (nRow >= 0 && nRow < rows && nCol >= 0 && nCol < cols)
-                {
-                    PipeComponent nextTile = grid[nRow, nCol];
-                    if (nextTile != null && !visited.Contains(nextTile) && IsConnected(current, nextTile))
-                    {
-                        visited.Add(nextTile);
-                        queue.Enqueue(nextTile);
-                    }
-                }
-            }
-        }
-
-        foreach (var tile in grid) if (tile != null) tile.UpdateVisualColor();
-
-        if (stageClearDetected && !IsClear)
-        {
-            CheckClearCondition();
-        }
-    }
-
+    /// <summary>END 타일까지 물이 연결된 상태를 클리어로 확정합니다.</summary>
     public override void CheckClearCondition()
     {
         IsClear = true;
         OnPuzzleClear();
     }
 
+    /// <summary>행과 열 좌표에 있는 파이프 타일을 안전하게 조회합니다.</summary>
+    public PipeComponent GetSpecificTile(int row, int column)
+    {
+        if (row < 0 || row >= _rows || column < 0 || column >= _columns)
+        {
+            return null;
+        }
+
+        return _grid[row, column];
+    }
+
+    /// <summary>행과 열 좌표를 중앙 정렬된 UI 로컬 좌표로 변환합니다.</summary>
+    public Vector3 GetGridLocalPosition(int row, int column)
+    {
+        Vector3 startLocalPosition = new Vector3(
+            -(_columns - 1) * ItemSpacing / 2f,
+            (_rows - 1) * ItemSpacing / 2f,
+            0f);
+        return startLocalPosition + new Vector3(
+            column * ItemSpacing,
+            -row * ItemSpacing,
+            0f);
+    }
+
+    /// <summary>파이프 퍼즐 클리어 이벤트를 외부에 전달합니다.</summary>
     protected override void OnPuzzleClear()
     {
+        Debug.Log($"[PipeManager] 파이프 퍼즐을 클리어했습니다. id={PuzzleId}");
         TriggerClearEvent();
     }
 
-    public PipeComponent GetSpecificTile(int row, int col)
+    private void TrySetDragDirection(Vector2 currentScreenPosition)
     {
-        if (row >= 0 && row < rows && col >= 0 && col < cols) return grid[row, col];
-        return null;
+        Vector2 mouseDelta = currentScreenPosition - _dragStartScreenPosition;
+
+        if (mouseDelta.magnitude <= _moveThreshold)
+        {
+            return;
+        }
+
+        int targetRow = _selectedTile.Row;
+        int targetColumn = _selectedTile.Col;
+
+        if (Mathf.Abs(mouseDelta.x) > Mathf.Abs(mouseDelta.y))
+        {
+            targetColumn += mouseDelta.x > 0f ? 1 : -1;
+        }
+        else
+        {
+            targetRow += mouseDelta.y > 0f ? -1 : 1;
+        }
+
+        PipeComponent neighbor = GetSpecificTile(targetRow, targetColumn);
+
+        if (neighbor == null || neighbor.Data.type != PipeType.Empty)
+        {
+            _isDragging = false;
+            _selectedTile = null;
+            return;
+        }
+
+        _targetEmptyTile = neighbor;
+        _emptyTileLocalPosition = neighbor.GetComponent<RectTransform>().localPosition;
+        _isDirectionSet = true;
     }
 
-    public Vector3 GetGridLocalPosition(int r, int c)
+    private void UpdateWaterFlow()
     {
-        Vector3 startLocalPos = new Vector3(-(cols - 1) * itemSpacing / 2f, (rows - 1) * itemSpacing / 2f, 0);
-        return startLocalPos + new Vector3(c * itemSpacing, -r * itemSpacing, 0);
-    }
+        if (_grid == null)
+        {
+            return;
+        }
 
-    private GameObject GetTilePrefab(PipeType type) => type switch
-    {
-        PipeType.Empty => emptyTilePrefab,
-        PipeType.Start => startTilePrefab,
-        PipeType.End => endTilePrefab,
-        PipeType.Pipe_1_Straight => pipeStraightPrefab,
-        PipeType.Pipe_1_Corner => pipeCornerPrefab,
-        PipeType.Pipe_2_T => pipeTPrefab,
-        PipeType.Pipe_3_Cross => pipeCrossPrefab,
-        _ => null
-    };
+        PipeComponent startTile = null;
+
+        for (int row = 0; row < _rows; row++)
+        {
+            for (int column = 0; column < _columns; column++)
+            {
+                PipeComponent tile = _grid[row, column];
+
+                if (tile == null)
+                {
+                    continue;
+                }
+
+                tile.IsWatered = false;
+
+                if (tile.Data.type == PipeType.Start)
+                {
+                    startTile = tile;
+                }
+            }
+        }
+
+        if (startTile == null)
+        {
+            return;
+        }
+
+        Queue<PipeComponent> queue = new Queue<PipeComponent>();
+        HashSet<PipeComponent> visited = new HashSet<PipeComponent>();
+        int[] rowOffsets = { -1, 1, 0, 0 };
+        int[] columnOffsets = { 0, 0, -1, 1 };
+        bool isEndConnected = false;
+        queue.Enqueue(startTile);
+        visited.Add(startTile);
+
+        while (queue.Count > 0)
+        {
+            PipeComponent current = queue.Dequeue();
+            current.IsWatered = true;
+
+            if (current.Data.type == PipeType.End)
+            {
+                isEndConnected = true;
+            }
+
+            for (int i = 0; i < rowOffsets.Length; i++)
+            {
+                PipeComponent next = GetSpecificTile(
+                    current.Row + rowOffsets[i],
+                    current.Col + columnOffsets[i]);
+
+                if (next == null || visited.Contains(next) || !IsConnected(current, next))
+                {
+                    continue;
+                }
+
+                visited.Add(next);
+                queue.Enqueue(next);
+            }
+        }
+
+        for (int row = 0; row < _rows; row++)
+        {
+            for (int column = 0; column < _columns; column++)
+            {
+                _grid[row, column]?.UpdateVisualColor();
+            }
+        }
+
+        if (isEndConnected && !IsClear)
+        {
+            CheckClearCondition();
+        }
+    }
 
     private bool IsConnected(PipeComponent from, PipeComponent to)
     {
-        int rowDiff = to.Row - from.Row;
-        int colDiff = to.Col - from.Col;
+        int rowDifference = to.Row - from.Row;
+        int columnDifference = to.Col - from.Col;
+        PipeDir fromDirection = from.Data.GetCurrentDirections();
+        PipeDir toDirection = to.Data.GetCurrentDirections();
 
-        PipeDir fromDir = from.Data.GetCurrentDirections();
-        PipeDir toDir = to.Data.GetCurrentDirections();
+        if (rowDifference == 0 && columnDifference == 1)
+        {
+            return (fromDirection & PipeDir.Right) != 0 && (toDirection & PipeDir.Left) != 0;
+        }
 
-        if (rowDiff == 0)
+        if (rowDifference == 0 && columnDifference == -1)
         {
-            if (colDiff == 1) return (fromDir & PipeDir.Right) != 0 && (toDir & PipeDir.Left) != 0;
-            if (colDiff == -1) return (fromDir & PipeDir.Left) != 0 && (toDir & PipeDir.Right) != 0;
+            return (fromDirection & PipeDir.Left) != 0 && (toDirection & PipeDir.Right) != 0;
         }
-        else if (colDiff == 0)
+
+        if (columnDifference == 0 && rowDifference == 1)
         {
-            if (rowDiff == 1) return (fromDir & PipeDir.Bottom) != 0 && (toDir & PipeDir.Top) != 0;
-            if (rowDiff == -1) return (fromDir & PipeDir.Top) != 0 && (toDir & PipeDir.Bottom) != 0;
+            return (fromDirection & PipeDir.Bottom) != 0 && (toDirection & PipeDir.Top) != 0;
         }
+
+        if (columnDifference == 0 && rowDifference == -1)
+        {
+            return (fromDirection & PipeDir.Top) != 0 && (toDirection & PipeDir.Bottom) != 0;
+        }
+
         return false;
+    }
+
+    private void ResetDragState()
+    {
+        _selectedTile = null;
+        _targetEmptyTile = null;
+        _isDragging = false;
+        _isDirectionSet = false;
+    }
+
+    private void ClearGrid()
+    {
+        if (_grid == null)
+        {
+            return;
+        }
+
+        for (int row = 0; row < _rows; row++)
+        {
+            for (int column = 0; column < _columns; column++)
+            {
+                if (_grid[row, column] != null)
+                {
+                    Destroy(_grid[row, column].gameObject);
+                }
+            }
+        }
+
+        _grid = null;
+    }
+
+    private bool AreRequiredReferencesAssigned()
+    {
+        return _gridParent != null
+            && _emptyTilePrefab != null
+            && _startTilePrefab != null
+            && _endTilePrefab != null
+            && _pipeStraightPrefab != null
+            && _pipeCornerPrefab != null
+            && _pipeTPrefab != null
+            && _pipeCrossPrefab != null;
+    }
+
+    private GameObject GetTilePrefab(PipeType type)
+    {
+        return type switch
+        {
+            PipeType.Empty => _emptyTilePrefab,
+            PipeType.Start => _startTilePrefab,
+            PipeType.End => _endTilePrefab,
+            PipeType.Pipe_1_Straight => _pipeStraightPrefab,
+            PipeType.Pipe_1_Corner => _pipeCornerPrefab,
+            PipeType.Pipe_2_T => _pipeTPrefab,
+            PipeType.Pipe_3_Cross => _pipeCrossPrefab,
+            _ => null
+        };
+    }
+
+    private static PipeType ConvertTileType(PuzzlePipeTileType tileType)
+    {
+        return tileType switch
+        {
+            PuzzlePipeTileType.PUZZLE_PIPE_TILE_TYPE_EMPTY => PipeType.Empty,
+            PuzzlePipeTileType.PUZZLE_PIPE_TILE_TYPE_START => PipeType.Start,
+            PuzzlePipeTileType.PUZZLE_PIPE_TILE_TYPE_END => PipeType.End,
+            PuzzlePipeTileType.PUZZLE_PIPE_TILE_TYPE_STRAIGHT => PipeType.Pipe_1_Straight,
+            PuzzlePipeTileType.PUZZLE_PIPE_TILE_TYPE_CORNER => PipeType.Pipe_1_Corner,
+            PuzzlePipeTileType.PUZZLE_PIPE_TILE_TYPE_T_JUNCTION => PipeType.Pipe_2_T,
+            PuzzlePipeTileType.PUZZLE_PIPE_TILE_TYPE_CROSS => PipeType.Pipe_3_Cross,
+            _ => PipeType.Empty
+        };
     }
 }

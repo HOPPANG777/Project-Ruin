@@ -1,106 +1,127 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections; 
 
-public class UiPuzzlePopup : MonoBehaviour
+//=============================================================================
+// File:        UiPuzzlePopup.cs
+//
+// Description: 퍼즐 팝업 열기, CSV 저장소 주입 및 클리어 후 지연 닫기를 관리한다.
+//
+// History:     07/26/2026 + CSV 저장소 주입과 Update 타이머 적용 -- VicZero
+//
+//=============================================================================
+public sealed class UiPuzzlePopup : MonoBehaviour
 {
-    [Header("UI Windows")]
-    [SerializeField] private GameObject popupContainer; // 팝업 전체 UI
-    [SerializeField] private Button closeButton;        // 닫기 버튼
+    [Header("UI References")]
+    [Tooltip("퍼즐 화면 전체를 표시하거나 숨길 최상위 UI 오브젝트입니다.")]
+    [SerializeField]
+    private GameObject _popupContainer;
 
-    [Header("Puzzle Managers Inside UI")]
-    [SerializeField] private BasePuzzleManager uiPuzzleManager;
+    [Tooltip("퍼즐 팝업을 수동으로 닫는 버튼입니다.")]
+    [SerializeField]
+    private Button _closeButton;
 
-    [Header("Clear Settings")]
-    [SerializeField] private float closeDelaySeconds = 3.0f;
+    [Header("Puzzle")]
+    [Tooltip("이 팝업이 표시하고 초기화할 퍼즐 매니저입니다.")]
+    [SerializeField]
+    private BasePuzzleManager _uiPuzzleManager;
 
-    private Coroutine closeDelayCoroutine;
+    [Header("Clear")]
+    [Tooltip("퍼즐 클리어 후 팝업을 자동으로 닫기까지 기다릴 시간입니다.")]
+    [SerializeField]
+    private float _closeDelaySeconds = 3f;
+
+    private bool _isCloseScheduled;
+    private float _closeAtUnscaledTime;
+
+    /// <summary>이 팝업이 직접 초기화하는 퍼즐 매니저입니다.</summary>
+    public BasePuzzleManager PuzzleManager => _uiPuzzleManager;
 
     private void Awake()
     {
-        if (closeButton != null)
-            closeButton.onClick.AddListener(ClosePopup);
-
-        // 클리어 이벤트 발생 시 바로 닫지 않고 지연 함수 호출
-        if (uiPuzzleManager != null)
+        if (_closeButton != null)
         {
-            uiPuzzleManager.OnPuzzleClearedEvent += OnPuzzleCleared;
+            _closeButton.onClick.AddListener(ClosePopup);
+        }
+
+        if (_uiPuzzleManager != null)
+        {
+            _uiPuzzleManager.OnPuzzleClearedEvent += OnPuzzleCleared;
         }
 
         ClosePopup();
     }
 
+    private void Update()
+    {
+        if (!_isCloseScheduled || Time.unscaledTime < _closeAtUnscaledTime)
+        {
+            return;
+        }
+
+        _isCloseScheduled = false;
+        ClosePopup();
+    }
+
     private void OnDestroy()
     {
-        if (uiPuzzleManager != null)
+        if (_closeButton != null)
         {
-            uiPuzzleManager.OnPuzzleClearedEvent -= OnPuzzleCleared;
+            _closeButton.onClick.RemoveListener(ClosePopup);
+        }
+
+        if (_uiPuzzleManager != null)
+        {
+            _uiPuzzleManager.OnPuzzleClearedEvent -= OnPuzzleCleared;
         }
     }
 
+    /// <summary>GameRoot의 CSV 저장소를 퍼즐 매니저에 주입하고 팝업을 엽니다.</summary>
     public void OpenPuzzlePopup()
     {
-        // 새로운 오픈 시 혹시 돌고 있을지 모를 코루틴 초기화
-        if (closeDelayCoroutine != null)
+        _isCloseScheduled = false;
+
+        if (_popupContainer == null || _uiPuzzleManager == null)
         {
-            StopCoroutine(closeDelayCoroutine);
-            closeDelayCoroutine = null;
+            Debug.LogError("[UiPuzzlePopup] Popup Container 또는 Puzzle Manager가 연결되지 않았습니다.");
+            return;
         }
 
-        if (popupContainer != null)
-            popupContainer.SetActive(true);
-
-        if (uiPuzzleManager != null)
+        if (!GameRoot.TryGetInstance(out GameRoot gameRoot) || gameRoot.GameData == null)
         {
-            uiPuzzleManager.enabled = true;
-            uiPuzzleManager.InitializePuzzle();
+            Debug.LogError("[UiPuzzlePopup] GameRoot의 CSV 게임 데이터 초기화가 아직 완료되지 않았습니다.");
+            return;
         }
+
+        _uiPuzzleManager.Init(gameRoot.GameData);
+        _popupContainer.SetActive(true);
+        _uiPuzzleManager.enabled = true;
+        _uiPuzzleManager.InitializePuzzle();
     }
 
-    // 수동으로 닫기 버튼을 누르거나 강제 종료할 때
+    /// <summary>진행 중인 자동 닫기를 취소하고 퍼즐 팝업을 즉시 닫습니다.</summary>
     public void ClosePopup()
     {
-        if (closeDelayCoroutine != null)
+        _isCloseScheduled = false;
+
+        if (_popupContainer != null)
         {
-            StopCoroutine(closeDelayCoroutine);
-            closeDelayCoroutine = null;
+            _popupContainer.SetActive(false);
         }
 
-        if (popupContainer != null)
-            popupContainer.SetActive(false);
-
-        if (uiPuzzleManager != null)
+        if (_uiPuzzleManager != null)
         {
-            uiPuzzleManager.enabled = false;
+            _uiPuzzleManager.enabled = false;
         }
     }
 
-    // 클리어 이벤트를 전달받는 함수
     private void OnPuzzleCleared()
     {
-        // 퍼즐 로직만 먼저 정지
-        if (uiPuzzleManager != null)
+        if (_uiPuzzleManager != null)
         {
-            uiPuzzleManager.enabled = false;
+            _uiPuzzleManager.enabled = false;
         }
 
-        // 3초 지연 후 닫히는 코루틴 시작
-        if (gameObject.activeInHierarchy)
-        {
-            closeDelayCoroutine = StartCoroutine(Co_DelayedClose());
-        }
-    }
-
-    private IEnumerator Co_DelayedClose()
-    {
-        // 설정한 시간 만큼 대기
-        yield return new WaitForSeconds(closeDelaySeconds);
-
-        // 팝업 컨테이너만 비활성화
-        if (popupContainer != null)
-            popupContainer.SetActive(false);
-
-        closeDelayCoroutine = null;
-        Debug.Log($"[UiPuzzlePopup] 퍼즐 클리어 후 {closeDelaySeconds}초가 지나 팝업이 자동으로 닫혔습니다.");
+        _isCloseScheduled = true;
+        _closeAtUnscaledTime = Time.unscaledTime + Mathf.Max(0f, _closeDelaySeconds);
     }
 }

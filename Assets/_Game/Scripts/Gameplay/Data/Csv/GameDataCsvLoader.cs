@@ -48,6 +48,10 @@ public static class GameDataCsvLoader
                 source,
                 out List<NpcDialogueBindingDefinition> npcDialogueBindings,
                 out List<NpcQuestDialogueRouteDefinition> npcQuestDialogueRoutes,
+                out loadError)
+            || !PuzzleCsvDefinitionLoader.TryLoad(
+                source,
+                out List<PuzzleDefinition> puzzles,
                 out loadError))
         {
             return false;
@@ -61,6 +65,7 @@ public static class GameDataCsvLoader
             localizationEntries,
             npcDialogueBindings,
             npcQuestDialogueRoutes,
+            puzzles,
             out repository,
             out GameDataRepositoryBuildError buildError))
         {

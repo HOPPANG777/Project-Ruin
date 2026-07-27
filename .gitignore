@@ -78,6 +78,11 @@ StyleCopReport.xml
 *_h.h
 *.ilk
 *.meta
+# GameRoot 프리팹이 직접 참조하는 퍼즐 CSV GUID는 협업자에게도 동일해야 합니다.
+!Assets/_Game/Data/Csv/puzzles.csv.meta
+!Assets/_Game/Data/Csv/puzzle_light_tiles.csv.meta
+!Assets/_Game/Data/Csv/puzzle_pipe_tiles.csv.meta
+!Assets/_Game/Data/Csv/puzzle_circle_rings.csv.meta
 *.obj
 *.iobj
 *.pch

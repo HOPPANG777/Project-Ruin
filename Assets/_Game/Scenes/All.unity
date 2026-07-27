@@ -148,14 +148,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 941f01ee8d1e1094292f8907e5dfd790, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CirclePuzzleManager
-  itemSpacing: 1.2
-  gridParent: {fileID: 317396540}
-  singleRingPrefab: {fileID: 3353086076178331877, guid: 783bef2c18e54494c9b0bf4b62f4e092, type: 3}
-  ringPrefabs:
+  _puzzleId: CIRCLE_STAGE_01
+  _itemSpacing: 1.2
+  _gridParent: {fileID: 317396540}
+  _singleRingPrefab: {fileID: 3353086076178331877, guid: 783bef2c18e54494c9b0bf4b62f4e092, type: 3}
+  _ringPrefabs:
   - {fileID: 7382138787708069627, guid: 1ac2207cf70485e4db74a3cbd73e5c1a, type: 3}
-  stageFileName: Stage01
-  startScale: 1
-  scaleStep: 0.4
+  _startScale: 1
+  _scaleStep: 0.4
 --- !u!4 &298709151
 Transform:
   m_ObjectHideFlags: 0
@@ -576,17 +576,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b10a5140d84546f4f90b8ae9d2bc4889, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PuzzleInteractionManager
-  itemSpacing: 120
-  stageFileName: Stage01
-  gridParent: {fileID: 1836198021}
-  moveThreshold: 0.2
-  emptyTilePrefab: {fileID: 6196961601239189391, guid: 07f12f675020cc54abc03ecdaa67c3d5, type: 3}
-  startTilePrefab: {fileID: 7521399399107404102, guid: 187c2eaa557d4c54b8d5c436fe1f05be, type: 3}
-  endTilePrefab: {fileID: 6371215998945381274, guid: 5cc93e99cde7ba14f940af1f79e208ba, type: 3}
-  pipeStraightPrefab: {fileID: 6359007512135268876, guid: 9bf12c870bd69a440b9a13b0b4e0b841, type: 3}
-  pipeCornerPrefab: {fileID: 4399392781004595962, guid: 90fc0d51fff2df948be4a867c04c2cbe, type: 3}
-  pipeTPrefab: {fileID: 1095102927279328651, guid: 6bc2bb263d79c81408b18f9e4af8dbc8, type: 3}
-  pipeCrossPrefab: {fileID: 7362290433690028296, guid: 2e6712c2df92d0c47a89a191c201d695, type: 3}
+  _puzzleId: PIPE_STAGE_01
+  _itemSpacing: 120
+  _gridParent: {fileID: 1836198021}
+  _moveThreshold: 0.2
+  _emptyTilePrefab: {fileID: 6196961601239189391, guid: 07f12f675020cc54abc03ecdaa67c3d5, type: 3}
+  _startTilePrefab: {fileID: 7521399399107404102, guid: 187c2eaa557d4c54b8d5c436fe1f05be, type: 3}
+  _endTilePrefab: {fileID: 6371215998945381274, guid: 5cc93e99cde7ba14f940af1f79e208ba, type: 3}
+  _pipeStraightPrefab: {fileID: 6359007512135268876, guid: 9bf12c870bd69a440b9a13b0b4e0b841, type: 3}
+  _pipeCornerPrefab: {fileID: 4399392781004595962, guid: 90fc0d51fff2df948be4a867c04c2cbe, type: 3}
+  _pipeTPrefab: {fileID: 1095102927279328651, guid: 6bc2bb263d79c81408b18f9e4af8dbc8, type: 3}
+  _pipeCrossPrefab: {fileID: 7362290433690028296, guid: 2e6712c2df92d0c47a89a191c201d695, type: 3}
 --- !u!4 &710984205
 Transform:
   m_ObjectHideFlags: 0
@@ -651,10 +651,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f021e61459ec0a0428f59c109306ce0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UiPuzzlePopup
-  popupContainer: {fileID: 1199023424}
-  closeButton: {fileID: 1328793497}
-  uiPuzzleManager: {fileID: 2103437518}
-  closeDelaySeconds: 3
+  _popupContainer: {fileID: 1199023424}
+  _closeButton: {fileID: 1328793497}
+  _uiPuzzleManager: {fileID: 2103437518}
+  _closeDelaySeconds: 3
 --- !u!1 &819150953
 GameObject:
   m_ObjectHideFlags: 0
@@ -809,10 +809,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f021e61459ec0a0428f59c109306ce0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UiPuzzlePopup
-  popupContainer: {fileID: 615956754}
-  closeButton: {fileID: 479305682}
-  uiPuzzleManager: {fileID: 710984204}
-  closeDelaySeconds: 3
+  _popupContainer: {fileID: 615956754}
+  _closeButton: {fileID: 479305682}
+  _uiPuzzleManager: {fileID: 710984204}
+  _closeDelaySeconds: 3
 --- !u!1 &839719781
 GameObject:
   m_ObjectHideFlags: 0
@@ -1760,10 +1760,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f021e61459ec0a0428f59c109306ce0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UiPuzzlePopup
-  popupContainer: {fileID: 931537132}
-  closeButton: {fileID: 1641253399}
-  uiPuzzleManager: {fileID: 2103437518}
-  closeDelaySeconds: 3
+  _popupContainer: {fileID: 931537132}
+  _closeButton: {fileID: 1641253399}
+  _uiPuzzleManager: {fileID: 298709150}
+  _closeDelaySeconds: 3
 --- !u!1 &2103437517
 GameObject:
   m_ObjectHideFlags: 0
@@ -1793,10 +1793,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2845ee7406c0264e828acbcd20eeccc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LightPuzzleManager
-  itemSpacing: 120
-  gridParent: {fileID: 1810894263}
-  tilePrefab: {fileID: 6201490905904744828, guid: 8b21b9254606191419ede63058b77cd6, type: 3}
-  stageFileName: Stage01
+  _puzzleId: LIGHT_STAGE_01
+  _itemSpacing: 120
+  _gridParent: {fileID: 1810894263}
+  _tilePrefab: {fileID: 6201490905904744828, guid: 8b21b9254606191419ede63058b77cd6, type: 3}
 --- !u!4 &2103437519
 Transform:
   m_ObjectHideFlags: 0

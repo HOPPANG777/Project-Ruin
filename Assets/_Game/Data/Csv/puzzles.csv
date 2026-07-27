@@ -1,0 +1,4 @@
+puzzle_id,puzzle_type,rows,columns
+PIPE_STAGE_01,PIPE,4,4
+LIGHT_STAGE_01,LIGHT,3,3
+CIRCLE_STAGE_01,CIRCLE,0,0

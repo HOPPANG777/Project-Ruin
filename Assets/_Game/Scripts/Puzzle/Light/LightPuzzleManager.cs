@@ -1,95 +1,106 @@
-using UnityEngine;
-using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine;
 
-public class UiLightPuzzleManager : BasePuzzleManager
+//=============================================================================
+// File:        LightPuzzleManager.cs
+//
+// Description: CSV 라이트 퍼즐 정의로 UI 타일을 생성하고 클릭 연쇄와 정답을 판정한다.
+//
+// History:     07/26/2026 + CSV Definition 기반 생성으로 전환 -- VicZero
+//
+//=============================================================================
+public sealed class UiLightPuzzleManager : BasePuzzleManager
 {
-    [Header("UI Grid Parent Settings")]
-    [Tooltip("UI 타일들이 생성되어 배치될 부모 Panel(RectTransform)을 연결하세요.")]
-    [SerializeField] private RectTransform gridParent;
+    [Header("UI References")]
+    [Tooltip("생성한 라이트 타일이 배치될 UI 부모입니다.")]
+    [SerializeField]
+    private RectTransform _gridParent;
 
-    [Header("Prefabs & Settings")]
-    [Tooltip("Image와 UiLightTileComponent가 붙어있는 UI 프리팹을 연결하세요.")]
-    [SerializeField] private GameObject tilePrefab;
+    [Tooltip("Image와 UiLightTileComponent가 포함된 라이트 타일 프리팹입니다.")]
+    [SerializeField]
+    private GameObject _tilePrefab;
 
-    [Header("Text File Path Settings")]
-    [SerializeField] private string stageFileName = "Stage01";
+    private readonly Dictionary<int, UiLightTileComponent> _spawnedTiles =
+        new Dictionary<int, UiLightTileComponent>();
 
-    private Dictionary<int, UiLightTileComponent> spawnedTiles = new Dictionary<int, UiLightTileComponent>();
-    private LightStageParsedData currentRuntimeData;
+    private PuzzleDefinition _currentDefinition;
 
+    /// <summary>CSV에서 현재 라이트 퍼즐을 조회하고 UI 타일을 다시 생성합니다.</summary>
     public override void InitializePuzzle()
     {
-        GenerateLightPuzzle();
-    }
-
-    private void GenerateLightPuzzle()
-    {
-        foreach (var tile in spawnedTiles.Values) if (tile != null) Destroy(tile.gameObject);
-        spawnedTiles.Clear();
+        ClearSpawnedTiles();
         IsClear = false;
+        _currentDefinition = null;
 
-        string fullPath = $"PuzzleData/Light/{stageFileName}";
-        TextAsset stageTextAsset = Resources.Load<TextAsset>(fullPath);
-
-        if (stageTextAsset == null)
+        if (_gridParent == null || _tilePrefab == null)
         {
-            Debug.LogError($"[UiLightPuzzleManager] 텍스트 파일을 찾을 수 없습니다! 경로: Resources/{fullPath}.txt");
+            Debug.LogError("[UiLightPuzzleManager] Grid Parent 또는 Tile Prefab이 연결되지 않았습니다.");
             return;
         }
 
-        currentRuntimeData = LightPuzzleParser.Parse(stageTextAsset.text);
-        if (currentRuntimeData == null) return;
-
-        int rows = currentRuntimeData.rows;
-        int cols = currentRuntimeData.cols;
-
-        // UI 캔버스 스페이스 기준 정중앙 정렬 좌표 연산
-        Vector3 startLocalPos = new Vector3(-(cols - 1) * itemSpacing / 2f, (rows - 1) * itemSpacing / 2f, 0);
-
-        int dataIndex = 0;
-        for (int r = 0; r < rows; r++)
+        if (!TryGetPuzzleDefinition(
+            PuzzleType.PUZZLE_TYPE_LIGHT,
+            out PuzzleDefinition puzzleDefinition))
         {
-            for (int c = 0; c < cols; c++)
-            {
-                if (dataIndex >= currentRuntimeData.tileDataList.Count) break;
-
-                LightTileRawData tileData = currentRuntimeData.tileDataList[dataIndex];
-
-                if (tilePrefab != null && gridParent != null)
-                {
-                    GameObject tileObj = Instantiate(tilePrefab, gridParent);
-                    tileObj.name = $"UI_LightTile_{tileData.id}";
-
-                    // RectTransform 좌표 설정
-                    RectTransform tileRect = tileObj.GetComponent<RectTransform>();
-                    tileRect.localPosition = startLocalPos + new Vector3(c * itemSpacing, -r * itemSpacing, 0);
-
-                    UiLightTileComponent lightTile = tileObj.GetComponent<UiLightTileComponent>() ?? tileObj.AddComponent<UiLightTileComponent>();
-                    lightTile.Init(tileData.id, tileData.initialState == 1, this);
-
-                    spawnedTiles.Add(tileData.id, lightTile);
-                }
-                dataIndex++;
-            }
+            return;
         }
 
-        Debug.Log($"[UiLightPuzzleManager] UI 퍼즐 파일('{stageFileName}.txt') 배치 완료: {spawnedTiles.Count}개 타일 세팅됨.");
+        _currentDefinition = puzzleDefinition;
+        Vector3 startLocalPosition = new Vector3(
+            -(puzzleDefinition.Columns - 1) * ItemSpacing / 2f,
+            (puzzleDefinition.Rows - 1) * ItemSpacing / 2f,
+            0f);
+
+        for (int i = 0; i < puzzleDefinition.LightTiles.Count; i++)
+        {
+            PuzzleLightTileDefinition tileDefinition = puzzleDefinition.LightTiles[i];
+            GameObject tileObject = Instantiate(_tilePrefab, _gridParent);
+            tileObject.name = $"UI_LightTile_{tileDefinition.TileId}";
+
+            RectTransform tileRect = tileObject.GetComponent<RectTransform>();
+            tileRect.localPosition = startLocalPosition + new Vector3(
+                tileDefinition.Column * ItemSpacing,
+                -tileDefinition.Row * ItemSpacing,
+                0f);
+
+            UiLightTileComponent lightTile = tileObject.GetComponent<UiLightTileComponent>();
+
+            if (lightTile == null)
+            {
+                Debug.LogError("[UiLightPuzzleManager] 라이트 타일 프리팹에 UiLightTileComponent가 없습니다.");
+                Destroy(tileObject);
+                ClearSpawnedTiles();
+                return;
+            }
+
+            lightTile.Init(tileDefinition.TileId, tileDefinition.IsOn, this);
+            _spawnedTiles.Add(tileDefinition.TileId, lightTile);
+        }
+
+        Debug.Log(
+            $"[UiLightPuzzleManager] CSV 퍼즐 배치 완료. id={PuzzleId}, tiles={_spawnedTiles.Count}");
     }
 
-    // 코드가 직접 마우스를 감지하는 Update() 레이캐스트 연산 전면 제거 (타일이 직접 이벤트를 보내옴)
-
+    /// <summary>클릭된 타일의 CSV 영향 목록에 포함된 모든 타일 상태를 반전합니다.</summary>
     public void OnTileClicked(int clickedId)
     {
-        if (currentRuntimeData == null || IsClear) return;
-
-        LightTileRawData clickedData = currentRuntimeData.tileDataList.Find(x => x.id == clickedId);
-        if (clickedData == null) return;
-
-        // 클릭된 타일과 연동된 모든 타일 토글 연산
-        foreach (int targetId in clickedData.targetIds)
+        if (_currentDefinition == null || IsClear)
         {
-            if (spawnedTiles.TryGetValue(targetId, out UiLightTileComponent targetTile))
+            return;
+        }
+
+        PuzzleLightTileDefinition clickedDefinition = FindTileDefinition(clickedId);
+
+        if (clickedDefinition == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < clickedDefinition.AffectedTileIds.Count; i++)
+        {
+            int targetId = clickedDefinition.AffectedTileIds[i];
+
+            if (_spawnedTiles.TryGetValue(targetId, out UiLightTileComponent targetTile))
             {
                 targetTile.ToggleState();
             }
@@ -98,22 +109,58 @@ public class UiLightPuzzleManager : BasePuzzleManager
         CheckClearCondition();
     }
 
+    /// <summary>생성된 모든 라이트 타일이 켜졌는지 검사합니다.</summary>
     public override void CheckClearCondition()
     {
-        foreach (var tile in spawnedTiles.Values)
+        if (_spawnedTiles.Count == 0)
         {
-            if (!tile.IsOn) return;
+            return;
+        }
+
+        foreach (UiLightTileComponent tile in _spawnedTiles.Values)
+        {
+            if (!tile.IsOn)
+            {
+                return;
+            }
         }
 
         IsClear = true;
         OnPuzzleClear();
     }
 
+    /// <summary>라이트 퍼즐 클리어 이벤트를 외부에 전달합니다.</summary>
     protected override void OnPuzzleClear()
     {
-        Debug.Log("🎯 [UI 라이트 퍼즐 클리어] 모든 불이 켜졌습니다!");
-
-        // 부모 UiPuzzlePopup에게 알림 -> 3초 뒤에 자동으로 팝업이 닫힙니다.
+        Debug.Log($"[UiLightPuzzleManager] 라이트 퍼즐을 클리어했습니다. id={PuzzleId}");
         TriggerClearEvent();
+    }
+
+    private PuzzleLightTileDefinition FindTileDefinition(int tileId)
+    {
+        for (int i = 0; i < _currentDefinition.LightTiles.Count; i++)
+        {
+            PuzzleLightTileDefinition definition = _currentDefinition.LightTiles[i];
+
+            if (definition.TileId == tileId)
+            {
+                return definition;
+            }
+        }
+
+        return null;
+    }
+
+    private void ClearSpawnedTiles()
+    {
+        foreach (UiLightTileComponent tile in _spawnedTiles.Values)
+        {
+            if (tile != null)
+            {
+                Destroy(tile.gameObject);
+            }
+        }
+
+        _spawnedTiles.Clear();
     }
 }

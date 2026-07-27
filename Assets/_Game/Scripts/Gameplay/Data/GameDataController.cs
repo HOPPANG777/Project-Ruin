@@ -85,6 +85,27 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
     private TextAsset _npcQuestDialogueRoutesCsv;
 
     //==============================================================================
+    // 직렬화 필드 - Puzzle
+    //==============================================================================
+
+    [Header("Puzzle CSV")]
+    [Tooltip("퍼즐 ID, 종류 및 격자 크기를 정의하는 puzzles.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _puzzlesCsv;
+
+    [Tooltip("라이트 퍼즐의 타일 상태와 영향 관계를 정의하는 puzzle_light_tiles.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _puzzleLightTilesCsv;
+
+    [Tooltip("파이프 퍼즐의 타일 위치, 종류 및 회전을 정의하는 puzzle_pipe_tiles.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _puzzlePipeTilesCsv;
+
+    [Tooltip("원형 퍼즐의 링 순서, 문양 및 시작 회전을 정의하는 puzzle_circle_rings.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _puzzleCircleRingsCsv;
+
+    //==============================================================================
     // 내부 상태
     //==============================================================================
 
@@ -201,7 +222,11 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
             || !TryValidateRequiredAsset(_questObjectivesCsv, "quest_objectives.csv", out loadError)
             || !TryValidateRequiredAsset(_questRewardsCsv, "quest_rewards.csv", out loadError)
             || !TryValidateRequiredAsset(_questConsumeItemsCsv, "quest_consume_items.csv", out loadError)
-            || !TryValidateRequiredAsset(_localizationCsv, "localization.csv", out loadError))
+            || !TryValidateRequiredAsset(_localizationCsv, "localization.csv", out loadError)
+            || !TryValidateRequiredAsset(_puzzlesCsv, "puzzles.csv", out loadError)
+            || !TryValidateRequiredAsset(_puzzleLightTilesCsv, "puzzle_light_tiles.csv", out loadError)
+            || !TryValidateRequiredAsset(_puzzlePipeTilesCsv, "puzzle_pipe_tiles.csv", out loadError)
+            || !TryValidateRequiredAsset(_puzzleCircleRingsCsv, "puzzle_circle_rings.csv", out loadError))
         {
             return false;
         }
@@ -219,7 +244,11 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
             CreateCsvFile(_questConsumeItemsCsv),
             CreateCsvFile(_localizationCsv),
             CreateOptionalCsvFile(_npcDialogueBindingsCsv),
-            CreateOptionalCsvFile(_npcQuestDialogueRoutesCsv));
+            CreateOptionalCsvFile(_npcQuestDialogueRoutesCsv),
+            CreateCsvFile(_puzzlesCsv),
+            CreateCsvFile(_puzzleLightTilesCsv),
+            CreateCsvFile(_puzzlePipeTilesCsv),
+            CreateCsvFile(_puzzleCircleRingsCsv));
         return true;
     }
 

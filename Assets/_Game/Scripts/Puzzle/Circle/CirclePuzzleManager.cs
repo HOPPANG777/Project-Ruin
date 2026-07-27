@@ -1,108 +1,162 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
-public class UiCirclePuzzleManager : BasePuzzleManager
+//=============================================================================
+// File:        CirclePuzzleManager.cs
+//
+// Description: CSV 원형 퍼즐 정의로 중첩 링을 생성하고 정렬 상태를 판정한다.
+//
+// History:     07/26/2026 + CSV Definition 기반 생성으로 전환 -- VicZero
+//
+//=============================================================================
+public sealed class UiCirclePuzzleManager : BasePuzzleManager
 {
-    [Header("UI Grid Parent Settings")]
-    [SerializeField] private RectTransform gridParent;
+    [Header("UI References")]
+    [Tooltip("생성한 원형 링이 배치될 UI 부모입니다.")]
+    [SerializeField]
+    private RectTransform _gridParent;
 
-    [Header("Single Base UI Prefab")]
-    [SerializeField] private GameObject singleRingPrefab;
+    [Tooltip("UiCircleComponent가 포함된 공용 원형 링 프리팹입니다.")]
+    [SerializeField]
+    private GameObject _singleRingPrefab;
 
-    [Header("Ring Prefabs Pool (문양 프리팹 리스트)")]
-    [SerializeField] private List<GameObject> ringPrefabs = new List<GameObject>();
+    [Header("Pattern Catalog")]
+    [Tooltip("puzzle_circle_rings.csv의 pattern_index가 가리키는 문양 프리팹 목록입니다.")]
+    [SerializeField]
+    private List<GameObject> _ringPrefabs = new List<GameObject>();
 
-    [Header("Text File Path Settings")]
-    [SerializeField] private string stageFileName = "Stage01";
+    [Header("Scale")]
+    [Tooltip("가장 안쪽 링에 적용할 시작 스케일입니다.")]
+    [SerializeField]
+    private float _startScale = 1f;
 
-    [Header("Size Settings (원 크기 계단식 확장용)")]
-    [Tooltip("가장 안쪽(첫 번째) 원의 시작 스케일 배율")]
-    [SerializeField] private float startScale = 1.0f;
-    [Tooltip("바깥쪽 원으로 갈수록 추가될 스케일 가중치")]
-    [SerializeField] private float scaleStep = 0.4f;
+    [Tooltip("바깥쪽 링으로 이동할 때마다 더할 스케일입니다.")]
+    [SerializeField]
+    private float _scaleStep = 0.4f;
 
-    private List<UiCircleComponent> spawnedRings = new List<UiCircleComponent>();
+    private readonly List<UiCircleComponent> _spawnedRings = new List<UiCircleComponent>();
 
+    /// <summary>CSV에서 현재 원형 퍼즐을 조회하고 중첩 링을 다시 생성합니다.</summary>
     public override void InitializePuzzle()
     {
-        LoadAndGeneratePuzzle();
-    }
-
-    private void LoadAndGeneratePuzzle()
-    {
-        foreach (var ring in spawnedRings) if (ring != null) Destroy(ring.gameObject);
-        spawnedRings.Clear();
+        ClearSpawnedRings();
         IsClear = false;
 
-        string fullPath = $"PuzzleData/Circle/{stageFileName}";
-        TextAsset stageTextAsset = Resources.Load<TextAsset>(fullPath);
-
-        if (stageTextAsset == null)
+        if (_gridParent == null || _singleRingPrefab == null)
         {
-            Debug.LogError($"[UiCirclePuzzleManager] 파일을 찾을 수 없습니다: Resources/{fullPath}.txt");
+            Debug.LogError("[UiCirclePuzzleManager] Grid Parent 또는 Single Ring Prefab이 연결되지 않았습니다.");
             return;
         }
 
-        List<CirclePuzzleData> ringDataList = CirclePuzzleParser.Parse(stageTextAsset.text);
-        if (ringDataList == null) return;
-
-        // 작은 원부터 차례대로 큰 원 순서로 생성
-        for (int i = 0; i < ringDataList.Count; i++)
+        if (!TryGetPuzzleDefinition(
+            PuzzleType.PUZZLE_TYPE_CIRCLE,
+            out PuzzleDefinition puzzleDefinition))
         {
-            CirclePuzzleData data = ringDataList[i];
-
-            if (data.prefabIndex < 0 || data.prefabIndex >= ringPrefabs.Count)
-            {
-                Debug.LogWarning($"[UiCirclePuzzleManager] 프리팹 인덱스 범위 초과: {data.prefabIndex}");
-                continue;
-            }
-
-            GameObject patternPrefab = ringPrefabs[data.prefabIndex];
-            if (singleRingPrefab == null || gridParent == null) continue;
-
-            // 1. 공용 베이스 틀 생성
-            GameObject ringObj = Instantiate(singleRingPrefab, gridParent);
-            ringObj.name = $"Ui_Circle_Ring_[Level_{i}]";
-
-            // 2. [핵심] 작은 순서에서 바깥으로 갈수록 크기를 크게 세팅 (Scale 제어)
-            RectTransform ringRect = ringObj.GetComponent<RectTransform>();
-            if (ringRect != null)
-            {
-                float currentScale = startScale + (i * scaleStep);
-                ringRect.localScale = new Vector3(currentScale, currentScale, 1f);
-            }
-
-            UiCircleComponent ringComp = ringObj.GetComponent<UiCircleComponent>() ?? ringObj.AddComponent<UiCircleComponent>();
-
-            // 3. 문양 조립 및 세그먼트 주입
-            ringComp.InitRingState(data.segments, patternPrefab, this);
-
-            // 4. 큰 원이 아래로 깔리고 작은 원이 위로 와서 마우스를 클릭할 수 있게 UI 계층 구조 정렬
-            // 작은 원(첫 번째 연산)일수록 맨 앞으로 뺍니다.
-            ringObj.transform.SetAsFirstSibling();
-
-            spawnedRings.Add(ringComp);
+            return;
         }
 
-        Debug.Log($"[UiCirclePuzzleManager] 서클 퍼즐 세팅 완료! 총 {spawnedRings.Count}개의 원이 크기별로 중첩 배치되었습니다.");
+        if (!ArePatternIndicesValid(puzzleDefinition.CircleRings))
+        {
+            return;
+        }
+
+        for (int i = 0; i < puzzleDefinition.CircleRings.Count; i++)
+        {
+            PuzzleCircleRingDefinition ringDefinition = puzzleDefinition.CircleRings[i];
+            GameObject ringObject = Instantiate(_singleRingPrefab, _gridParent);
+            ringObject.name = $"UI_CircleRing_{ringDefinition.RingOrder}";
+
+            RectTransform ringRect = ringObject.GetComponent<RectTransform>();
+
+            if (ringRect != null)
+            {
+                float scale = _startScale + ringDefinition.RingOrder * _scaleStep;
+                ringRect.localScale = new Vector3(scale, scale, 1f);
+            }
+
+            UiCircleComponent ringComponent = ringObject.GetComponent<UiCircleComponent>();
+
+            if (ringComponent == null)
+            {
+                Debug.LogError("[UiCirclePuzzleManager] 공용 링 프리팹에 UiCircleComponent가 없습니다.");
+                Destroy(ringObject);
+                ClearSpawnedRings();
+                return;
+            }
+
+            GameObject patternPrefab = _ringPrefabs[ringDefinition.PatternIndex];
+            ringComponent.InitRingState(
+                ringDefinition.Segments,
+                ringDefinition.InitialOffset,
+                patternPrefab,
+                this);
+            ringObject.transform.SetAsFirstSibling();
+            _spawnedRings.Add(ringComponent);
+        }
+
+        Debug.Log(
+            $"[UiCirclePuzzleManager] CSV 퍼즐 배치 완료. id={PuzzleId}, rings={_spawnedRings.Count}");
     }
 
+    /// <summary>생성된 모든 링이 정답 각도에 정렬됐는지 검사합니다.</summary>
     public override void CheckClearCondition()
     {
-        if (spawnedRings == null || spawnedRings.Count == 0) return;
-
-        foreach (var ring in spawnedRings)
+        if (_spawnedRings.Count == 0)
         {
-            if (!ring.IsAligned()) return;
+            return;
+        }
+
+        for (int i = 0; i < _spawnedRings.Count; i++)
+        {
+            if (!_spawnedRings[i].IsAligned())
+            {
+                return;
+            }
         }
 
         IsClear = true;
         OnPuzzleClear();
     }
 
+    /// <summary>원형 퍼즐 클리어 이벤트를 외부에 전달합니다.</summary>
     protected override void OnPuzzleClear()
     {
-        Debug.Log("🎯 [UI 원형 퍼즐 클리어] 모든 크기의 원 문양이 올바르게 정렬되었습니다!");
+        Debug.Log($"[UiCirclePuzzleManager] 원형 퍼즐을 클리어했습니다. id={PuzzleId}");
         TriggerClearEvent();
+    }
+
+    private bool ArePatternIndicesValid(IReadOnlyList<PuzzleCircleRingDefinition> rings)
+    {
+        for (int i = 0; i < rings.Count; i++)
+        {
+            int patternIndex = rings[i].PatternIndex;
+
+            if (patternIndex >= 0
+                && patternIndex < _ringPrefabs.Count
+                && _ringPrefabs[patternIndex] != null)
+            {
+                continue;
+            }
+
+            Debug.LogError(
+                $"[UiCirclePuzzleManager] CSV pattern_index에 대응하는 문양 프리팹이 없습니다. "
+                + $"id={PuzzleId}, pattern_index={patternIndex}");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ClearSpawnedRings()
+    {
+        for (int i = 0; i < _spawnedRings.Count; i++)
+        {
+            if (_spawnedRings[i] != null)
+            {
+                Destroy(_spawnedRings[i].gameObject);
+            }
+        }
+
+        _spawnedRings.Clear();
     }
 }

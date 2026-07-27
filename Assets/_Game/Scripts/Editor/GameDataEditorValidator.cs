@@ -244,6 +244,30 @@ internal static class GameDataEditorValidator
             "localization.csv",
             report,
             out GameDataCsvFile localization);
+        hasAllRequiredFiles &= TryGetRequiredCsvFile(
+            controllerSerializedObject,
+            "_puzzlesCsv",
+            "puzzles.csv",
+            report,
+            out GameDataCsvFile puzzles);
+        hasAllRequiredFiles &= TryGetRequiredCsvFile(
+            controllerSerializedObject,
+            "_puzzleLightTilesCsv",
+            "puzzle_light_tiles.csv",
+            report,
+            out GameDataCsvFile puzzleLightTiles);
+        hasAllRequiredFiles &= TryGetRequiredCsvFile(
+            controllerSerializedObject,
+            "_puzzlePipeTilesCsv",
+            "puzzle_pipe_tiles.csv",
+            report,
+            out GameDataCsvFile puzzlePipeTiles);
+        hasAllRequiredFiles &= TryGetRequiredCsvFile(
+            controllerSerializedObject,
+            "_puzzleCircleRingsCsv",
+            "puzzle_circle_rings.csv",
+            report,
+            out GameDataCsvFile puzzleCircleRings);
 
         if (!hasAllRequiredFiles)
         {
@@ -270,7 +294,11 @@ internal static class GameDataEditorValidator
             questConsumeItems,
             localization,
             npcDialogueBindings,
-            npcQuestDialogueRoutes);
+            npcQuestDialogueRoutes,
+            puzzles,
+            puzzleLightTiles,
+            puzzlePipeTiles,
+            puzzleCircleRings);
         return true;
     }
 

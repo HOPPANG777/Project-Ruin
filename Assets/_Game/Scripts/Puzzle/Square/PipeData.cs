@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine;
 
 [Flags]
 public enum PipeDir
@@ -11,7 +9,6 @@ public enum PipeDir
     Bottom = 1 << 2,
     Left = 1 << 3
 }
-
 public enum PipeType
 {
     Empty, 
@@ -49,49 +46,5 @@ public struct PipeData
         }
 
         return (PipeDir)dirVal;
-    }
-}
-
-public class PipeTileRawData
-{
-    public string typeStr;
-    public int rotationIndex;
-}
-
-public class PipeStageParsedData
-{
-    public int rows;
-    public int cols;
-    public List<PipeTileRawData> tileDataList = new List<PipeTileRawData>();
-}
-
-[CreateAssetMenu(fileName = "NewPuzzleLevel", menuName = "Puzzle/Level Data")]
-public class PuzzleLevelData : ScriptableObject
-{
-    public int rows = 4;
-    public int cols = 4;
-    public List<PipeData> mapData = new List<PipeData>();
-
-    public void ParseRawData(string rawData)
-    {
-        mapData.Clear();
-        string[] tokens = rawData.Split(new[] { ' ', '\n', '\r' }, System.StringSplitOptions.RemoveEmptyEntries);
-
-        foreach (string token in tokens)
-        {
-            PipeData tile = new PipeData { rotationIndex = 0 };
-            tile.type = token switch
-            {
-                "0" => PipeType.Empty,
-                "S" => PipeType.Start,
-                "E" => PipeType.End,
-                "1S" => PipeType.Pipe_1_Straight,
-                "1C" => PipeType.Pipe_1_Corner,
-                "2" => PipeType.Pipe_2_T,
-                "3" => PipeType.Pipe_3_Cross,
-                _ => PipeType.Empty
-            };
-            mapData.Add(tile);
-        }
     }
 }

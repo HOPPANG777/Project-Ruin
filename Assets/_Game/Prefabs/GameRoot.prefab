@@ -496,6 +496,10 @@ MonoBehaviour:
   _language: 0
   _npcDialogueBindingsCsv: {fileID: 4900000, guid: 29e6c4c00505451b9c1300aa801e6542, type: 3}
   _npcQuestDialogueRoutesCsv: {fileID: 4900000, guid: 17b66e402ae14c2a964712bfa770a632, type: 3}
+  _puzzlesCsv: {fileID: 4900000, guid: 7a26c00100004d7aa001000000000001, type: 3}
+  _puzzleLightTilesCsv: {fileID: 4900000, guid: 7a26c00100004d7aa001000000000002, type: 3}
+  _puzzlePipeTilesCsv: {fileID: 4900000, guid: 7a26c00100004d7aa001000000000003, type: 3}
+  _puzzleCircleRingsCsv: {fileID: 4900000, guid: 7a26c00100004d7aa001000000000004, type: 3}
 --- !u!1 &1008359294462020877
 GameObject:
   m_ObjectHideFlags: 0

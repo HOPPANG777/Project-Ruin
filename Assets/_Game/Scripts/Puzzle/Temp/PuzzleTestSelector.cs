@@ -91,7 +91,8 @@ public class PuzzleTestSelector : MonoBehaviour
 
         targetPopup.OpenPuzzlePopup();
 
-        currentActiveManager = targetPopup.GetComponentInChildren<BasePuzzleManager>();
+        // 퍼즐 매니저는 팝업의 자식이 아닐 수 있으므로 팝업에 직렬화된 실제 참조를 사용합니다.
+        currentActiveManager = targetPopup.PuzzleManager;
         if (currentActiveManager != null)
         {
             currentActiveManager.enabled = true;

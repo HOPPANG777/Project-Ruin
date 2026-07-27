@@ -1,0 +1,5 @@
+puzzle_id,ring_order,pattern_index,segments,initial_offset
+CIRCLE_STAGE_01,0,0,8,1
+CIRCLE_STAGE_01,1,0,8,-2
+CIRCLE_STAGE_01,2,0,8,3
+CIRCLE_STAGE_01,3,0,8,-1

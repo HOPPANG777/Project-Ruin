@@ -73,6 +73,18 @@ public sealed class GameDataCsvSource
     // 선택 입력인 NPC 퀘스트 상태별 대화 경로 CSV 원본입니다.
     private readonly GameDataCsvFile _npcQuestDialogueRoutes;
 
+    // 퍼즐 공통 정보 CSV 원본입니다.
+    private readonly GameDataCsvFile _puzzles;
+
+    // 라이트 퍼즐 타일 CSV 원본입니다.
+    private readonly GameDataCsvFile _puzzleLightTiles;
+
+    // 파이프 퍼즐 타일 CSV 원본입니다.
+    private readonly GameDataCsvFile _puzzlePipeTiles;
+
+    // 원형 퍼즐 링 CSV 원본입니다.
+    private readonly GameDataCsvFile _puzzleCircleRings;
+
     /// <summary>대화 화자 CSV 원본입니다.</summary>
     public GameDataCsvFile DialogueActors => _dialogueActors;
 
@@ -112,6 +124,18 @@ public sealed class GameDataCsvSource
     /// <summary>선택 입력인 NPC 퀘스트 상태별 대화 경로 CSV 원본입니다.</summary>
     public GameDataCsvFile NpcQuestDialogueRoutes => _npcQuestDialogueRoutes;
 
+    /// <summary>퍼즐 공통 정보 CSV 원본입니다.</summary>
+    public GameDataCsvFile Puzzles => _puzzles;
+
+    /// <summary>라이트 퍼즐 타일 CSV 원본입니다.</summary>
+    public GameDataCsvFile PuzzleLightTiles => _puzzleLightTiles;
+
+    /// <summary>파이프 퍼즐 타일 CSV 원본입니다.</summary>
+    public GameDataCsvFile PuzzlePipeTiles => _puzzlePipeTiles;
+
+    /// <summary>원형 퍼즐 링 CSV 원본입니다.</summary>
+    public GameDataCsvFile PuzzleCircleRings => _puzzleCircleRings;
+
     /// <summary>
     /// 게임 데이터 저장소를 구성할 CSV 원본 묶음을 생성합니다.
     /// </summary>
@@ -127,6 +151,10 @@ public sealed class GameDataCsvSource
     /// <param name="localization">로컬라이징 CSV 원본입니다.</param>
     /// <param name="npcDialogueBindings">선택 입력인 NPC 기본 대화 연결 CSV 원본입니다.</param>
     /// <param name="npcQuestDialogueRoutes">선택 입력인 NPC 퀘스트 상태별 대화 경로 CSV 원본입니다.</param>
+    /// <param name="puzzles">퍼즐 공통 정보 CSV 원본입니다.</param>
+    /// <param name="puzzleLightTiles">라이트 퍼즐 타일 CSV 원본입니다.</param>
+    /// <param name="puzzlePipeTiles">파이프 퍼즐 타일 CSV 원본입니다.</param>
+    /// <param name="puzzleCircleRings">원형 퍼즐 링 CSV 원본입니다.</param>
     public GameDataCsvSource(
         GameDataCsvFile dialogueActors,
         GameDataCsvFile dialoguePortraits,
@@ -140,7 +168,11 @@ public sealed class GameDataCsvSource
         GameDataCsvFile questConsumeItems,
         GameDataCsvFile localization,
         GameDataCsvFile npcDialogueBindings = null,
-        GameDataCsvFile npcQuestDialogueRoutes = null)
+        GameDataCsvFile npcQuestDialogueRoutes = null,
+        GameDataCsvFile puzzles = null,
+        GameDataCsvFile puzzleLightTiles = null,
+        GameDataCsvFile puzzlePipeTiles = null,
+        GameDataCsvFile puzzleCircleRings = null)
     {
         _dialogueActors = dialogueActors;
         _dialoguePortraits = dialoguePortraits;
@@ -155,5 +187,9 @@ public sealed class GameDataCsvSource
         _localization = localization;
         _npcDialogueBindings = npcDialogueBindings;
         _npcQuestDialogueRoutes = npcQuestDialogueRoutes;
+        _puzzles = puzzles;
+        _puzzleLightTiles = puzzleLightTiles;
+        _puzzlePipeTiles = puzzlePipeTiles;
+        _puzzleCircleRings = puzzleCircleRings;
     }
 }

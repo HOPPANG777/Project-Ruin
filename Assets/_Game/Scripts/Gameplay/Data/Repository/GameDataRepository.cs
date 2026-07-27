@@ -50,6 +50,9 @@ public sealed class GameDataRepository : IGameDataRepository
     // 저장소 생성 오류에서 사용하는 NPC 퀘스트 대화 경로 데이터 종류 이름입니다.
     private const string DATA_TYPE_NPC_QUEST_DIALOGUE_ROUTE = "NpcQuestDialogueRoute";
 
+    // 저장소 생성 오류에서 사용하는 퍼즐 데이터 종류 이름입니다.
+    private const string DATA_TYPE_PUZZLE = "Puzzle";
+
     //==============================================================================
     // 내부 상태
     //==============================================================================
@@ -81,6 +84,9 @@ public sealed class GameDataRepository : IGameDataRepository
     // NPC ID별 우선순위가 정렬된 퀘스트 상태 대화 경로 인덱스입니다.
     private readonly Dictionary<string, IReadOnlyList<NpcQuestDialogueRouteDefinition>> _npcQuestDialogueRoutesById;
 
+    // 퍼즐 ID별 퍼즐 정의 인덱스입니다.
+    private readonly Dictionary<string, PuzzleDefinition> _puzzleById;
+
     //==============================================================================
     // 공개 프로퍼티
     //==============================================================================
@@ -100,6 +106,9 @@ public sealed class GameDataRepository : IGameDataRepository
     /// <summary>등록된 로컬라이징 문장 개수입니다.</summary>
     public int LocalizationEntryCount => _localizationEntryByKey.Count;
 
+    /// <summary>등록된 퍼즐 개수입니다.</summary>
+    public int PuzzleCount => _puzzleById.Count;
+
     //==============================================================================
     // 생성자
     //==============================================================================
@@ -118,6 +127,7 @@ public sealed class GameDataRepository : IGameDataRepository
         _localizationEntryByKey = new Dictionary<string, LocalizationEntryDefinition>(StringComparer.Ordinal);
         _npcDialogueBindingById = new Dictionary<string, NpcDialogueBindingDefinition>(StringComparer.Ordinal);
         _npcQuestDialogueRoutesById = new Dictionary<string, IReadOnlyList<NpcQuestDialogueRouteDefinition>>(StringComparer.Ordinal);
+        _puzzleById = new Dictionary<string, PuzzleDefinition>(StringComparer.Ordinal);
     }
 
     //==============================================================================
@@ -133,6 +143,7 @@ public sealed class GameDataRepository : IGameDataRepository
     /// <param name="localizationEntries">로컬라이징 정의 목록입니다.</param>
     /// <param name="npcDialogueBindings">NPC 기본 대화 연결 정의 목록입니다.</param>
     /// <param name="npcQuestDialogueRoutes">NPC 퀘스트 상태별 대화 경로 정의 목록입니다.</param>
+    /// <param name="puzzles">퍼즐 정의 목록입니다.</param>
     /// <param name="repository">생성된 게임 데이터 저장소입니다.</param>
     /// <param name="buildError">저장소 생성을 중단시킨 첫 번째 오류입니다.</param>
     /// <returns>모든 데이터를 검증하고 저장소를 생성했으면 true입니다.</returns>
@@ -144,6 +155,7 @@ public sealed class GameDataRepository : IGameDataRepository
         IReadOnlyList<LocalizationEntryDefinition> localizationEntries,
         IReadOnlyList<NpcDialogueBindingDefinition> npcDialogueBindings,
         IReadOnlyList<NpcQuestDialogueRouteDefinition> npcQuestDialogueRoutes,
+        IReadOnlyList<PuzzleDefinition> puzzles,
         out GameDataRepository repository,
         out GameDataRepositoryBuildError buildError)
     {
@@ -183,6 +195,11 @@ public sealed class GameDataRepository : IGameDataRepository
         }
 
         if (!candidateRepository.TryAddNpcQuestDialogueRoutes(npcQuestDialogueRoutes, out buildError))
+        {
+            return false;
+        }
+
+        if (!candidateRepository.TryAddPuzzles(puzzles, out buildError))
         {
             return false;
         }
@@ -310,6 +327,24 @@ public sealed class GameDataRepository : IGameDataRepository
         }
 
         return _questById.TryGetValue(questId, out questDefinition);
+    }
+
+    /// <summary>
+    /// 퍼즐 ID로 검증된 퍼즐 정의를 조회합니다.
+    /// </summary>
+    /// <param name="puzzleId">조회할 퍼즐 ID입니다.</param>
+    /// <param name="puzzleDefinition">조회된 퍼즐 정의입니다.</param>
+    /// <returns>퍼즐 정의를 찾으면 true입니다.</returns>
+    public bool TryGetPuzzle(string puzzleId, out PuzzleDefinition puzzleDefinition)
+    {
+        puzzleDefinition = null;
+
+        if (string.IsNullOrWhiteSpace(puzzleId))
+        {
+            return false;
+        }
+
+        return _puzzleById.TryGetValue(puzzleId, out puzzleDefinition);
     }
 
     /// <summary>
@@ -580,6 +615,38 @@ public sealed class GameDataRepository : IGameDataRepository
             if (!TryValidateQuestChildren(quest, out buildError))
             {
                 return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 퍼즐 정의를 검증하고 퍼즐 ID 인덱스에 추가합니다.
+    /// </summary>
+    private bool TryAddPuzzles(
+        IReadOnlyList<PuzzleDefinition> puzzles,
+        out GameDataRepositoryBuildError buildError)
+    {
+        buildError = null;
+
+        if (puzzles == null)
+        {
+            return true;
+        }
+
+        for (int i = 0; i < puzzles.Count; i++)
+        {
+            PuzzleDefinition puzzle = puzzles[i];
+
+            if (puzzle == null || string.IsNullOrWhiteSpace(puzzle.PuzzleId))
+            {
+                return FailBuild(DATA_TYPE_PUZZLE, string.Empty, "퍼즐 ID가 비어 있습니다.", out buildError);
+            }
+
+            if (!_puzzleById.TryAdd(puzzle.PuzzleId, puzzle))
+            {
+                return FailBuild(DATA_TYPE_PUZZLE, puzzle.PuzzleId, "중복 퍼즐 ID가 있습니다.", out buildError);
             }
         }
 

@@ -21,6 +21,9 @@ public interface IGameDataRepository
     /// <summary>등록된 로컬라이징 문장 개수입니다.</summary>
     int LocalizationEntryCount { get; }
 
+    /// <summary>등록된 퍼즐 개수입니다.</summary>
+    int PuzzleCount { get; }
+
     /// <summary>
     /// 화자 ID로 대화 화자 정의를 조회합니다.
     /// </summary>
@@ -73,6 +76,14 @@ public interface IGameDataRepository
     /// <param name="questDefinition">조회된 퀘스트 정의입니다.</param>
     /// <returns>퀘스트 정의를 찾으면 true입니다.</returns>
     bool TryGetQuest(string questId, out QuestDefinition questDefinition);
+
+    /// <summary>
+    /// 퍼즐 ID로 검증된 퍼즐 정의를 조회합니다.
+    /// </summary>
+    /// <param name="puzzleId">조회할 퍼즐 ID입니다.</param>
+    /// <param name="puzzleDefinition">조회된 퍼즐 정의입니다.</param>
+    /// <returns>퍼즐 정의를 찾으면 true입니다.</returns>
+    bool TryGetPuzzle(string puzzleId, out PuzzleDefinition puzzleDefinition);
 
     /// <summary>
     /// 문장 키로 로컬라이징 정의를 조회합니다.
