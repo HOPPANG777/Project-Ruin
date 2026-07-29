@@ -411,6 +411,9 @@ FodyWeavers.xsd
 ### ChatGPT ###
 .codex/
 .codex-doc-review/
+.docx_review_tech/
+.agents/
+
 
 ### Unity ###
 # This .gitignore file should be placed at the root of your Unity project directory

@@ -81,10 +81,13 @@ public class PipeComponent : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     {
         if (tileImage == null) return;
 
-        if (!IsWatered && Data.type != PipeType.End)
+        if (!IsWatered)
+        {
             tileImage.color = Color.white;
-        else
-            tileImage.color = Data.type == PipeType.Start ? Color.green : Color.cyan;
+            return;
+        }
+
+        tileImage.color = Data.type == PipeType.Start ? Color.green : Color.cyan;
     }
 
     private void UpdateVisualRotation()

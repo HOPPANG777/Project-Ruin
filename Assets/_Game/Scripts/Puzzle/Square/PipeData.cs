@@ -34,7 +34,9 @@ public struct PipeData
             PipeType.End => PipeDir.Top,
             PipeType.Pipe_1_Straight => PipeDir.Top | PipeDir.Bottom,
             PipeType.Pipe_1_Corner => PipeDir.Left | PipeDir.Bottom,
-            PipeType.Pipe_2_T => PipeDir.Top | PipeDir.Left | PipeDir.Right,
+            // T 프리팹의 기본 그림은 왼쪽, 오른쪽, 아래쪽이 열려 있다.
+            // 논리 방향도 그림과 같아야 보이지 않는 반대편으로 물이 흐르지 않는다.
+            PipeType.Pipe_2_T => PipeDir.Left | PipeDir.Right | PipeDir.Bottom,
             PipeType.Pipe_3_Cross => PipeDir.Top | PipeDir.Bottom | PipeDir.Left | PipeDir.Right,
             _ => PipeDir.None
         };
