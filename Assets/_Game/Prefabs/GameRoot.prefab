@@ -539,6 +539,7 @@ Transform:
   - {fileID: 8585077351130699641}
   - {fileID: 2878542185971289226}
   - {fileID: 9012345678901234501}
+  - {fileID: 664003303490831643}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4132607794765692391
@@ -556,6 +557,8 @@ MonoBehaviour:
   _cameraController: {fileID: 3506346225531343242}
   _gameDataController: {fileID: 5787683473583654242}
   _progressController: {fileID: 3253425018199022226}
+  _relicRestorationController: {fileID: 7938823001391292649}
+  _altarPresenter: {fileID: 0}
   _questController: {fileID: 4612708442974497604}
   _inventoryController: {fileID: 9012345678901234567}
   _inventoryPresenter: {fileID: 0}
@@ -763,6 +766,51 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!1 &1775123542018314617
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 664003303490831643}
+  - component: {fileID: 7938823001391292649}
+  m_Layer: 0
+  m_Name: RelicRestorationController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &664003303490831643
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1775123542018314617}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2305819821877646456}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7938823001391292649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1775123542018314617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c70e3f41693f1641951d0bba3578309, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RelicRestorationController
+  _catalog: {fileID: 11400000, guid: 4eb8ba9888fd3294dbdd9b86b1dbce1a, type: 2}
 --- !u!1 &2092624547534193612
 GameObject:
   m_ObjectHideFlags: 0
@@ -2119,6 +2167,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7a8b9c0d1e2435698701234abcdef01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProgressController
+  _saveFilePath: ProjectRuinSave.es3
 --- !u!1 &9012345678901234500
 GameObject:
   m_ObjectHideFlags: 0
