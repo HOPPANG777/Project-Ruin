@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7636271342351962108}
   - component: {fileID: 1683317289808248022}
   - component: {fileID: 3310922567559964005}
+  - component: {fileID: 7764074386822721775}
   m_Layer: 5
   m_Name: Tile_Light
   m_TagString: Untagged
@@ -55,7 +56,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 1}
@@ -75,3 +76,15 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7764074386822721775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6201490905904744828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff962a3785c25d042a3057a87a350517, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::UiLightTileComponent
