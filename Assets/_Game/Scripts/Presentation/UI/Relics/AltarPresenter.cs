@@ -51,7 +51,7 @@ public sealed class AltarPresenter : MonoBehaviour
         [Tooltip("기술을 반납했을 때 증가하는 재건도를 표시하는 텍스트입니다.")]
         [SerializeField] private TMP_Text _stateText;
 
-        internal void Show(SkillDataSO skill, string displayName)
+        internal void Show(TechnologyDataSO technology, string displayName)
         {
             if (_root != null)
             {
@@ -60,8 +60,8 @@ public sealed class AltarPresenter : MonoBehaviour
 
             if (_icon != null)
             {
-                _icon.sprite = skill.Icon;
-                _icon.enabled = skill.Icon != null;
+                _icon.sprite = technology.Icon;
+                _icon.enabled = technology.Icon != null;
             }
 
             if (_nameText != null)
@@ -71,7 +71,7 @@ public sealed class AltarPresenter : MonoBehaviour
 
             if (_stateText != null)
             {
-                _stateText.text = string.Concat("+", skill.RestoreValue.ToString(), "%");
+                _stateText.text = string.Concat("+", technology.RestoreValue.ToString(), "%");
             }
         }
 
@@ -118,12 +118,12 @@ public sealed class AltarPresenter : MonoBehaviour
     // 내부 상태
     //========================================
 
-    private readonly List<SkillDataSO> _returnableSkills = new List<SkillDataSO>();
+    private readonly List<TechnologyDataSO> _returnableTechnologies = new List<TechnologyDataSO>();
     private IRelicRestorationService _restorationService;
     private IProgressService _progressService;
     private ILocalizationService _localizationService;
-    private UnityAction[] _skillButtonActions;
-    private SkillDataSO _selectedSkill;
+    private UnityAction[] _technologyButtonActions;
+    private TechnologyDataSO _selectedTechnology;
     private bool _isBusy;
 
     //******************************************************************************
@@ -173,7 +173,7 @@ public sealed class AltarPresenter : MonoBehaviour
         _restorationService = restorationService;
         _progressService = progressService;
         _localizationService = localizationService;
-        _selectedSkill = null;
+        _selectedTechnology = null;
         _isBusy = false;
 
         RegisterButtonListeners();
@@ -206,8 +206,8 @@ public sealed class AltarPresenter : MonoBehaviour
             return;
         }
 
-        _selectedSkill = null;
-        RefreshSkillList();
+        _selectedTechnology = null;
+        RefreshTechnologyList();
         SetPlayerControl(false);
         SetViewActive(true);
     }
@@ -228,7 +228,7 @@ public sealed class AltarPresenter : MonoBehaviour
             return;
         }
 
-        _skillButtonActions = new UnityAction[_skillButtons.Length];
+        _technologyButtonActions = new UnityAction[_skillButtons.Length];
 
         for (int i = 0; i < _skillButtons.Length; i++)
         {
@@ -239,9 +239,9 @@ public sealed class AltarPresenter : MonoBehaviour
                 continue;
             }
 
-            int skillIndex = i;
-            UnityAction action = () => SelectSkill(skillIndex);
-            _skillButtonActions[i] = action;
+            int technologyIndex = i;
+            UnityAction action = () => SelectTechnology(technologyIndex);
+            _technologyButtonActions[i] = action;
             binding._button.onClick.AddListener(action);
         }
 
@@ -253,14 +253,14 @@ public sealed class AltarPresenter : MonoBehaviour
     /// <summary>연결한 버튼 클릭 이벤트를 해제합니다.</summary>
     private void UnregisterButtonListeners()
     {
-        if (_skillButtons != null && _skillButtonActions != null)
+        if (_skillButtons != null && _technologyButtonActions != null)
         {
-            int count = Mathf.Min(_skillButtons.Length, _skillButtonActions.Length);
+            int count = Mathf.Min(_skillButtons.Length, _technologyButtonActions.Length);
 
             for (int i = 0; i < count; i++)
             {
                 ButtonBinding binding = _skillButtons[i];
-                UnityAction action = _skillButtonActions[i];
+                UnityAction action = _technologyButtonActions[i];
 
                 if (binding != null && binding._button != null && action != null)
                 {
@@ -272,13 +272,13 @@ public sealed class AltarPresenter : MonoBehaviour
         _closeButton?.onClick.RemoveListener(Close);
         _confirmButton?.onClick.RemoveListener(ConfirmSelection);
         _cancelConfirmButton?.onClick.RemoveListener(CancelSelection);
-        _skillButtonActions = null;
+        _technologyButtonActions = null;
     }
 
     /// <summary>반납 가능한 기술 목록을 재사용 버퍼와 고정 버튼에 반영합니다.</summary>
-    private void RefreshSkillList()
+    private void RefreshTechnologyList()
     {
-        _restorationService.FillReturnableSkills(_returnableSkills);
+        _restorationService.FillReturnableTechnologies(_returnableTechnologies);
         int buttonCount = _skillButtons != null ? _skillButtons.Length : 0;
 
         for (int i = 0; i < buttonCount; i++)
@@ -290,34 +290,34 @@ public sealed class AltarPresenter : MonoBehaviour
                 continue;
             }
 
-            if (i >= _returnableSkills.Count)
+            if (i >= _returnableTechnologies.Count)
             {
                 binding._root?.SetActive(false);
                 continue;
             }
 
-            SkillDataSO skill = _returnableSkills[i];
-            binding.Show(skill, _localizationService.GetText(skill.DisplayNameKey));
+            TechnologyDataSO technology = _returnableTechnologies[i];
+            binding.Show(technology, _localizationService.GetText(technology.DisplayNameKey));
         }
 
-        _skillListRoot?.SetActive(_returnableSkills.Count > 0);
-        _noReturnableRoot?.SetActive(_returnableSkills.Count == 0);
+        _skillListRoot?.SetActive(_returnableTechnologies.Count > 0);
+        _noReturnableRoot?.SetActive(_returnableTechnologies.Count == 0);
 
-        if (_returnableSkills.Count > buttonCount)
+        if (_returnableTechnologies.Count > buttonCount)
         {
             Debug.LogWarning("[AltarPresenter] 고정 기술 버튼 수가 반납 가능한 기술 수보다 적습니다.");
         }
     }
 
     /// <summary>선택한 기술의 확인 팝업을 엽니다.</summary>
-    private void SelectSkill(int skillIndex)
+    private void SelectTechnology(int technologyIndex)
     {
-        if (_isBusy || skillIndex < 0 || skillIndex >= _returnableSkills.Count)
+        if (_isBusy || technologyIndex < 0 || technologyIndex >= _returnableTechnologies.Count)
         {
             return;
         }
 
-        _selectedSkill = _returnableSkills[skillIndex];
+        _selectedTechnology = _returnableTechnologies[technologyIndex];
         _confirmPopupRoot?.SetActive(true);
     }
 
@@ -329,34 +329,36 @@ public sealed class AltarPresenter : MonoBehaviour
             return;
         }
 
-        _selectedSkill = null;
+        _selectedTechnology = null;
         _confirmPopupRoot?.SetActive(false);
     }
 
     /// <summary>선택한 기술 반납과 체크포인트 저장을 시작합니다.</summary>
     private void ConfirmSelection()
     {
-        if (_isBusy || _selectedSkill == null)
+        if (_isBusy || _selectedTechnology == null)
         {
             return;
         }
 
-        ReturnSelectedSkillAsync(this.GetCancellationTokenOnDestroy()).Forget();
+        ReturnSelectedTechnologyAsync(this.GetCancellationTokenOnDestroy()).Forget();
     }
 
     /// <summary>기술을 한 번만 반납하고 확정된 진행 상태를 저장합니다.</summary>
-    private async UniTask ReturnSelectedSkillAsync(CancellationToken cancellationToken)
+    private async UniTask ReturnSelectedTechnologyAsync(CancellationToken cancellationToken)
     {
         _isBusy = true;
-        SkillDataSO selectedSkill = _selectedSkill;
+        TechnologyDataSO selectedTechnology = _selectedTechnology;
 
-        if (!_restorationService.TryReturnSkill(selectedSkill.SkillId, out _, out RelicRestorationFailure failure))
+        if (!_restorationService.TryReturnTechnology(selectedTechnology.TechnologyId, out _,
+            out RelicRestorationFailure failure))
         {
-            Debug.LogWarning($"[AltarPresenter] 기술 반납에 실패했습니다. SkillId={selectedSkill.SkillId}, Failure={failure}");
+            Debug.LogWarning($"[AltarPresenter] 기술 반납에 실패했습니다. "
+                + $"TechnologyId={selectedTechnology.TechnologyId}, Failure={failure}");
             _isBusy = false;
-            _selectedSkill = null;
+            _selectedTechnology = null;
             _confirmPopupRoot?.SetActive(false);
-            RefreshSkillList();
+            RefreshTechnologyList();
             return;
         }
 
@@ -371,7 +373,7 @@ public sealed class AltarPresenter : MonoBehaviour
         }
         finally
         {
-            _selectedSkill = null;
+            _selectedTechnology = null;
             _isBusy = false;
             SetPlayerControl(true);
         }
@@ -385,7 +387,7 @@ public sealed class AltarPresenter : MonoBehaviour
             return;
         }
 
-        _selectedSkill = null;
+        _selectedTechnology = null;
         SetViewActive(false);
         SetPlayerControl(true);
     }

@@ -1,9 +1,10 @@
 //=============================================================================
 // File:        SkillDataSO.cs
 //
-// Description: 스킬의 고정 정보와 유적 재건 기여도를 보관한다.
+// Description: 환경 상호작용 스킬의 고정 정보를 보관한다.
 //
 // History:     07/22/2026 + 기술 재건 데이터 추가 -- Codex
+//              07/31/2026 + 환경 상호작용 데이터로 분리 -- Codex
 //
 //=============================================================================
 
@@ -16,8 +17,8 @@ using UnityEngine;
 //
 // Synopsis:   SkillDataSO;
 //                - 스킬 ID와 표시 정보 정의
-//                - 사용 분류와 재건 기여도 정의
-//                - 플레이 중 변경되는 획득·반납 상태는 보관하지 않음
+//                - 상호작용 종류와 입력 방식 정의
+//                - 플레이 중 변경되는 획득 상태는 보관하지 않음
 //
 //=============================================================================
 [CreateAssetMenu(menuName = "_Game/Skill/SkillData", fileName = "SkillDataSO")]
@@ -40,29 +41,28 @@ public sealed class SkillDataSO : ScriptableObject
     [SerializeField]
     private string _descriptionKey;
 
-    [Tooltip("스킬 선택 UI에 표시할 아이콘입니다.")]
+    [Tooltip("스킬 목록과 획득 UI에 표시할 아이콘입니다.")]
     [SerializeField]
     private Sprite _icon;
 
     [Header("Gameplay")]
-    [Tooltip("스킬의 사용 방식 분류입니다.")]
+    [Tooltip("스킬이 수행하는 환경 상호작용 종류입니다.")]
     [SerializeField]
     private SkillType _skillType = SkillType.SKILL_NONE;
 
-    [Tooltip("스킬 사용 시 플레이어가 전환될 행동 상태입니다.")]
+    [Tooltip("스킬을 시작하고 유지하는 입력 방식입니다.")]
     [SerializeField]
-    private SkillActionState _skillActionState = SkillActionState.STATE_NONE;
+    private SkillActionState _skillActionState = SkillActionState.SKILL_ACTION_NONE;
 
-    [Header("Restoration")]
+    [Tooltip("상호작용 가능 상태에서 표시할 안내 문구의 Localization Key입니다.")]
+    [SerializeField]
+    private string _interactionPromptKey;
+
+    [Header("Acquisition")]
     [Tooltip("스킬을 획득하는 챕터 번호입니다.")]
     [Min(0)]
     [SerializeField]
     private int _chapter;
-
-    [Tooltip("스킬을 되돌려놓을 때 증가하는 유적 재건도입니다.")]
-    [Min(0)]
-    [SerializeField]
-    private int _restoreValue;
 
     //========================================
     // 프로퍼티
@@ -77,18 +77,19 @@ public sealed class SkillDataSO : ScriptableObject
     /// <summary>스킬 설명의 Localization Key입니다.</summary>
     public string DescriptionKey => _descriptionKey;
 
-    /// <summary>스킬 선택 UI에 표시할 아이콘입니다.</summary>
+    /// <summary>스킬 목록과 획득 UI에 표시할 아이콘입니다.</summary>
     public Sprite Icon => _icon;
 
-    /// <summary>스킬의 사용 방식 분류입니다.</summary>
+    /// <summary>스킬이 수행하는 환경 상호작용 종류입니다.</summary>
     public SkillType SkillType => _skillType;
 
-    /// <summary>스킬 사용 시 전환될 행동 상태입니다.</summary>
+    /// <summary>스킬을 시작하고 유지하는 입력 방식입니다.</summary>
     public SkillActionState SkillActionState => _skillActionState;
+
+    /// <summary>상호작용 안내 문구의 Localization Key입니다.</summary>
+    public string InteractionPromptKey => _interactionPromptKey;
 
     /// <summary>스킬을 획득하는 챕터 번호입니다.</summary>
     public int Chapter => _chapter;
 
-    /// <summary>스킬을 되돌려놓을 때 증가하는 재건도입니다.</summary>
-    public int RestoreValue => _restoreValue;
 }

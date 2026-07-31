@@ -388,9 +388,10 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     {
         return reward != null
             && (string.IsNullOrWhiteSpace(reward.ProgressFlagId) || reward.FlagValue.HasValue)
-            && (!IsSkillRewardFlag(reward.ProgressFlagId)
-                || (TryGetSkillRewardId(reward, out string skillId)
-                    && _relicRestorationService != null && _relicRestorationService.IsKnownSkill(skillId)))
+            && (!IsTechnologyRewardFlag(reward.ProgressFlagId)
+                || (TryGetTechnologyRewardId(reward, out string technologyId)
+                    && _relicRestorationService != null
+                    && _relicRestorationService.IsKnownTechnology(technologyId)))
             && (string.IsNullOrWhiteSpace(reward.ItemId)
                 || (_inventoryService != null
                     && reward.ItemAmount.HasValue && reward.ItemAmount.Value > 0
@@ -426,11 +427,11 @@ public sealed class QuestController : MonoBehaviour, IQuestService
     /// <summary>일반 Flag는 Progress에, 기술 Flag는 재건 서비스에 전달합니다.</summary>
     private bool TryApplyProgressReward(QuestRewardDefinition reward)
     {
-        if (IsSkillRewardFlag(reward.ProgressFlagId))
+        if (IsTechnologyRewardFlag(reward.ProgressFlagId))
         {
-            return TryGetSkillRewardId(reward, out string skillId)
-                && (_relicRestorationService.IsAcquired(skillId) ||
-                    _relicRestorationService.TryAcquireSkill(skillId, out _));
+            return TryGetTechnologyRewardId(reward, out string technologyId)
+                && (_relicRestorationService.IsAcquired(technologyId) ||
+                    _relicRestorationService.TryAcquireTechnology(technologyId, out _));
         }
 
         if (!string.IsNullOrWhiteSpace(reward.ProgressFlagId))
@@ -441,20 +442,23 @@ public sealed class QuestController : MonoBehaviour, IQuestService
         return true;
     }
 
-    private static bool IsSkillRewardFlag(string flagId) => !string.IsNullOrWhiteSpace(flagId)
-        && flagId.StartsWith(IRelicRestorationService.SKILL_ACQUIRED_FLAG_PREFIX, StringComparison.Ordinal);
+    private static bool IsTechnologyRewardFlag(string flagId) => !string.IsNullOrWhiteSpace(flagId)
+        && flagId.StartsWith(IRelicRestorationService.TECHNOLOGY_ACQUIRED_FLAG_PREFIX,
+            StringComparison.Ordinal);
 
-    private static bool TryGetSkillRewardId(QuestRewardDefinition reward, out string skillId)
+    private static bool TryGetTechnologyRewardId(QuestRewardDefinition reward, out string technologyId)
     {
-        skillId = null;
+        technologyId = null;
 
-        if (reward == null || reward.FlagValue != true || !IsSkillRewardFlag(reward.ProgressFlagId))
+        if (reward == null || reward.FlagValue != true
+            || !IsTechnologyRewardFlag(reward.ProgressFlagId))
         {
             return false;
         }
 
-        skillId = reward.ProgressFlagId.Substring(IRelicRestorationService.SKILL_ACQUIRED_FLAG_PREFIX.Length);
-        return !string.IsNullOrWhiteSpace(skillId);
+        technologyId = reward.ProgressFlagId.Substring(
+            IRelicRestorationService.TECHNOLOGY_ACQUIRED_FLAG_PREFIX.Length);
+        return !string.IsNullOrWhiteSpace(technologyId);
     }
 
     //==============================================================================
