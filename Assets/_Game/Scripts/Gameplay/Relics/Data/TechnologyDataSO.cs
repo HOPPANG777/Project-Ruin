@@ -78,4 +78,40 @@ public sealed class TechnologyDataSO : ScriptableObject
 
     /// <summary>기술 반환 시 증가하는 문명 재건도입니다.</summary>
     public int RestoreValue => _restoreValue;
+
+#if UNITY_EDITOR
+    private void OnValidate() => ValidateData();
+
+    [ContextMenu("기술 데이터 검증")]
+    private void ValidateData()
+    {
+        if (string.IsNullOrWhiteSpace(_technologyId))
+        {
+            LogValidationIssue("기술 ID가 비어 있습니다.", true);
+        }
+        if (string.IsNullOrWhiteSpace(_displayNameKey))
+        {
+            LogValidationIssue("이름 Localization Key가 비어 있습니다.", true);
+        }
+        if (string.IsNullOrWhiteSpace(_descriptionKey))
+        {
+            LogValidationIssue("설명 Localization Key가 비어 있습니다.", true);
+        }
+        if (_restoreValue < 0)
+        {
+            LogValidationIssue("재건 기여도는 0 이상이어야 합니다.", true);
+        }
+        if (_icon == null)
+        {
+            LogValidationIssue("아이콘이 연결되지 않았습니다.", false);
+        }
+    }
+
+    private void LogValidationIssue(string message, bool isError)
+    {
+        string formattedMessage = $"[TechnologyDataSO] {name}: {message}";
+        if (isError) Debug.LogError(formattedMessage, this);
+        else Debug.LogWarning(formattedMessage, this);
+    }
+#endif
 }

@@ -1,304 +1,200 @@
+//=============================================================================
+// File:        PlayerInteractionController.cs
+//
+// Description: 주변 상호작용 대상을 탐지하고 누르기·홀드 입력을 전달한다.
+//
+// History:     07/31/2026 + 홀드 입력 계약과 저할당 탐지 흐름 추가 -- Codex
+//
+//=============================================================================
 using UnityEngine;
 using UnityEngine.InputSystem;
-
-//==============================================================================
-// 기능: class::PlayerInteractionController
-// 설명: 플레이어 주변 상호작용 대상 탐지, 하이라이트, 입력 처리
-//==============================================================================
-// NOTE:
-//  - IInteractable / IHighlightable 인터페이스만 참조합니다.
-//  - 대화 등으로 입력이 막히면 SetCanInteract(false)를 호출합니다.
-//==============================================================================
-public class PlayerInteractionController : MonoBehaviour
+//=============================================================================
+// Synopsis:   PlayerInteractionController;
+//                - 가장 가까운 상호작용 대상 탐지와 하이라이트 관리
+//                - 대상별 행동을 모른 채 누르기·홀드 시작·해제만 전달
+//=============================================================================
+[DisallowMultipleComponent]
+public sealed class PlayerInteractionController : MonoBehaviour
 {
-    //==============================================================================
-    // 직렬화 필드 (인스펙터 노출)
-    //==============================================================================
-
+    // 기존 탐지 용량을 유지해 씬의 동작 범위를 바꾸지 않습니다.
+    private const int DETECTION_BUFFER_SIZE = 10;
     [Header("Interaction")]
-    [Tooltip("상호작용 탐지 기준 위치입니다. 비어 있으면 본 Transform을 사용합니다.")]
-    [SerializeField]
-    private Transform _origin;
-
-    [Header("Interaction")]
-    [Tooltip("상호작용 대상이 속한 레이어입니다.")]
-    [SerializeField]
-    private LayerMask _layer;
-
-    [Header("Interaction")]
-    [Tooltip("상호작용을 탐지할 반경입니다.")]
-    [SerializeField]
-    private float _interactRange = 1.0f;
-
-    [Header("Interaction")]
-    [Tooltip("상호작용 입력 액션입니다.")]
-    [SerializeField]
-    private InputActionReference _interactAction;
-
-    [Header("Interaction")]
-    [Tooltip("상호작용 입력 및 탐지 허용 여부입니다. 대화 중에는 false로 설정합니다.")]
-    [SerializeField]
-    private bool _canInteract = true;
-
-    //==============================================================================
-    // 내부 상태
-    //==============================================================================
-
-    // OverlapCircleNonAlloc 결과를 담는 고정 버퍼입니다. (GC 할당 방지)
-    private readonly Collider2D[] _detectResults = new Collider2D[10];
-
-    // 현재 포커스된 상호작용 대상입니다.
-    private IInteractable _currentTarget;
-
-    // 현재 하이라이트 중인 대상입니다. (_currentTarget과 다를 수 있음)
-    private IHighlightable _currentHighlightTarget;
-
-    // OverlapCircleNonAlloc에 사용할 레이어 필터입니다.
+    [Tooltip("상호작용 탐지 기준 위치이며, 비어 있으면 플레이어 위치를 사용합니다.")]
+    [SerializeField] private Transform _origin;
+    [Tooltip("상호작용 대상으로 탐지할 레이어입니다.")]
+    [SerializeField] private LayerMask _layer;
+    [Tooltip("상호작용 대상을 탐지할 반경입니다.")]
+    [SerializeField] private float _interactRange = 1.0f;
+    [Tooltip("누르기와 홀드에 함께 사용하는 상호작용 입력 액션입니다.")]
+    [SerializeField] private InputActionReference _interactAction;
+    [Tooltip("대화나 UI 중 상호작용 탐지와 입력을 허용할지 결정합니다.")]
+    [SerializeField] private bool _canInteract = true;
+    private readonly Collider2D[] _detectResults = new Collider2D[DETECTION_BUFFER_SIZE];
     private ContactFilter2D _contactFilter;
-
-    //==============================================================================
-    // 유니티 생명주기
-    //==============================================================================
-
-    /// <summary>
-    /// 탐지 필터와 입력 액션을 초기화합니다.
-    /// </summary>
+    private Collider2D _currentCollider;
+    private IInteractable _currentTarget;
+    private IHighlightable _currentHighlightTarget;
+    private IHoldInteractable _currentHoldTarget;
+    private IHoldInteractable _activeHoldTarget;
     private void Awake()
     {
         _contactFilter.useLayerMask = true;
         _contactFilter.layerMask = _layer;
         _contactFilter.useTriggers = true;
     }
-
-    /// <summary>
-    /// 상호작용 입력 액션을 활성화합니다.
-    /// </summary>
     private void OnEnable()
     {
-        if (_interactAction != null)
+        if (_interactAction != null && _interactAction.action != null)
         {
             _interactAction.action.Enable();
         }
     }
-
-    /// <summary>
-    /// 상호작용 입력 액션을 비활성화하고 포커스를 해제합니다.
-    /// </summary>
     private void OnDisable()
     {
-        if (_interactAction != null)
+        if (_interactAction != null && _interactAction.action != null)
         {
             _interactAction.action.Disable();
         }
-
         ClearTarget();
     }
-
-    /// <summary>
-    /// 매 프레임 상호작용 대상 갱신 및 입력을 처리합니다.
-    /// </summary>
     private void Update()
     {
-        // 상호작용이 금지된 상태면 대상을 해제하고 종료합니다.
-        if (_canInteract == false)
+        if (!_canInteract)
         {
             ClearTarget();
             return;
         }
-
-        UpdateInteractionTarget();
+        FindNearestInteractable();
         HandleInteractionInput();
     }
 
-    //==============================================================================
-    // 공개 API
-    //==============================================================================
-
-    /// <summary>
-    /// 상호작용 입력 및 탐지 허용 여부를 설정합니다.
-    /// </summary>
-    /// <param name="canInteract">허용 여부입니다.</param>
+    //=============================================================================
+    // PlayerInteractionController.SetCanInteract
+    //=============================================================================
+    /// <summary>상호작용 탐지와 입력을 허용하거나 즉시 중지합니다.</summary>
     public void SetCanInteract(bool canInteract)
     {
         _canInteract = canInteract;
-
-        // 상호작용이 금지되면 현재 대상과 하이라이트를 즉시 해제합니다.
-        if (_canInteract == false)
+        if (!canInteract)
         {
             ClearTarget();
         }
     }
 
-    //==============================================================================
-    // 내부 로직 — 탐지
-    //==============================================================================
-
-    /// <summary>
-    /// 범위 내 상호작용 대상을 갱신합니다.
-    /// </summary>
-    private void UpdateInteractionTarget()
-    {
-        FindNearestInteractable();
-    }
-
-    /// <summary>
-    /// 범위 내 가장 가까운 IInteractable을 찾아 대상을 변경합니다.
-    /// </summary>
+    // 고정 버퍼에서 가장 가까운 계약만 선택해 매 프레임 컬렉션 할당을 피합니다.
     private void FindNearestInteractable()
     {
-        Vector2 originPosition = GetOriginPosition();
-
-        // NonAlloc으로 주변 콜라이더를 수집합니다.
+        Vector2 originPosition = _origin != null ? _origin.position : transform.position;
         int hitCount = Physics2D.OverlapCircle(
-            originPosition,
-            _interactRange,
-            _contactFilter,
-            _detectResults);
-
-        IInteractable nearestInteractable = null;
+            originPosition, _interactRange, _contactFilter, _detectResults);
+        Collider2D nearestCollider = null;
+        IInteractable nearestTarget = null;
         IHighlightable nearestHighlight = null;
         float nearestSqrDistance = float.MaxValue;
-
         for (int i = 0; i < hitCount; i++)
         {
             Collider2D hitCollider = _detectResults[i];
-
-            // 비어 있는 슬롯은 건너뜁니다.
             if (hitCollider == null)
             {
                 continue;
             }
-
-            IInteractable interactable = hitCollider.GetComponent<IInteractable>();
-
-            // 상호작용 불가 오브젝트는 후보에서 제외합니다.
-            if (interactable == null)
+            IInteractable interactable;
+            if (hitCollider == _currentCollider)
+            {
+                interactable = _currentTarget;
+            }
+            else if (!hitCollider.TryGetComponent(out interactable))
             {
                 continue;
             }
-
-            Vector2 targetPosition = hitCollider.transform.position;
-            float sqrDistance = (targetPosition - originPosition).sqrMagnitude;
-
-            // 더 가까운 대상만 후보로 갱신합니다.
-            if (sqrDistance >= nearestSqrDistance)
+            float sqrDistance = ((Vector2)hitCollider.transform.position - originPosition).sqrMagnitude;
+            if (interactable == null || sqrDistance >= nearestSqrDistance)
             {
                 continue;
             }
-
+            nearestCollider = hitCollider;
+            nearestTarget = interactable;
             nearestSqrDistance = sqrDistance;
-            nearestInteractable = interactable;
-            nearestHighlight = hitCollider.GetComponent<IHighlightable>();
-        }
-
-        // 범위 안에 대상이 없으면 포커스를 해제합니다.
-        if (nearestInteractable == null)
-        {
-            if (_currentTarget != null)
+            if (hitCollider == _currentCollider)
             {
-                ClearTarget();
+                nearestHighlight = _currentHighlightTarget;
             }
-
-            return;
+            else
+            {
+                hitCollider.TryGetComponent(out nearestHighlight);
+            }
         }
-
-        // 같은 대상이면 하이라이트/전환을 반복하지 않습니다.
-        if (nearestInteractable == _currentTarget)
+        if (nearestTarget == null)
         {
+            ClearTarget();
             return;
         }
-
-        ChangeTarget(nearestInteractable, nearestHighlight);
+        if (nearestTarget == _currentTarget)
+        {
+            _currentCollider = nearestCollider;
+            return;
+        }
+        ChangeTarget(nearestCollider, nearestTarget, nearestHighlight);
     }
-
-    /// <summary>
-    /// 상호작용 대상을 변경하고 하이라이트를 갱신합니다.
-    /// </summary>
-    /// <param name="newTarget">새 상호작용 대상입니다.</param>
-    /// <param name="newHighlightTarget">새 하이라이트 대상입니다. null이면 하이라이트하지 않습니다.</param>
-    private void ChangeTarget(IInteractable newTarget, IHighlightable newHighlightTarget)
+    // 대상 변경은 진행 중인 홀드를 먼저 끝내 중복 상태를 남기지 않습니다.
+    private void ChangeTarget(Collider2D newCollider, IInteractable newTarget,
+        IHighlightable newHighlightTarget)
     {
-        // 이전 하이라이트를 끕니다.
-        if (_currentHighlightTarget != null)
-        {
-            _currentHighlightTarget.SetHighlight(false);
-        }
-
+        EndHold();
+        _currentHighlightTarget?.SetHighlight(false);
+        _currentCollider = newCollider;
         _currentTarget = newTarget;
         _currentHighlightTarget = newHighlightTarget;
-
-        // 새 대상에 하이라이트를 켭니다.
-        if (_currentHighlightTarget != null)
-        {
-            _currentHighlightTarget.SetHighlight(true);
-        }
+        _currentHoldTarget = newTarget as IHoldInteractable;
+        _currentHighlightTarget?.SetHighlight(true);
     }
-
-    /// <summary>
-    /// 현재 상호작용 대상과 하이라이트를 모두 해제합니다.
-    /// </summary>
     private void ClearTarget()
     {
-        if (_currentHighlightTarget != null)
-        {
-            _currentHighlightTarget.SetHighlight(false);
-        }
-
+        EndHold();
+        _currentHighlightTarget?.SetHighlight(false);
+        _currentCollider = null;
         _currentTarget = null;
         _currentHighlightTarget = null;
+        _currentHoldTarget = null;
     }
 
-    //==============================================================================
-    // 내부 로직 — 입력
-    //==============================================================================
-
-    /// <summary>
-    /// 상호작용 입력을 감지해 TryInteract를 호출합니다.
-    /// </summary>
     private void HandleInteractionInput()
     {
-        // 입력 액션이 연결되지 않았으면 처리할 수 없습니다.
-        if (_interactAction == null)
+        if (_interactAction == null || _interactAction.action == null)
+        {
+            EndHold();
+            return;
+        }
+        InputAction action = _interactAction.action;
+        if (action.WasPressedThisFrame())
+        {
+            _currentTarget?.Interact();
+        }
+        if (action.WasReleasedThisFrame())
+        {
+            EndHold();
+            return;
+        }
+        if (!action.IsPressed() || _activeHoldTarget != null || _currentHoldTarget == null)
         {
             return;
         }
-
-        // 이번 프레임에 상호작용 입력이 들어왔을 때만 실행합니다.
-        if (_interactAction.action.WasPressedThisFrame())
-        {
-            TryInteract();
-        }
+        _activeHoldTarget = _currentHoldTarget;
+        _activeHoldTarget.OnHoldStarted();
     }
 
-    /// <summary>
-    /// 현재 포커스된 대상에 상호작용을 시도합니다.
-    /// </summary>
-    private void TryInteract()
+    private void EndHold()
     {
-        // 포커스된 대상이 없으면 아무 것도 하지 않습니다.
-        if (_currentTarget == null)
+        if (_activeHoldTarget == null)
         {
             return;
         }
-
-        _currentTarget.Interact();
-    }
-
-    //==============================================================================
-    // 유틸
-    //==============================================================================
-
-    /// <summary>
-    /// 상호작용 탐지 기준 월드 좌표를 반환합니다.
-    /// </summary>
-    /// <returns>탐지 원의 중심 좌표입니다.</returns>
-    private Vector2 GetOriginPosition()
-    {
-        if (_origin != null)
+        IHoldInteractable holdTarget = _activeHoldTarget;
+        _activeHoldTarget = null;
+        if (holdTarget is Object unityObject && unityObject == null)
         {
-            return _origin.position;
+            return;
         }
-
-        return transform.position;
+        holdTarget.OnHoldEnded();
     }
 }

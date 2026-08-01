@@ -99,4 +99,34 @@ public sealed class AltarInteractable : MonoBehaviour, IInteractable
 
         _altarPresenter.Open(this);
     }
+
+#if UNITY_EDITOR
+    private void OnValidate() => ValidateSetup();
+
+    [ContextMenu("제단 설정 검증")]
+    private void ValidateSetup()
+    {
+        if (_altarPresenter == null)
+        {
+            LogValidationError("AltarPresenter가 연결되지 않았습니다.");
+        }
+        if (string.IsNullOrWhiteSpace(_altarId))
+        {
+            LogValidationError("제단 ID가 비어 있습니다.");
+        }
+        if (string.IsNullOrWhiteSpace(_spawnPointId))
+        {
+            LogValidationError("SpawnPoint ID가 비어 있습니다.");
+        }
+        if (_stageNumber < 0)
+        {
+            LogValidationError("스테이지 번호는 0 이상이어야 합니다.");
+        }
+    }
+
+    private void LogValidationError(string message)
+    {
+        Debug.LogError($"[AltarInteractable] {name}: {message}", this);
+    }
+#endif
 }

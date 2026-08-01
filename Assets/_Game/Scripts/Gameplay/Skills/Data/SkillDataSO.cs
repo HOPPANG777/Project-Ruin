@@ -92,4 +92,35 @@ public sealed class SkillDataSO : ScriptableObject
     /// <summary>스킬을 획득하는 챕터 번호입니다.</summary>
     public int Chapter => _chapter;
 
+#if UNITY_EDITOR
+    private void OnValidate() => ValidateData();
+
+    [ContextMenu("스킬 데이터 검증")]
+    private void ValidateData()
+    {
+        if (string.IsNullOrWhiteSpace(_skillId))
+        {
+            LogValidationIssue("스킬 ID가 비어 있습니다.", true);
+        }
+        if (string.IsNullOrWhiteSpace(_displayNameKey))
+        {
+            LogValidationIssue("이름 Localization Key가 비어 있습니다.", true);
+        }
+        if (string.IsNullOrWhiteSpace(_descriptionKey))
+        {
+            LogValidationIssue("설명 Localization Key가 비어 있습니다.", true);
+        }
+        if (_icon == null)
+        {
+            LogValidationIssue("아이콘이 연결되지 않았습니다.", false);
+        }
+    }
+
+    private void LogValidationIssue(string message, bool isError)
+    {
+        string formattedMessage = $"[SkillDataSO] {name}: {message}";
+        if (isError) Debug.LogError(formattedMessage, this);
+        else Debug.LogWarning(formattedMessage, this);
+    }
+#endif
 }

@@ -62,16 +62,16 @@ public sealed class RelicRestorationControllerTests
         _createdObjects.Clear();
     }
     [Test]
-    public void AcquiredTechnologyBecomesReturnable()
+    public void AcquiredTechnologyIsReturnableUntilReturned()
     {
         List<TechnologyDataSO> buffer = new List<TechnologyDataSO>();
-
         bool acquired = _controller.TryAcquireTechnology(TECHNOLOGY_POWER, out _);
         int count = _controller.FillReturnableTechnologies(buffer);
-
         Assert.That(acquired, Is.True);
         Assert.That(count, Is.EqualTo(1));
         Assert.That(buffer[0].TechnologyId, Is.EqualTo(TECHNOLOGY_POWER));
+        Assert.That(_controller.TryReturnTechnology(TECHNOLOGY_POWER, out _, out _), Is.True);
+        Assert.That(_controller.FillReturnableTechnologies(buffer), Is.Zero);
     }
     [Test]
     public void TechnologyCannotBeAcquiredTwice()

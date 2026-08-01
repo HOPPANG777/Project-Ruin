@@ -11,10 +11,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Timeline;
-//=============================================================================
-// Synopsis:   RelicRestorationCatalogSO;
-//                - 재건 시스템의 읽기 전용 설정과 데이터 검증
-//=============================================================================
+
+// 재건 시스템의 읽기 전용 설정과 데이터 검증을 담당합니다.
 [CreateAssetMenu(menuName = "_Game/Relics/Restoration Catalog", fileName = "RelicRestorationCatalog")]
 public sealed class RelicRestorationCatalogSO : ScriptableObject
 {
@@ -59,9 +57,7 @@ public sealed class RelicRestorationCatalogSO : ScriptableObject
         /// <summary>박물관의 메인 제단인지 여부입니다.</summary>
         public bool IsMainAltar => _isMainAltar;
     }
-    //========================================
     // 직렬화 필드
-    //========================================
     [Header("Technologies")]
     [Tooltip("획득하고 반환할 수 있는 문명 기술 목록입니다.")]
     [FormerlySerializedAs("_skills")]
@@ -80,13 +76,6 @@ public sealed class RelicRestorationCatalogSO : ScriptableObject
     public IReadOnlyList<RestorationStageEntry> Stages => _stages;
     /// <summary>텔레포트 화면에 사용할 제단 목적지 목록입니다.</summary>
     public IReadOnlyList<AltarDestinationEntry> AltarDestinations => _altarDestinations;
-    //=============================================================================
-    // RelicRestorationCatalogSO.TryValidate
-    //=============================================================================
-    // Description: 기술, 복원 단계와 제단 목적지의 필수 값을 검증한다.
-    // Parameters:  ( out string errorMessage )
-    // Return:      bool — 모든 데이터가 유효하면 true
-    //=============================================================================
     /// <summary>등록된 재건 데이터를 검증합니다.</summary>
     public bool TryValidate(out string errorMessage)
     {
@@ -95,11 +84,21 @@ public sealed class RelicRestorationCatalogSO : ScriptableObject
             && TryValidateAltars(out errorMessage);
     }
 #if UNITY_EDITOR
-    private void OnValidate()
+    private void OnValidate() => LogValidationResult(false);
+
+    [ContextMenu("기술 Catalog 검증")]
+    private void ValidateCatalog() => LogValidationResult(true);
+
+    private void LogValidationResult(bool logSuccess)
     {
         if (!TryValidate(out string errorMessage))
         {
-            Debug.LogWarning($"[RelicRestorationCatalogSO] {errorMessage}", this);
+            Debug.LogWarning($"[RelicRestorationCatalogSO] {name}: {errorMessage}", this);
+            return;
+        }
+        if (logSuccess)
+        {
+            Debug.Log($"[RelicRestorationCatalogSO] {name}: 기술 Catalog 설정이 유효합니다.", this);
         }
     }
 #endif
@@ -117,9 +116,10 @@ public sealed class RelicRestorationCatalogSO : ScriptableObject
             TechnologyDataSO technology = _technologies[i];
             if (technology == null || string.IsNullOrWhiteSpace(technology.TechnologyId)
                 || string.IsNullOrWhiteSpace(technology.DisplayNameKey)
-                || string.IsNullOrWhiteSpace(technology.DescriptionKey))
+                || string.IsNullOrWhiteSpace(technology.DescriptionKey)
+                || technology.RestoreValue < 0)
             {
-                errorMessage = $"기술 {i}번 항목의 참조, ID 또는 표시 키가 비어 있습니다.";
+                errorMessage = $"기술 {i}번 항목의 참조, ID, 표시 키 또는 재건 기여도가 잘못되었습니다.";
                 return false;
             }
             for (int compareIndex = i + 1; compareIndex < _technologies.Count; compareIndex++)
