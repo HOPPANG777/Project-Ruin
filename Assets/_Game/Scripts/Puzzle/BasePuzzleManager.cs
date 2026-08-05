@@ -35,6 +35,9 @@ public abstract class BasePuzzleManager : MonoBehaviour
     /// <summary>퍼즐 구성 요소 사이의 UI 간격입니다.</summary>
     protected float ItemSpacing => _itemSpacing;
 
+    /// <summary>퍼즐 초기화에 CSV 게임 데이터가 필요한지 여부입니다.</summary>
+    public virtual bool RequiresGameData => true;
+
     /// <summary>CSV 게임 데이터 저장소 의존성을 주입합니다.</summary>
     public void Init(IGameDataRepository gameDataRepository)
     {

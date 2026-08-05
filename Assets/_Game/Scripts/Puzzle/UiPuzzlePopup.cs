@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -30,11 +31,33 @@ public sealed class UiPuzzlePopup : MonoBehaviour
     [SerializeField]
     private float _closeDelaySeconds = 3f;
 
+    [Header("Lifecycle")]
+    [Tooltip("닫힌 동안 퍼즐 매니저 컴포넌트도 비활성화할지 결정합니다.")]
+    [SerializeField]
+    private bool _disablePuzzleManagerWhenClosed = true;
+
+    [Tooltip("클리어 이벤트를 받으면 이 팝업이 자동으로 닫힐지 결정합니다.")]
+    [SerializeField]
+    private bool _closeAutomaticallyOnClear = true;
+
     private bool _isCloseScheduled;
+    private bool _isAwakeComplete;
     private float _closeAtUnscaledTime;
+
+    /// <summary>팝업이 열린 뒤 실제 닫힐 때 호출되는 이벤트입니다.</summary>
+    public event Action OnPopupClosedEvent;
 
     /// <summary>이 팝업이 직접 초기화하는 퍼즐 매니저입니다.</summary>
     public BasePuzzleManager PuzzleManager => _uiPuzzleManager;
+
+    /// <summary>현재 팝업 컨테이너가 열려 있는지 여부입니다.</summary>
+    public bool IsOpen => _popupContainer != null && _popupContainer.activeSelf;
+
+    /// <summary>닫혀도 퍼즐 매니저가 상호작용을 받을 수 있는지 여부입니다.</summary>
+    public bool KeepsPuzzleManagerEnabled => !_disablePuzzleManagerWhenClosed;
+
+    /// <summary>클리어 이벤트의 자동 닫기 여부입니다.</summary>
+    public bool ClosesAutomaticallyOnClear => _closeAutomaticallyOnClear;
 
     private void Awake()
     {
@@ -49,6 +72,7 @@ public sealed class UiPuzzlePopup : MonoBehaviour
         }
 
         ClosePopup();
+        _isAwakeComplete = true;
     }
 
     private void Update()
@@ -86,13 +110,19 @@ public sealed class UiPuzzlePopup : MonoBehaviour
             return;
         }
 
-        if (!GameRoot.TryGetInstance(out GameRoot gameRoot) || gameRoot.GameData == null)
+        GameRoot gameRoot = null;
+        if (_uiPuzzleManager.RequiresGameData
+            && (!GameRoot.TryGetInstance(out gameRoot) || gameRoot.GameData == null))
         {
             Debug.LogError("[UiPuzzlePopup] GameRoot의 CSV 게임 데이터 초기화가 아직 완료되지 않았습니다.");
             return;
         }
 
-        _uiPuzzleManager.Init(gameRoot.GameData);
+        if (_uiPuzzleManager.RequiresGameData)
+        {
+            _uiPuzzleManager.Init(gameRoot.GameData);
+        }
+
         _popupContainer.SetActive(true);
         _uiPuzzleManager.enabled = true;
         _uiPuzzleManager.InitializePuzzle();
@@ -102,23 +132,40 @@ public sealed class UiPuzzlePopup : MonoBehaviour
     public void ClosePopup()
     {
         _isCloseScheduled = false;
+        bool wasOpen = IsOpen;
 
         if (_popupContainer != null)
         {
             _popupContainer.SetActive(false);
         }
 
-        if (_uiPuzzleManager != null)
+        if (_uiPuzzleManager != null && _disablePuzzleManagerWhenClosed)
         {
             _uiPuzzleManager.enabled = false;
+        }
+
+        if (_isAwakeComplete && wasOpen)
+        {
+            OnPopupClosedEvent?.Invoke();
         }
     }
 
     private void OnPuzzleCleared()
     {
+        if (!_closeAutomaticallyOnClear || !IsOpen)
+        {
+            return;
+        }
+
         if (_uiPuzzleManager != null)
         {
             _uiPuzzleManager.enabled = false;
+        }
+
+        if (_closeDelaySeconds <= 0f)
+        {
+            ClosePopup();
+            return;
         }
 
         _isCloseScheduled = true;
