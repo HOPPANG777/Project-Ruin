@@ -52,6 +52,11 @@ public static class GameDataCsvLoader
             || !PuzzleCsvDefinitionLoader.TryLoad(
                 source,
                 out List<PuzzleDefinition> puzzles,
+                out loadError)
+            || !ShopCsvDefinitionLoader.TryLoad(
+                source.Shops,
+                source.ShopStock,
+                out List<ShopDefinition> shops,
                 out loadError))
         {
             return false;
@@ -66,6 +71,7 @@ public static class GameDataCsvLoader
             npcDialogueBindings,
             npcQuestDialogueRoutes,
             puzzles,
+            shops,
             out repository,
             out GameDataRepositoryBuildError buildError))
         {

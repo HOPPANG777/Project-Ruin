@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -49,6 +50,16 @@ public class InventoryController : MonoBehaviour, IInventoryService
     // 같은 아이템을 다시 획득했을 때 최근 획득 순서로 옮기기 위한 임시 목록입니다.
     private readonly List<InventorySlotData> _movingSlots = new List<InventorySlotData>();
 
+    // Reset 시 같은 ItemId의 최종 수량 이벤트를 한 번만 보내기 위한 재사용 집합입니다.
+    private readonly HashSet<string> _resetItemIds = new HashSet<string>(StringComparer.Ordinal);
+
+    //==============================================================================
+    // 공개 이벤트
+    //==============================================================================
+
+    /// <summary>아이템 수량 변경 후 ItemId와 최종 보유 수량을 전달합니다.</summary>
+    public event Action<string, int> ItemCountChanged;
+
     //==============================================================================
     // 초기화
     //==============================================================================
@@ -76,29 +87,34 @@ public class InventoryController : MonoBehaviour, IInventoryService
     /// <returns>아이템 데이터와 개수가 유효하고 추가에 성공하면 true입니다.</returns>
     public bool TryAddItem(string itemId, int amount)
     {
-        if (amount < INVENTORY_MIN_ITEM_AMOUNT)
+        if (!CanAddItem(itemId, amount)
+            || !TryGetItem(itemId, out ItemDefinition itemData))
         {
             return false;
         }
 
-        if (!TryGetItem(itemId, out ItemDefinition itemData))
+        if (!AddItemAmount(itemData, amount))
         {
             return false;
         }
 
-        int maxStackCount = GetSafeMaxStackCount(itemData);
-        bool isFirstAcquisition = GetItemCount(itemData.ItemId) == 0;
-        int remainingAmount = amount;
+        NotifyItemCountChanged(itemData.ItemId);
+        return true;
+    }
 
-        FillExistingStacks(itemData.ItemId, maxStackCount, ref remainingAmount);
-        CreateOverflowSlots(itemData.ItemId, maxStackCount, isFirstAcquisition, ref remainingAmount);
-
-        if (HasAnyManualSlotOrder() == false)
+    /// <summary>
+    /// 아이템을 현재 수량과 int 범위를 넘지 않고 추가할 수 있는지 확인합니다.
+    /// </summary>
+    public bool CanAddItem(string itemId, int amount)
+    {
+        if (amount < INVENTORY_MIN_ITEM_AMOUNT
+            || !TryGetItem(itemId, out ItemDefinition itemData)
+            || !TryGetItemCount(itemData.ItemId, out int currentCount))
         {
-            MoveItemSlotsToRecentEnd(itemData.ItemId);
+            return false;
         }
 
-        return remainingAmount == 0;
+        return currentCount <= int.MaxValue - amount;
     }
 
     /// <summary>
@@ -119,18 +135,68 @@ public class InventoryController : MonoBehaviour, IInventoryService
             return false;
         }
 
-        if (GetItemCount(normalizedItemId) < amount)
+        if (!TryGetItemCount(normalizedItemId, out int currentCount)
+            || currentCount < amount)
         {
             return false;
         }
 
+        if (!RemoveItemAmount(normalizedItemId, amount))
+        {
+            return false;
+        }
+
+        NotifyItemCountChanged(normalizedItemId);
+        return true;
+    }
+
+    /// <summary>
+    /// 한 아이템을 제거하고 다른 아이템을 추가하는 교환을 원자적으로 처리합니다.
+    /// </summary>
+    public bool TryExchangeItem(
+        string removeItemId,
+        int removeAmount,
+        string addItemId,
+        int addAmount)
+    {
+        if (!TryNormalizeItemId(removeItemId, out string normalizedRemoveId)
+            || !TryNormalizeItemId(addItemId, out string normalizedAddId)
+            || normalizedRemoveId == normalizedAddId
+            || removeAmount < INVENTORY_MIN_ITEM_AMOUNT
+            || addAmount < INVENTORY_MIN_ITEM_AMOUNT)
+        {
+            return false;
+        }
+
+        if (!TryGetItemCount(normalizedRemoveId, out int removeCount)
+            || removeCount < removeAmount
+            || !CanAddItem(normalizedAddId, addAmount)
+            || !TryGetItem(normalizedAddId, out ItemDefinition addItemData))
+        {
+            return false;
+        }
+
+        // 모든 실패 조건을 먼저 확인했으므로 두 변경은 중간 실패 없이 연속 적용됩니다.
+        if (!RemoveItemAmount(normalizedRemoveId, removeAmount)
+            || !AddItemAmount(addItemData, addAmount))
+        {
+            return false;
+        }
+
+        NotifyItemCountChanged(normalizedRemoveId);
+        NotifyItemCountChanged(normalizedAddId);
+        return true;
+    }
+
+    private bool RemoveItemAmount(string itemId, int amount)
+    {
         int remainingAmount = amount;
 
         for (int i = _slots.Count - 1; i >= 0; i--)
         {
             InventorySlotData slotData = _slots[i];
 
-            if (IsMatchingSlot(slotData, normalizedItemId) == false)
+            if (IsMatchingSlot(slotData, itemId) == false)
             {
                 continue;
             }
@@ -210,24 +276,7 @@ public class InventoryController : MonoBehaviour, IInventoryService
     /// <returns>보유 중인 전체 수량입니다. 아이템 ID가 유효하지 않거나 보유하지 않으면 0입니다.</returns>
     public int GetItemCount(string itemId)
     {
-        if (!TryNormalizeItemId(itemId, out string normalizedItemId))
-        {
-            return 0;
-        }
-
-        int itemCount = 0;
-
-        for (int i = 0; i < _slots.Count; i++)
-        {
-            InventorySlotData slotData = _slots[i];
-
-            if (IsMatchingSlot(slotData, normalizedItemId))
-            {
-                itemCount += slotData.Quantity;
-            }
-        }
-
-        return itemCount;
+        return TryGetItemCount(itemId, out int itemCount) ? itemCount : 0;
     }
 
     /// <summary>
@@ -256,6 +305,27 @@ public class InventoryController : MonoBehaviour, IInventoryService
 
         RebuildSlotIndexCache();
         _visibleSlots.Sort(CompareInventorySlots);
+
+        return _visibleSlots;
+    }
+
+    /// <summary>
+    /// 현재 보유 슬롯을 최근 획득한 아이템부터 조회합니다.
+    /// </summary>
+    /// <returns>내부 버퍼를 재사용하는 읽기 전용 슬롯 목록입니다.</returns>
+    public IReadOnlyList<InventorySlotData> GetSlotsByAcquisitionOrder()
+    {
+        _visibleSlots.Clear();
+
+        for (int i = _slots.Count - 1; i >= 0; i--)
+        {
+            InventorySlotData slotData = _slots[i];
+
+            if (slotData != null && slotData.IsEmpty == false)
+            {
+                _visibleSlots.Add(slotData);
+            }
+        }
 
         return _visibleSlots;
     }
@@ -355,10 +425,29 @@ public class InventoryController : MonoBehaviour, IInventoryService
     /// </summary>
     public void Reset()
     {
+        _resetItemIds.Clear();
+
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            InventorySlotData slotData = _slots[i];
+
+            if (slotData != null && slotData.TryGetItemId(out string itemId))
+            {
+                _resetItemIds.Add(itemId);
+            }
+        }
+
         _slots.Clear();
         _visibleSlots.Clear();
         _slotIndexBySlot.Clear();
         _movingSlots.Clear();
+
+        foreach (string itemId in _resetItemIds)
+        {
+            ItemCountChanged?.Invoke(itemId, 0);
+        }
+
+        _resetItemIds.Clear();
     }
 
     //==============================================================================
@@ -400,6 +489,23 @@ public class InventoryController : MonoBehaviour, IInventoryService
                 remainingAmount -= addAmount;
             }
         }
+    }
+
+    private bool AddItemAmount(ItemDefinition itemData, int amount)
+    {
+        int maxStackCount = GetSafeMaxStackCount(itemData);
+        bool isFirstAcquisition = GetItemCount(itemData.ItemId) == 0;
+        int remainingAmount = amount;
+
+        FillExistingStacks(itemData.ItemId, maxStackCount, ref remainingAmount);
+        CreateOverflowSlots(itemData.ItemId, maxStackCount, isFirstAcquisition, ref remainingAmount);
+
+        if (HasAnyManualSlotOrder() == false)
+        {
+            MoveItemSlotsToRecentEnd(itemData.ItemId);
+        }
+
+        return remainingAmount == 0;
     }
 
     /// <summary>
@@ -482,6 +588,46 @@ public class InventoryController : MonoBehaviour, IInventoryService
 
         normalizedItemId = itemId.Trim();
         return true;
+    }
+
+    private bool TryGetItemCount(string itemId, out int itemCount)
+    {
+        itemCount = 0;
+
+        if (!TryNormalizeItemId(itemId, out string normalizedItemId))
+        {
+            return false;
+        }
+
+        long totalCount = 0L;
+
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            InventorySlotData slotData = _slots[i];
+
+            if (!IsMatchingSlot(slotData, normalizedItemId))
+            {
+                continue;
+            }
+
+            totalCount += slotData.Quantity;
+
+            if (totalCount > int.MaxValue)
+            {
+                return false;
+            }
+        }
+
+        itemCount = (int)totalCount;
+        return true;
+    }
+
+    private void NotifyItemCountChanged(string itemId)
+    {
+        if (TryGetItemCount(itemId, out int itemCount))
+        {
+            ItemCountChanged?.Invoke(itemId, itemCount);
+        }
     }
 
     /// <summary>

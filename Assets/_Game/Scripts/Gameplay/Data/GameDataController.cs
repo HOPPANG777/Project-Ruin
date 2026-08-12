@@ -42,6 +42,19 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
     private TextAsset _itemsCsv;
 
     //==============================================================================
+    // 직렬화 필드 - Shop
+    //==============================================================================
+
+    [Header("Optional Shop CSV")]
+    [Tooltip("상점별 화폐를 정의하는 선택적 shops.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _shopsCsv;
+
+    [Tooltip("상점별 초기 재고와 표시 순서를 정의하는 선택적 shop_stock.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _shopStockCsv;
+
+    //==============================================================================
     // 직렬화 필드 - Quest
     //==============================================================================
 
@@ -248,7 +261,9 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
             CreateCsvFile(_puzzlesCsv),
             CreateCsvFile(_puzzleLightTilesCsv),
             CreateCsvFile(_puzzlePipeTilesCsv),
-            CreateCsvFile(_puzzleCircleRingsCsv));
+            CreateCsvFile(_puzzleCircleRingsCsv),
+            CreateOptionalCsvFile(_shopsCsv),
+            CreateOptionalCsvFile(_shopStockCsv));
         return true;
     }
 

@@ -28,7 +28,10 @@ public enum DialogueActionType
     CLAIM_QUEST_REWARD,
 
     // 현재 대화를 즉시 종료합니다.
-    END_DIALOGUE
+    END_DIALOGUE,
+
+    // action_id에 지정한 상점을 엽니다.
+    OPEN_SHOP
 }
 
 //==============================================================================

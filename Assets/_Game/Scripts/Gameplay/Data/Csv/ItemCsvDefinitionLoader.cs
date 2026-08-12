@@ -14,6 +14,7 @@ public static class ItemCsvDefinitionLoader
         "description_text_key",
         "icon_id",
         "price",
+        "can_sell",
         "item_type",
         "max_stack_count"
     };
@@ -47,6 +48,7 @@ public static class ItemCsvDefinitionLoader
                 || !CsvDefinitionReadUtility.TryGetRequiredLocalizationKey(row, document.SourceName, "description_text_key", out string descriptionTextKey, out loadError)
                 || !CsvDefinitionReadUtility.TryGetOptionalSystemId(row, document.SourceName, "icon_id", out string iconId, out loadError)
                 || !CsvDefinitionReadUtility.TryGetNonNegativeInt(row, document.SourceName, "price", out int price, out loadError)
+                || !CsvDefinitionReadUtility.TryGetRequiredBool(row, document.SourceName, "can_sell", out bool canSell, out loadError)
                 || !CsvDefinitionReadUtility.TryGetRequiredValue(row, document.SourceName, "item_type", out string itemTypeText, out loadError)
                 || !CsvDefinitionReadUtility.TryGetPositiveInt(row, document.SourceName, "max_stack_count", out int maxStackCount, out loadError))
             {
@@ -80,6 +82,7 @@ public static class ItemCsvDefinitionLoader
                 descriptionTextKey,
                 iconId,
                 price,
+                canSell,
                 itemType,
                 maxStackCount));
         }

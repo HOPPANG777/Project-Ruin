@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -9,6 +10,9 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public sealed class DialogueController : MonoBehaviour, IDialogueService
 {
+    /// <summary>검증된 shop_id를 대화 종료 후 전달합니다.</summary>
+    public event Action<string> ShopOpenRequested;
+
     //==============================================================================
     // 직렬화 필드
     //==============================================================================
@@ -267,6 +271,13 @@ public sealed class DialogueController : MonoBehaviour, IDialogueService
         }
 
         DialogueChoiceDefinition choice = _currentNode.Choices[choiceIndex];
+
+        if (choice.ActionType == DialogueActionType.OPEN_SHOP)
+        {
+            TryOpenShop(choice.ActionId);
+            return;
+        }
+
         ApplyChoiceAction(choice);
 
         if (choice.ActionType == DialogueActionType.END_DIALOGUE)
@@ -619,6 +630,22 @@ public sealed class DialogueController : MonoBehaviour, IDialogueService
                 _questService?.TryClaimReward(choice.ActionId);
                 break;
         }
+    }
+
+    /// <summary>상점 ID와 요청 수신자를 확인한 후 대화를 닫고 상점 요청을 전달합니다.</summary>
+    private bool TryOpenShop(string shopId)
+    {
+        if (_gameDataRepository == null
+            || !_gameDataRepository.TryGetShop(shopId, out _)
+            || ShopOpenRequested == null)
+        {
+            Debug.LogWarning($"[DialogueController] 상점을 열 수 없습니다. shopId={shopId}");
+            return false;
+        }
+
+        EndDialogue();
+        ShopOpenRequested.Invoke(shopId);
+        return true;
     }
 
     /// <summary>

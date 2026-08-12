@@ -44,6 +44,8 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
     private float _initialRotation;
     private bool _isHolding;
     private bool _isPuzzleCompleted;
+    /// <summary>외부 퍼즐 초기화에서 이 돌을 최초 위치로 복원할 수 있는지 나타냅니다.</summary>
+    public bool CanResetToInitialPosition => _canReset;
     private void Awake()
     {
         _rigidbody = GetComponent<Rigidbody2D>();
@@ -175,7 +177,11 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
         {
             LogValidationIssue("필요 스킬은 ID가 있는 홀드 이동 스킬이어야 합니다.", true);
         }
-        if (_playerMoveController == null) LogValidationIssue("PlayerMoveController가 연결되지 않았습니다.", true);
+        if (_playerMoveController == null
+            && !UnityEditor.PrefabUtility.IsPartOfPrefabAsset(gameObject))
+        {
+            LogValidationIssue("PlayerMoveController가 연결되지 않았습니다.", true);
+        }
         if (!TryGetComponent<Rigidbody2D>(out _)) LogValidationIssue("Rigidbody2D가 없습니다.", true);
         if (!TryGetComponent<Collider2D>(out _)) LogValidationIssue("Collider2D가 없습니다.", true);
         if (_obstacleLayer.value == 0) LogValidationIssue("막힘 검사 LayerMask가 비어 있습니다.", false);

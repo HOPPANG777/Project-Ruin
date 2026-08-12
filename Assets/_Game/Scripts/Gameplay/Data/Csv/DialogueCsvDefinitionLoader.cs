@@ -531,6 +531,7 @@ public static class DialogueCsvDefinitionLoader
             case "COMPLETE_QUEST": actionType = DialogueActionType.COMPLETE_QUEST; return true;
             case "CLAIM_QUEST_REWARD": actionType = DialogueActionType.CLAIM_QUEST_REWARD; return true;
             case "END_DIALOGUE": actionType = DialogueActionType.END_DIALOGUE; return true;
+            case "OPEN_SHOP": actionType = DialogueActionType.OPEN_SHOP; return true;
             default: return false;
         }
     }

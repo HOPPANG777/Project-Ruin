@@ -53,6 +53,12 @@ public sealed class GameDataRepository : IGameDataRepository
     // 저장소 생성 오류에서 사용하는 퍼즐 데이터 종류 이름입니다.
     private const string DATA_TYPE_PUZZLE = "Puzzle";
 
+    // 저장소 생성 오류에서 사용하는 상점 데이터 종류 이름입니다.
+    private const string DATA_TYPE_SHOP = "Shop";
+
+    // 저장소 생성 오류에서 사용하는 상점 재고 데이터 종류 이름입니다.
+    private const string DATA_TYPE_SHOP_STOCK = "ShopStock";
+
     //==============================================================================
     // 내부 상태
     //==============================================================================
@@ -87,6 +93,9 @@ public sealed class GameDataRepository : IGameDataRepository
     // 퍼즐 ID별 퍼즐 정의 인덱스입니다.
     private readonly Dictionary<string, PuzzleDefinition> _puzzleById;
 
+    // 상점 ID별 상점 정의 인덱스입니다.
+    private readonly Dictionary<string, ShopDefinition> _shopById;
+
     //==============================================================================
     // 공개 프로퍼티
     //==============================================================================
@@ -109,6 +118,9 @@ public sealed class GameDataRepository : IGameDataRepository
     /// <summary>등록된 퍼즐 개수입니다.</summary>
     public int PuzzleCount => _puzzleById.Count;
 
+    /// <summary>등록된 상점 개수입니다.</summary>
+    public int ShopCount => _shopById.Count;
+
     //==============================================================================
     // 생성자
     //==============================================================================
@@ -128,6 +140,7 @@ public sealed class GameDataRepository : IGameDataRepository
         _npcDialogueBindingById = new Dictionary<string, NpcDialogueBindingDefinition>(StringComparer.Ordinal);
         _npcQuestDialogueRoutesById = new Dictionary<string, IReadOnlyList<NpcQuestDialogueRouteDefinition>>(StringComparer.Ordinal);
         _puzzleById = new Dictionary<string, PuzzleDefinition>(StringComparer.Ordinal);
+        _shopById = new Dictionary<string, ShopDefinition>(StringComparer.Ordinal);
     }
 
     //==============================================================================
@@ -156,6 +169,7 @@ public sealed class GameDataRepository : IGameDataRepository
         IReadOnlyList<NpcDialogueBindingDefinition> npcDialogueBindings,
         IReadOnlyList<NpcQuestDialogueRouteDefinition> npcQuestDialogueRoutes,
         IReadOnlyList<PuzzleDefinition> puzzles,
+        IReadOnlyList<ShopDefinition> shops,
         out GameDataRepository repository,
         out GameDataRepositoryBuildError buildError)
     {
@@ -200,6 +214,11 @@ public sealed class GameDataRepository : IGameDataRepository
         }
 
         if (!candidateRepository.TryAddPuzzles(puzzles, out buildError))
+        {
+            return false;
+        }
+
+        if (!candidateRepository.TryAddShops(shops, out buildError))
         {
             return false;
         }
@@ -345,6 +364,21 @@ public sealed class GameDataRepository : IGameDataRepository
         }
 
         return _puzzleById.TryGetValue(puzzleId, out puzzleDefinition);
+    }
+
+    /// <summary>
+    /// 상점 ID로 검증된 상점 정의를 조회합니다.
+    /// </summary>
+    public bool TryGetShop(string shopId, out ShopDefinition shopDefinition)
+    {
+        shopDefinition = null;
+
+        if (string.IsNullOrWhiteSpace(shopId))
+        {
+            return false;
+        }
+
+        return _shopById.TryGetValue(shopId, out shopDefinition);
     }
 
     /// <summary>
@@ -569,6 +603,7 @@ public sealed class GameDataRepository : IGameDataRepository
             if (string.IsNullOrWhiteSpace(item.DisplayNameKey)
                 || string.IsNullOrWhiteSpace(item.DescriptionTextKey)
                 || item.Price < 0
+                || (item.CanSell && item.Price == 0)
                 || !Enum.IsDefined(typeof(ItemType), item.ItemType)
                 || item.MaxStackCount < 1)
             {
@@ -647,6 +682,75 @@ public sealed class GameDataRepository : IGameDataRepository
             if (!_puzzleById.TryAdd(puzzle.PuzzleId, puzzle))
             {
                 return FailBuild(DATA_TYPE_PUZZLE, puzzle.PuzzleId, "중복 퍼즐 ID가 있습니다.", out buildError);
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 상점 정의와 재고 구조를 검증하고 상점 ID 인덱스에 추가합니다.
+    /// </summary>
+    private bool TryAddShops(
+        IReadOnlyList<ShopDefinition> shops,
+        out GameDataRepositoryBuildError buildError)
+    {
+        buildError = null;
+
+        if (shops == null)
+        {
+            return true;
+        }
+
+        for (int i = 0; i < shops.Count; i++)
+        {
+            ShopDefinition shop = shops[i];
+
+            if (shop == null || string.IsNullOrWhiteSpace(shop.ShopId)
+                || string.IsNullOrWhiteSpace(shop.CurrencyItemId))
+            {
+                return FailBuild(DATA_TYPE_SHOP, string.Empty, "상점 ID 또는 화폐 아이템 ID가 비어 있습니다.", out buildError);
+            }
+
+            if (!TryValidateShopStockStructure(shop, out buildError))
+            {
+                return false;
+            }
+
+            if (!_shopById.TryAdd(shop.ShopId, shop))
+            {
+                return FailBuild(DATA_TYPE_SHOP, shop.ShopId, "중복 상점 ID가 있습니다.", out buildError);
+            }
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateShopStockStructure(
+        ShopDefinition shop,
+        out GameDataRepositoryBuildError buildError)
+    {
+        buildError = null;
+
+        for (int i = 0; i < shop.Stock.Count; i++)
+        {
+            ShopStockDefinition stock = shop.Stock[i];
+
+            if (stock == null || stock.ShopId != shop.ShopId
+                || string.IsNullOrWhiteSpace(stock.ItemId)
+                || stock.DisplayOrder < 0 || stock.InitialStock < 0)
+            {
+                return FailBuild(DATA_TYPE_SHOP_STOCK, shop.ShopId, "상점 재고 필수 값이 유효하지 않습니다.", out buildError);
+            }
+
+            for (int j = 0; j < i; j++)
+            {
+                ShopStockDefinition previous = shop.Stock[j];
+
+                if (previous.ItemId == stock.ItemId || previous.DisplayOrder == stock.DisplayOrder)
+                {
+                    return FailBuild(DATA_TYPE_SHOP_STOCK, shop.ShopId, "중복 상품 또는 표시 순서가 있습니다.", out buildError);
+                }
             }
         }
 
@@ -999,6 +1103,11 @@ public sealed class GameDataRepository : IGameDataRepository
             return false;
         }
 
+        if (!TryValidateShopReferences(out buildError))
+        {
+            return false;
+        }
+
         if (!TryValidateQuestReferences(out buildError))
         {
             return false;
@@ -1026,6 +1135,38 @@ public sealed class GameDataRepository : IGameDataRepository
                     item.ItemId,
                     "아이템 이름 또는 설명 문장 키를 찾을 수 없습니다.",
                     out buildError);
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 상점 화폐와 상품 아이템 및 공통 가격·판매 가능 정책을 검증합니다.
+    /// </summary>
+    private bool TryValidateShopReferences(out GameDataRepositoryBuildError buildError)
+    {
+        buildError = null;
+
+        foreach (KeyValuePair<string, ShopDefinition> shopPair in _shopById)
+        {
+            ShopDefinition shop = shopPair.Value;
+
+            if (!_itemById.TryGetValue(shop.CurrencyItemId, out ItemDefinition currency)
+                || currency.CanSell)
+            {
+                return FailBuild(DATA_TYPE_SHOP, shop.ShopId, "화폐 아이템이 없거나 판매 가능으로 설정됐습니다.", out buildError);
+            }
+
+            for (int i = 0; i < shop.Stock.Count; i++)
+            {
+                ShopStockDefinition stock = shop.Stock[i];
+
+                if (!_itemById.TryGetValue(stock.ItemId, out ItemDefinition item)
+                    || stock.ItemId == shop.CurrencyItemId || item.Price <= 0 || !item.CanSell)
+                {
+                    return FailBuild(DATA_TYPE_SHOP_STOCK, stock.ItemId, "상품 아이템, 가격 또는 판매 가능 정책이 유효하지 않습니다.", out buildError);
+                }
             }
         }
 
@@ -1217,6 +1358,16 @@ public sealed class GameDataRepository : IGameDataRepository
                     || !string.IsNullOrWhiteSpace(choice.NextNodeId))
                 {
                     return FailBuild(DATA_TYPE_DIALOGUE_CHOICE, choice.NodeId, "END_DIALOGUE 액션은 액션 ID와 다음 노드를 가질 수 없습니다.", out buildError);
+                }
+
+                return true;
+
+            case DialogueActionType.OPEN_SHOP:
+                if (string.IsNullOrWhiteSpace(choice.ActionId)
+                    || !_shopById.ContainsKey(choice.ActionId)
+                    || !string.IsNullOrWhiteSpace(choice.NextNodeId))
+                {
+                    return FailBuild(DATA_TYPE_DIALOGUE_CHOICE, choice.NodeId, "OPEN_SHOP 액션은 존재하는 상점 ID만 가져야 합니다.", out buildError);
                 }
 
                 return true;

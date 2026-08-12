@@ -24,6 +24,9 @@ public interface IGameDataRepository
     /// <summary>등록된 퍼즐 개수입니다.</summary>
     int PuzzleCount { get; }
 
+    /// <summary>등록된 상점 개수입니다.</summary>
+    int ShopCount { get; }
+
     /// <summary>
     /// 화자 ID로 대화 화자 정의를 조회합니다.
     /// </summary>
@@ -84,6 +87,14 @@ public interface IGameDataRepository
     /// <param name="puzzleDefinition">조회된 퍼즐 정의입니다.</param>
     /// <returns>퍼즐 정의를 찾으면 true입니다.</returns>
     bool TryGetPuzzle(string puzzleId, out PuzzleDefinition puzzleDefinition);
+
+    /// <summary>
+    /// 상점 ID로 검증된 상점 정의를 조회합니다.
+    /// </summary>
+    /// <param name="shopId">조회할 상점 ID입니다.</param>
+    /// <param name="shopDefinition">조회된 상점 정의입니다.</param>
+    /// <returns>상점 정의를 찾으면 true입니다.</returns>
+    bool TryGetShop(string shopId, out ShopDefinition shopDefinition);
 
     /// <summary>
     /// 문장 키로 로컬라이징 정의를 조회합니다.

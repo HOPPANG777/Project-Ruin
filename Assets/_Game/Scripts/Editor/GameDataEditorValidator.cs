@@ -280,6 +280,12 @@ internal static class GameDataEditorValidator
         GameDataCsvFile npcQuestDialogueRoutes = GetOptionalCsvFile(
             controllerSerializedObject,
             "_npcQuestDialogueRoutesCsv");
+        GameDataCsvFile shops = GetOptionalCsvFile(
+            controllerSerializedObject,
+            "_shopsCsv");
+        GameDataCsvFile shopStock = GetOptionalCsvFile(
+            controllerSerializedObject,
+            "_shopStockCsv");
 
         csvSource = new GameDataCsvSource(
             dialogueActors,
@@ -298,7 +304,9 @@ internal static class GameDataEditorValidator
             puzzles,
             puzzleLightTiles,
             puzzlePipeTiles,
-            puzzleCircleRings);
+            puzzleCircleRings,
+            shops,
+            shopStock);
         return true;
     }
 

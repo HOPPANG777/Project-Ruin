@@ -35,6 +35,9 @@ public class PlayerMoveController : MonoBehaviour, IMoveable
     [Tooltip("플레이어 이동 입력 허용 여부입니다. 대화 중에는 false로 설정합니다.")]
     [SerializeField] private bool _canMove = true;
 
+    /// <summary>현재 플레이어 이동 입력 허용 상태입니다.</summary>
+    public bool CanMove => _canMove;
+
     //==============================================================================
     // 함수
     //==============================================================================

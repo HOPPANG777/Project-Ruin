@@ -1,63 +1,109 @@
+//=============================================================================
+// File:        UnitBase.cs
+//
+// Description: 유닛의 생존 여부와 체력 변경 및 사망 이벤트를 관리합니다.
+//
+// History:     08/08/2026 + 체력 변경·사망·완전 회복 계약 보완 -- Codex
+//
+//=============================================================================
+
+using System;
 using UnityEngine;
 
-
-//==============================================================================
-// class::UnitBase
-// Player와 Enemy가 상속받을 공통 기능 부모 클래스.
-//==============================================================================
-// TODO: TakeDamage, Dead 작성해야함.
+//=============================================================================
 //
-//==============================================================================
+// Synopsis:   UnitBase;
+//                - 체력을 0부터 최대 체력 사이로 유지
+//                - 체력 변경과 최초 사망을 이벤트로 전달
+//
+//=============================================================================
 public class UnitBase : MonoBehaviour, IKillable, IDamageable, IHealth
 {
-    //==============================================================================
-    // 변수
-    //============================================================================== 
     [Header("Unit")]
-    [Tooltip("유닛의 사망 판정")]
+    [Tooltip("유닛이 현재 살아 있는지 나타냅니다.")]
     [SerializeField] private bool _isAlive;
-    public bool IsAlive { get => _isAlive; }
-
-    [Header("Unit")]
-    [Tooltip("유닛의 최대체력")]
+    [Tooltip("유닛의 최대 체력입니다.")]
     [SerializeField] private float _maxHealth;
-    public float MaxHealth { get => _maxHealth; }
-
-    [Header("Unit")]
-    [Tooltip("유닛의 현재체력")]
+    [Tooltip("유닛의 현재 체력입니다.")]
     [SerializeField] private float _currentHealth;
-    public float CurrentHealth { get => _currentHealth; }
 
-    //==============================================================================
-    // 함수
-    //============================================================================== 
-    // 유닛의 데미지 판정을 담당합니다.
-    virtual public void TakeDamage(float damage)
+    /// <summary>유닛이 현재 살아 있는지 반환합니다.</summary>
+    public bool IsAlive => _isAlive;
+    /// <summary>유닛의 최대 체력을 반환합니다.</summary>
+    public float MaxHealth => _maxHealth;
+    /// <summary>유닛의 현재 체력을 반환합니다.</summary>
+    public float CurrentHealth => _currentHealth;
+
+    /// <summary>현재 체력과 최대 체력이 바뀌었을 때 전달합니다.</summary>
+    public event Action<float, float> HealthChanged;
+    /// <summary>살아 있던 유닛이 처음 사망했을 때 전달합니다.</summary>
+    public event Action Died;
+
+    protected virtual void Awake()
     {
-        // 사망했으면 리턴
-        if (!_isAlive) return;
-        // 데미지가 0이하면(음수) 리턴
-        if (damage < 0.0f) return;
-
-        // 데미지 입력(방어 스탯 추가 시 방어력 계산 후 적용)
-        float resultHealth = _currentHealth - damage;
-        // 체력이 0이면 Die호출
-        if (resultHealth <= 0.0f) Die();
-
-        // 체력 반영
-        _currentHealth = resultHealth;
-        Debug.Log("공격받음");
+        if (!IsFinite(_maxHealth) || _maxHealth < 0.0f)
+        {
+            _maxHealth = 0.0f;
+        }
+        if (!IsFinite(_currentHealth))
+        {
+            _currentHealth = 0.0f;
+        }
+        _currentHealth = Mathf.Clamp(_currentHealth, 0.0f, _maxHealth);
+        _isAlive = _isAlive && _currentHealth > 0.0f;
     }
 
-    // 유닛의 사망판정을 담당합니다
-    virtual public void Die()
+    /// <summary>유효한 양수 피해를 현재 체력에 한 번 반영합니다.</summary>
+    public virtual void TakeDamage(float damage)
     {
-        // 이미 죽어있다면 리턴
-        if (!_isAlive) return;
+        if (!_isAlive || !IsFinite(damage) || damage <= 0.0f)
+        {
+            return;
+        }
 
-        // 체력 0으로 초기화 및 죽음 활성화
+        _currentHealth = Mathf.Max(0.0f, _currentHealth - damage);
+        HealthChanged?.Invoke(_currentHealth, _maxHealth);
+        if (_currentHealth <= 0.0f)
+        {
+            Die();
+        }
+    }
+
+    /// <summary>살아 있는 유닛을 한 번 사망 처리합니다.</summary>
+    public virtual void Die()
+    {
+        if (!_isAlive)
+        {
+            return;
+        }
+
+        bool healthChanged = _currentHealth > 0.0f;
         _currentHealth = 0.0f;
         _isAlive = false;
+        if (healthChanged)
+        {
+            HealthChanged?.Invoke(_currentHealth, _maxHealth);
+        }
+        Died?.Invoke();
     }
 
+    /// <summary>유효한 최대 체력으로 유닛을 완전히 회복하고 부활시킵니다.</summary>
+    public virtual bool TryRestoreFullHealth()
+    {
+        if (!IsFinite(_maxHealth) || _maxHealth <= 0.0f)
+        {
+            Debug.LogError($"[UnitBase] 최대 체력이 0보다 커야 합니다. object={name}", this);
+            return false;
+        }
+
+        _currentHealth = _maxHealth;
+        _isAlive = true;
+        HealthChanged?.Invoke(_currentHealth, _maxHealth);
+        return true;
+    }
+
+    private static bool IsFinite(float value)
+    {
+        return !float.IsNaN(value) && !float.IsInfinity(value);
+    }
 }

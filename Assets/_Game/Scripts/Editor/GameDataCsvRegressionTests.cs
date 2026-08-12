@@ -81,6 +81,12 @@ public sealed class GameDataCsvRegressionTests
         Assert.That(lightPuzzle.LightTiles.Count, Is.EqualTo(9));
         Assert.That(repository.TryGetPuzzle("CIRCLE_STAGE_01", out PuzzleDefinition circlePuzzle), Is.True);
         Assert.That(circlePuzzle.CircleRings.Count, Is.EqualTo(4));
+        Assert.That(repository.TryGetItem("ITEM_COIN", out ItemDefinition coin), Is.True);
+        Assert.That(coin.ItemType, Is.EqualTo(ItemType.ITEM_QUEST));
+        Assert.That(coin.CanSell, Is.False);
+        Assert.That(repository.TryGetQuest("QUEST_RESTORE_MURAL", out QuestDefinition quest), Is.True);
+        Assert.That(HasItemReward(quest, "ITEM_COIN", 100), Is.True);
+        Assert.That(repository.ShopCount, Is.Zero);
     }
 
     /// <summary>
@@ -177,6 +183,108 @@ public sealed class GameDataCsvRegressionTests
     }
 
     /// <summary>
+    /// 유효한 상점 CSV가 표시 순서로 정렬된 상점 정의를 생성하는지 검증합니다.
+    /// </summary>
+    [Test]
+    public void ValidShopCsvCreatesOrderedRepository()
+    {
+        GameDataCsvSource source = CreateShopTestSource(
+            "shop_id,currency_item_id\nSHOP_TEST,ITEM_COIN",
+            "shop_id,item_id,display_order,initial_stock\nSHOP_TEST,ITEM_REPAIR_KIT,2,0\nSHOP_TEST,ITEM_TEST_TOOL,0,3");
+
+        bool didLoad = GameDataCsvLoader.TryLoad(
+            source, out GameDataRepository repository, out GameDataCsvLoadError loadError);
+
+        Assert.That(didLoad, Is.True, loadError?.ToString());
+        Assert.That(repository.ShopCount, Is.EqualTo(1));
+        Assert.That(repository.TryGetShop("SHOP_TEST", out ShopDefinition shop), Is.True);
+        Assert.That(shop.CurrencyItemId, Is.EqualTo("ITEM_COIN"));
+        Assert.That(shop.Stock.Count, Is.EqualTo(2));
+        Assert.That(shop.Stock[0].ItemId, Is.EqualTo("ITEM_TEST_TOOL"));
+        Assert.That(shop.Stock[1].InitialStock, Is.Zero);
+    }
+
+    [TestCase(
+        "shop_id,currency_item_id\nSHOP_TEST,ITEM_COIN\nSHOP_TEST,ITEM_COIN",
+        "shop_id,item_id,display_order,initial_stock",
+        "shop_id")]
+    [TestCase(
+        "shop_id,currency_item_id\nSHOP_TEST,ITEM_COIN",
+        "shop_id,item_id,display_order,initial_stock\nSHOP_UNKNOWN,ITEM_REPAIR_KIT,0,1",
+        "shop_id")]
+    [TestCase(
+        "shop_id,currency_item_id\nSHOP_TEST,ITEM_COIN",
+        "shop_id,item_id,display_order,initial_stock\nSHOP_TEST,ITEM_REPAIR_KIT,0,-1",
+        "initial_stock")]
+    [TestCase(
+        "shop_id,currency_item_id\nSHOP_TEST,ITEM_COIN",
+        "shop_id,item_id,display_order,initial_stock\nSHOP_TEST,ITEM_REPAIR_KIT,0,1\nSHOP_TEST,ITEM_TEST_TOOL,0,1",
+        "display_order")]
+    [TestCase(
+        "shop_id,currency_item_id\nSHOP_TEST,ITEM_COIN",
+        "shop_id,item_id,display_order,initial_stock\nSHOP_TEST,ITEM_REPAIR_KIT,0,1\nSHOP_TEST,ITEM_REPAIR_KIT,1,1",
+        "item_id")]
+    public void InvalidShopCsvIsRejected(string shopsText, string stockText, string expectedColumn)
+    {
+        bool didLoad = ShopCsvDefinitionLoader.TryLoad(
+            new GameDataCsvFile("shops.csv", shopsText),
+            new GameDataCsvFile("shop_stock.csv", stockText),
+            out _,
+            out GameDataCsvLoadError loadError);
+
+        Assert.That(didLoad, Is.False);
+        Assert.That(loadError, Is.Not.Null);
+        Assert.That(loadError.ColumnName, Is.EqualTo(expectedColumn));
+    }
+
+    /// <summary>
+    /// 상점 화폐와 상품의 잘못된 아이템 참조를 저장소 생성 전에 거부하는지 검증합니다.
+    /// </summary>
+    [TestCase(
+        "shop_id,currency_item_id\nSHOP_TEST,ITEM_UNKNOWN",
+        "shop_id,item_id,display_order,initial_stock",
+        "Shop")]
+    [TestCase(
+        "shop_id,currency_item_id\nSHOP_TEST,ITEM_COIN",
+        "shop_id,item_id,display_order,initial_stock\nSHOP_TEST,ITEM_COIN,0,1",
+        "ShopStock")]
+    [TestCase(
+        "shop_id,currency_item_id\nSHOP_TEST,ITEM_COIN",
+        "shop_id,item_id,display_order,initial_stock\nSHOP_TEST,ITEM_UNKNOWN,0,1",
+        "ShopStock")]
+    public void InvalidShopItemReferenceIsRejected(
+        string shopsText,
+        string stockText,
+        string expectedDataType)
+    {
+        GameDataCsvSource source = CreateShopTestSource(shopsText, stockText);
+
+        bool didLoad = GameDataCsvLoader.TryLoad(source, out _, out GameDataCsvLoadError loadError);
+
+        Assert.That(didLoad, Is.False);
+        Assert.That(loadError, Is.Not.Null);
+        Assert.That(loadError.ColumnName, Is.EqualTo(expectedDataType));
+    }
+
+    /// <summary>
+    /// 판매 가능 아이템에 0 가격을 지정하면 저장소 생성을 거부하는지 검증합니다.
+    /// </summary>
+    [Test]
+    public void SellableZeroPriceItemIsRejected()
+    {
+        GameDataCsvSource source = CreateRuntimeSource();
+        string invalidText = source.Items.Text.Replace(
+            "ITEM_REPAIR_KIT,item.repair_kit.name,item.repair_kit.description,,0,false,ITEM_QUEST,99",
+            "ITEM_REPAIR_KIT,item.repair_kit.name,item.repair_kit.description,,0,true,ITEM_QUEST,99");
+        source = CopySourceWithItems(source, new GameDataCsvFile("items.csv", invalidText));
+
+        bool didLoad = GameDataCsvLoader.TryLoad(source, out _, out GameDataCsvLoadError loadError);
+
+        Assert.That(didLoad, Is.False);
+        Assert.That(loadError.ColumnName, Is.EqualTo("Item"));
+    }
+
+    /// <summary>
     /// CSV 전환이 끝난 Dialogue, Quest, Inventory 레거시 ScriptableObject 타입이 런타임 어셈블리에 없는지 검증합니다.
     /// </summary>
     [Test]
@@ -217,7 +325,7 @@ public sealed class GameDataCsvRegressionTests
     //==============================================================================
 
     /// <summary>
-    /// 프로젝트의 실제 런타임 CSV TextAsset 17개를 전체 게임 데이터 원본 묶음으로 생성합니다.
+    /// 프로젝트의 실제 런타임 CSV TextAsset 19개를 전체 게임 데이터 원본 묶음으로 생성합니다.
     /// </summary>
     /// <returns>실제 런타임 CSV 원본 묶음입니다.</returns>
     private static GameDataCsvSource CreateRuntimeSource()
@@ -239,7 +347,44 @@ public sealed class GameDataCsvRegressionTests
             LoadRequiredCsv("puzzles.csv"),
             LoadRequiredCsv("puzzle_light_tiles.csv"),
             LoadRequiredCsv("puzzle_pipe_tiles.csv"),
-            LoadRequiredCsv("puzzle_circle_rings.csv"));
+            LoadRequiredCsv("puzzle_circle_rings.csv"),
+            LoadRequiredCsv("shops.csv"),
+            LoadRequiredCsv("shop_stock.csv"));
+    }
+
+    private static bool HasItemReward(QuestDefinition quest, string itemId, int amount)
+    {
+        if (quest == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < quest.Rewards.Count; i++)
+        {
+            QuestRewardDefinition reward = quest.Rewards[i];
+
+            if (reward != null && reward.ItemId == itemId && reward.ItemAmount == amount)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static GameDataCsvSource CreateShopTestSource(string shopsText, string stockText)
+    {
+        GameDataCsvSource source = CreateRuntimeSource();
+        string itemText = source.Items.Text.Replace(
+            "ITEM_REPAIR_KIT,item.repair_kit.name,item.repair_kit.description,,0,false,ITEM_QUEST,99",
+            "ITEM_REPAIR_KIT,item.repair_kit.name,item.repair_kit.description,,25,true,ITEM_QUEST,99");
+        itemText = itemText.TrimEnd()
+            + "\nITEM_TEST_TOOL,item.repair_kit.name,item.repair_kit.description,,50,true,ITEM_MISC,10";
+        source = CopySourceWithItems(source, new GameDataCsvFile("items.csv", itemText));
+        return CopySourceWithShops(
+            source,
+            new GameDataCsvFile("shops.csv", shopsText),
+            new GameDataCsvFile("shop_stock.csv", stockText));
     }
 
     /// <summary>
@@ -269,7 +414,9 @@ public sealed class GameDataCsvRegressionTests
             source.Puzzles,
             source.PuzzleLightTiles,
             source.PuzzlePipeTiles,
-            source.PuzzleCircleRings);
+            source.PuzzleCircleRings,
+            source.Shops,
+            source.ShopStock);
     }
 
     /// <summary>
@@ -296,7 +443,9 @@ public sealed class GameDataCsvRegressionTests
             source.Puzzles,
             source.PuzzleLightTiles,
             source.PuzzlePipeTiles,
-            source.PuzzleCircleRings);
+            source.PuzzleCircleRings,
+            source.Shops,
+            source.ShopStock);
     }
 
     /// <summary>
@@ -323,7 +472,36 @@ public sealed class GameDataCsvRegressionTests
             source.Puzzles,
             puzzleLightTiles,
             source.PuzzlePipeTiles,
-            source.PuzzleCircleRings);
+            source.PuzzleCircleRings,
+            source.Shops,
+            source.ShopStock);
+    }
+
+    private static GameDataCsvSource CopySourceWithShops(
+        GameDataCsvSource source,
+        GameDataCsvFile shops,
+        GameDataCsvFile shopStock)
+    {
+        return new GameDataCsvSource(
+            source.DialogueActors,
+            source.DialoguePortraits,
+            source.DialogueGraphs,
+            source.DialogueNodes,
+            source.DialogueChoices,
+            source.Items,
+            source.Quests,
+            source.QuestObjectives,
+            source.QuestRewards,
+            source.QuestConsumeItems,
+            source.Localization,
+            source.NpcDialogueBindings,
+            source.NpcQuestDialogueRoutes,
+            source.Puzzles,
+            source.PuzzleLightTiles,
+            source.PuzzlePipeTiles,
+            source.PuzzleCircleRings,
+            shops,
+            shopStock);
     }
 
     /// <summary>

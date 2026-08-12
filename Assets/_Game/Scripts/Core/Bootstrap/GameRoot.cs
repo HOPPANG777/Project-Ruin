@@ -38,6 +38,15 @@ public sealed class GameRoot : Singleton<GameRoot>
     [Tooltip("인벤토리 UI와 선택 입력을 중개하는 Presenter입니다.")]
     [SerializeField]
     private InventoryPresenter _inventoryPresenter;
+    [Tooltip("ITEM_COIN 아이콘과 현재 수량을 표시하는 HUD Presenter입니다.")]
+    [SerializeField]
+    private CurrencyHudPresenter _currencyHudPresenter;
+    [Tooltip("상점 재고와 구매·판매 거래를 관리하는 컨트롤러입니다.")]
+    [SerializeField]
+    private ShopController _shopController;
+    [Tooltip("상점 목록, 설명과 거래 창 입력을 중개하는 Presenter입니다.")]
+    [SerializeField]
+    private ShopPresenter _shopPresenter;
     [Tooltip("NPC 대화 그래프 진행과 대화 UI를 관리하는 컨트롤러입니다.")]
     [SerializeField]
     private DialogueController _dialogueController;
@@ -69,6 +78,8 @@ public sealed class GameRoot : Singleton<GameRoot>
     public IQuestService Quest => _questController;
     /// <summary>인벤토리 시스템의 외부 공개 계약입니다.</summary>
     public IInventoryService Inventory => _inventoryController;
+    /// <summary>상점 재고와 거래를 관리하는 컨트롤러입니다.</summary>
+    public ShopController Shop => _shopController;
     /// <summary>대화 시스템의 외부 공개 계약입니다.</summary>
     public IDialogueService Dialogue => _dialogueController;
     /// <summary>스테이지 전환 시스템의 외부 공개 계약입니다.</summary>
@@ -128,6 +139,21 @@ public sealed class GameRoot : Singleton<GameRoot>
         if (_inventoryPresenter != null)
         {
             _inventoryPresenter.Init(_inventoryController);
+        }
+
+        if (_currencyHudPresenter != null)
+        {
+            _currencyHudPresenter.Init(_inventoryController);
+        }
+
+        if (_shopController != null)
+        {
+            _shopController.Init(GameData, _inventoryController);
+        }
+
+        if (_shopPresenter != null)
+        {
+            _shopPresenter.Init(_shopController, _inventoryController, _dialogueController);
         }
 
         if (_questController != null)

@@ -85,6 +85,12 @@ public sealed class GameDataCsvSource
     // 원형 퍼즐 링 CSV 원본입니다.
     private readonly GameDataCsvFile _puzzleCircleRings;
 
+    // 선택 입력인 상점 기본 정보 CSV 원본입니다.
+    private readonly GameDataCsvFile _shops;
+
+    // 선택 입력인 상점 초기 재고 CSV 원본입니다.
+    private readonly GameDataCsvFile _shopStock;
+
     /// <summary>대화 화자 CSV 원본입니다.</summary>
     public GameDataCsvFile DialogueActors => _dialogueActors;
 
@@ -136,6 +142,12 @@ public sealed class GameDataCsvSource
     /// <summary>원형 퍼즐 링 CSV 원본입니다.</summary>
     public GameDataCsvFile PuzzleCircleRings => _puzzleCircleRings;
 
+    /// <summary>선택 입력인 상점 기본 정보 CSV 원본입니다.</summary>
+    public GameDataCsvFile Shops => _shops;
+
+    /// <summary>선택 입력인 상점 초기 재고 CSV 원본입니다.</summary>
+    public GameDataCsvFile ShopStock => _shopStock;
+
     /// <summary>
     /// 게임 데이터 저장소를 구성할 CSV 원본 묶음을 생성합니다.
     /// </summary>
@@ -155,6 +167,8 @@ public sealed class GameDataCsvSource
     /// <param name="puzzleLightTiles">라이트 퍼즐 타일 CSV 원본입니다.</param>
     /// <param name="puzzlePipeTiles">파이프 퍼즐 타일 CSV 원본입니다.</param>
     /// <param name="puzzleCircleRings">원형 퍼즐 링 CSV 원본입니다.</param>
+    /// <param name="shops">선택 입력인 상점 기본 정보 CSV 원본입니다.</param>
+    /// <param name="shopStock">선택 입력인 상점 초기 재고 CSV 원본입니다.</param>
     public GameDataCsvSource(
         GameDataCsvFile dialogueActors,
         GameDataCsvFile dialoguePortraits,
@@ -172,7 +186,9 @@ public sealed class GameDataCsvSource
         GameDataCsvFile puzzles = null,
         GameDataCsvFile puzzleLightTiles = null,
         GameDataCsvFile puzzlePipeTiles = null,
-        GameDataCsvFile puzzleCircleRings = null)
+        GameDataCsvFile puzzleCircleRings = null,
+        GameDataCsvFile shops = null,
+        GameDataCsvFile shopStock = null)
     {
         _dialogueActors = dialogueActors;
         _dialoguePortraits = dialoguePortraits;
@@ -191,5 +207,7 @@ public sealed class GameDataCsvSource
         _puzzleLightTiles = puzzleLightTiles;
         _puzzlePipeTiles = puzzlePipeTiles;
         _puzzleCircleRings = puzzleCircleRings;
+        _shops = shops;
+        _shopStock = shopStock;
     }
 }

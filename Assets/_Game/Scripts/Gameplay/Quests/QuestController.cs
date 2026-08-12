@@ -395,7 +395,7 @@ public sealed class QuestController : MonoBehaviour, IQuestService
             && (string.IsNullOrWhiteSpace(reward.ItemId)
                 || (_inventoryService != null
                     && reward.ItemAmount.HasValue && reward.ItemAmount.Value > 0
-                    && _inventoryService.TryGetItem(reward.ItemId, out _)));
+                    && _inventoryService.CanAddItem(reward.ItemId, reward.ItemAmount.Value)));
     }
 
     /// <summary>

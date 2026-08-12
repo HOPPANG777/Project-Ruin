@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 //==============================================================================
@@ -15,13 +16,24 @@ using System.Collections.Generic;
 /// </summary>
 public interface IInventoryService
 {
+    /// <summary>아이템 수량 변경 후 ItemId와 최종 보유 수량을 전달합니다.</summary>
+    event Action<string, int> ItemCountChanged;
+
     /// <summary>
     /// 아이템 원본 데이터를 기준으로 인벤토리에 아이템을 추가합니다.
     /// </summary>
-    /// <param name="itemData">추가할 아이템 원본 데이터입니다.</param>
+    /// <param name="itemId">추가할 아이템 고유 ID입니다.</param>
     /// <param name="amount">추가할 아이템 개수입니다.</param>
     /// <returns>아이템 데이터와 개수가 유효하고 추가에 성공하면 true입니다.</returns>
     bool TryAddItem(string itemId, int amount);
+
+    /// <summary>
+    /// 아이템을 현재 수량과 int 범위를 넘지 않고 추가할 수 있는지 확인합니다.
+    /// </summary>
+    /// <param name="itemId">추가 가능 여부를 확인할 아이템 고유 ID입니다.</param>
+    /// <param name="amount">추가할 아이템 개수입니다.</param>
+    /// <returns>아이템이 존재하고 추가 후 총수량이 int 범위 안이면 true입니다.</returns>
+    bool CanAddItem(string itemId, int amount);
 
     /// <summary>
     /// 퀘스트 완료 또는 재료 사용 조건이 만족되었을 때 인벤토리 아이템을 자동 소모합니다.
@@ -30,6 +42,20 @@ public interface IInventoryService
     /// <param name="amount">소모할 아이템 개수입니다.</param>
     /// <returns>아이템 ID, 개수, 보유 수량이 유효하고 소모에 성공하면 true입니다.</returns>
     bool TryConsumeItem(string itemId, int amount);
+
+    /// <summary>
+    /// 한 아이템을 제거하고 다른 아이템을 추가하는 교환을 원자적으로 처리합니다.
+    /// </summary>
+    /// <param name="removeItemId">제거할 아이템 고유 ID입니다.</param>
+    /// <param name="removeAmount">제거할 아이템 개수입니다.</param>
+    /// <param name="addItemId">추가할 아이템 고유 ID입니다.</param>
+    /// <param name="addAmount">추가할 아이템 개수입니다.</param>
+    /// <returns>두 변경을 모두 적용했으면 true입니다.</returns>
+    bool TryExchangeItem(
+        string removeItemId,
+        int removeAmount,
+        string addItemId,
+        int addAmount);
 
     /// <summary>
     /// 아이템 ID로 원본 아이템 데이터를 조회합니다.
@@ -55,6 +81,12 @@ public interface IInventoryService
     /// <param name="category">조회할 인벤토리 카테고리입니다.</param>
     /// <returns>카테고리에 포함되는 슬롯 목록입니다.</returns>
     IReadOnlyList<InventorySlotData> GetSlots(InventoryCategory category);
+
+    /// <summary>
+    /// 현재 보유 슬롯을 최근 획득한 아이템부터 조회합니다.
+    /// </summary>
+    /// <returns>재사용되는 읽기 전용 슬롯 목록입니다.</returns>
+    IReadOnlyList<InventorySlotData> GetSlotsByAcquisitionOrder();
 
     /// <summary>
     /// 드래그 이동으로 지정된 슬롯의 수동 배치 순서를 변경합니다.

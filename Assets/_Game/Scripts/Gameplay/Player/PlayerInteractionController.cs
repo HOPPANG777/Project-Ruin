@@ -29,6 +29,8 @@ public sealed class PlayerInteractionController : MonoBehaviour
     [SerializeField] private InputActionReference _interactAction;
     [Tooltip("대화나 UI 중 상호작용 탐지와 입력을 허용할지 결정합니다.")]
     [SerializeField] private bool _canInteract = true;
+    /// <summary>현재 월드 상호작용 입력 허용 상태입니다.</summary>
+    public bool CanInteract => _canInteract;
     private readonly Collider2D[] _detectResults = new Collider2D[DETECTION_BUFFER_SIZE];
     private ContactFilter2D _contactFilter;
     private Collider2D _currentCollider;

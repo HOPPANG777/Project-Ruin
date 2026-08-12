@@ -1,9 +1,14 @@
+using System;
+
 //==============================================================================
 // 기능: interface::IDialogueService
 // 설명: CSV 대화 그래프의 시작, 진행, 선택 및 종료 계약
 //==============================================================================
 public interface IDialogueService
 {
+    /// <summary>검증된 shop_id를 대화 종료 후 전달합니다.</summary>
+    event Action<string> ShopOpenRequested;
+
     /// <summary>현재 대화창이 열려 있는지 여부입니다.</summary>
     bool IsDialogueOpen { get; }
 
