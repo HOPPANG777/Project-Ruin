@@ -12,15 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3e5d33764c3bba4381e676bfce6ad4a, type: 3}
   m_Name: RelicRestorationCatalog
   m_EditorClassIdentifier: Assembly-CSharp::RelicRestorationCatalogSO
-  _skills:
-  - {fileID: 0}
-  _stages:
-  - _stage: 0
-    _requiredRestore: 0
-    _timeline: {fileID: 0}
-  _altarDestinations:
-  - _altarId: 
-    _displayNameKey: 
-    _stageNumber: 0
-    _spawnPointId: 
-    _isMainAltar: 0
+  _technologies: []
+  _stages: []
+  _altarDestinations: []
