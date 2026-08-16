@@ -30,6 +30,7 @@ public sealed class ShopSystemTests
     private readonly List<UnityEngine.Object> _createdObjects = new List<UnityEngine.Object>();
     private InventoryController _inventory;
     private ShopController _shop;
+    private ProgressController _progress;
 
     [SetUp]
     public void SetUp()
@@ -37,12 +38,13 @@ public sealed class ShopSystemTests
         GameDataRepository repository = CreateRepository();
         GameObject inventoryObject = new GameObject(nameof(ShopSystemTests));
         _createdObjects.Add(inventoryObject);
+        _progress = inventoryObject.AddComponent<ProgressController>();
         _inventory = inventoryObject.AddComponent<InventoryController>();
-        _inventory.Init(repository, null);
+        _inventory.Init(repository, null, _progress);
         GameObject shopObject = new GameObject("ShopController");
         _createdObjects.Add(shopObject);
         _shop = shopObject.AddComponent<ShopController>();
-        _shop.Init(repository, _inventory);
+        _shop.Init(repository, _inventory, _progress);
     }
 
     [TearDown]
@@ -57,18 +59,15 @@ public sealed class ShopSystemTests
     }
 
     [Test]
-    public void InitialCoinCountIsZero()
-    {
-        Assert.That(_inventory.GetItemCount(ITEM_COIN), Is.Zero);
-    }
-
-    [Test]
     public void CoinCanBeAddedAndConsumed()
     {
+        Assert.That(_inventory.GetItemCount(ITEM_COIN), Is.Zero);
         Assert.That(_inventory.TryAddItem(ITEM_COIN, 10), Is.True);
         Assert.That(_inventory.TryConsumeItem(ITEM_COIN, 4), Is.True);
         Assert.That(_inventory.GetItemCount(ITEM_COIN), Is.EqualTo(6));
         Assert.That(_inventory.TryConsumeItem(ITEM_COIN, 7), Is.False);
+        Assert.That(_inventory.GetItemCount(ITEM_COIN), Is.EqualTo(6));
+        _inventory.Init(CreateRepository(), null, _progress);
         Assert.That(_inventory.GetItemCount(ITEM_COIN), Is.EqualTo(6));
     }
 
@@ -109,9 +108,7 @@ public sealed class ShopSystemTests
         Assert.That(eventCount, Is.EqualTo(2));
     }
 
-    [TestCase(21, 1)]
-    [TestCase(1, 0)]
-    [TestCase(0, 1)]
+    [TestCase(21, 1), TestCase(1, 0), TestCase(0, 1)]
     public void InvalidExchangeLeavesInventoryUnchanged(int removeAmount, int addAmount)
     {
         Assert.That(_inventory.TryAddItem(ITEM_COIN, 20), Is.True);
@@ -154,17 +151,19 @@ public sealed class ShopSystemTests
     [Test]
     public void PurchaseUsesCurrentLimitsAndChangesAllState()
     {
-        Assert.That(_inventory.TryAddItem(ITEM_COIN, 25), Is.True);
-        Assert.That(_shop.GetMaxPurchaseQuantity(SHOP_ID, ITEM_TOOL), Is.EqualTo(2));
-        Assert.That(_shop.TryGetTotalPrice(ITEM_TOOL, 2, out int totalPrice), Is.True);
-        Assert.That(totalPrice, Is.EqualTo(20));
+        Assert.That(_inventory.TryAddItem(ITEM_COIN, 50), Is.True);
+        Assert.That(_shop.GetMaxPurchaseQuantity(SHOP_ID, ITEM_TOOL), Is.EqualTo(5));
+        Assert.That(_shop.TryGetTotalPrice(ITEM_TOOL, 5, out int totalPrice), Is.True);
+        Assert.That(totalPrice, Is.EqualTo(50));
 
-        ShopTransactionResult result = _shop.TryPurchase(SHOP_ID, ITEM_TOOL, 2);
+        ShopTransactionResult result = _shop.TryPurchase(SHOP_ID, ITEM_TOOL, 5);
 
         Assert.That(result, Is.EqualTo(ShopTransactionResult.SHOP_TRANSACTION_SUCCESS));
-        Assert.That(_inventory.GetItemCount(ITEM_COIN), Is.EqualTo(5));
-        Assert.That(_inventory.GetItemCount(ITEM_TOOL), Is.EqualTo(2));
-        Assert.That(_shop.GetStock(SHOP_ID, ITEM_TOOL), Is.EqualTo(3));
+        Assert.That(_inventory.GetItemCount(ITEM_COIN), Is.Zero);
+        Assert.That(_inventory.GetItemCount(ITEM_TOOL), Is.EqualTo(5));
+        Assert.That(_shop.GetStock(SHOP_ID, ITEM_TOOL), Is.Zero);
+        _shop.Init(CreateRepository(), _inventory, _progress);
+        Assert.That(_shop.GetStock(SHOP_ID, ITEM_TOOL), Is.Zero);
     }
 
     [Test]
@@ -209,7 +208,7 @@ public sealed class ShopSystemTests
     }
 
     [Test]
-    public void SaleUsesExchangeAndRejectsInvalidRequests()
+    public void SellableQuestItemUsesExchangeAndRejectsInvalidRequests()
     {
         Assert.That(_inventory.TryAddItem(ITEM_TOOL, 3), Is.True);
         Assert.That(_shop.GetMaxSaleQuantity(SHOP_ID, ITEM_TOOL), Is.EqualTo(3));
@@ -266,7 +265,7 @@ public sealed class ShopSystemTests
         ItemDefinition[] items =
         {
             new ItemDefinition(ITEM_COIN, "item.coin.name", "item.coin.description", string.Empty, 0, false, ItemType.ITEM_QUEST, int.MaxValue),
-            new ItemDefinition(ITEM_TOOL, "item.tool.name", "item.tool.description", string.Empty, 10, true, ItemType.ITEM_MISC, int.MaxValue),
+            new ItemDefinition(ITEM_TOOL, "item.tool.name", "item.tool.description", string.Empty, 10, true, ItemType.ITEM_QUEST, int.MaxValue),
             new ItemDefinition(ITEM_EXPENSIVE, "item.tool.name", "item.tool.description", string.Empty, int.MaxValue, true, ItemType.ITEM_MISC, int.MaxValue)
         };
         ShopStockDefinition[] stock =
@@ -286,10 +285,9 @@ public sealed class ShopSystemTests
             new LocalizationEntryDefinition("item.tool.description", "도구", "Tool", "Tool")
         };
         bool created = GameDataRepository.TryCreate(
-            Array.Empty<DialogueActorDefinition>(), Array.Empty<DialogueGraphDefinition>(), items,
-            Array.Empty<QuestDefinition>(), localization, Array.Empty<NpcDialogueBindingDefinition>(),
-            Array.Empty<NpcQuestDialogueRouteDefinition>(), Array.Empty<PuzzleDefinition>(), shops,
-            out GameDataRepository repository, out GameDataRepositoryBuildError error);
+            Array.Empty<DialogueActorDefinition>(), Array.Empty<DialogueGraphDefinition>(), items, Array.Empty<QuestDefinition>(),
+            localization, Array.Empty<NpcDialogueBindingDefinition>(), Array.Empty<NpcQuestDialogueRouteDefinition>(),
+            Array.Empty<PuzzleDefinition>(), shops, out GameDataRepository repository, out GameDataRepositoryBuildError error);
         Assert.That(created, Is.True, error?.ToString());
         return repository;
     }

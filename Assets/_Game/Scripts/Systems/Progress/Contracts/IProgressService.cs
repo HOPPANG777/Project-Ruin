@@ -40,6 +40,12 @@ public interface IProgressService
     /// <returns>저장된 값이 있으면 해당 값, 없으면 false입니다.</returns>
     bool GetFlag(string flagId);
 
+    /// <summary>인벤토리·상점 같은 전역 시스템의 직렬화 상태를 저장합니다.</summary>
+    void SetSystemState(string stateId, string stateJson);
+
+    /// <summary>전역 시스템의 직렬화 상태를 조회합니다.</summary>
+    bool TryGetSystemState(string stateId, out string stateJson);
+
     /// <summary>
     /// 특정 스테이지의 오브젝트 상태(JSON blob)를 저장합니다.
     /// </summary>

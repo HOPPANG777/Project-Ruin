@@ -541,6 +541,7 @@ Transform:
   - {fileID: 9012345678901234501}
   - {fileID: 664003303490831643}
   - {fileID: 1228521804616574463}
+  - {fileID: 9123456789012345602}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4132607794765692391
@@ -564,9 +565,56 @@ MonoBehaviour:
   _questController: {fileID: 4612708442974497604}
   _inventoryController: {fileID: 9012345678901234567}
   _inventoryPresenter: {fileID: 0}
+  _currencyHudPresenter: {fileID: 0}
+  _shopController: {fileID: 9123456789012345603}
+  _shopPresenter: {fileID: 0}
   _dialogueController: {fileID: 5682704680682971946}
   _stageFlowController: {fileID: 6413104067889454956}
   _sceneStateBridge: {fileID: 2285303300801334074}
+--- !u!1 &9123456789012345601
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9123456789012345602}
+  - component: {fileID: 9123456789012345603}
+  m_Layer: 0
+  m_Name: ShopController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9123456789012345602
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9123456789012345601}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2305819821877646456}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9123456789012345603
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9123456789012345601}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 485a5c5cd9a840089e5fd03dd35fa599, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::ShopController
 --- !u!1 &1026423296325697472
 GameObject:
   m_ObjectHideFlags: 0

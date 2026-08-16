@@ -19,6 +19,14 @@ public class InventoryController : MonoBehaviour, IInventoryService
     // 아직 플레이어가 수동 배치하지 않은 슬롯 순서입니다.
     private const int INVENTORY_UNASSIGNED_MANUAL_ORDER = -1;
 
+    private const string INVENTORY_STATE_ID = "inventory.slots";
+
+    [Serializable]
+    private sealed class InventorySaveData
+    {
+        public List<InventorySlotData> Slots = new List<InventorySlotData>();
+    }
+
     //==============================================================================
     // 직렬화 필드
     //==============================================================================
@@ -38,6 +46,8 @@ public class InventoryController : MonoBehaviour, IInventoryService
     // 아이템 이름과 설명 Localization Key를 현재 언어 문자열로 변환할 서비스입니다.
     private ILocalizationService _localizationService;
 
+    private IProgressService _progressService;
+
     // 인벤토리가 현재 보관 중인 런타임 슬롯 목록입니다.
     private readonly List<InventorySlotData> _slots = new List<InventorySlotData>();
 
@@ -52,6 +62,10 @@ public class InventoryController : MonoBehaviour, IInventoryService
 
     // Reset 시 같은 ItemId의 최종 수량 이벤트를 한 번만 보내기 위한 재사용 집합입니다.
     private readonly HashSet<string> _resetItemIds = new HashSet<string>(StringComparer.Ordinal);
+
+    private readonly InventorySaveData _saveData = new InventorySaveData();
+    private readonly List<InventorySlotData> _restoredSlots = new List<InventorySlotData>();
+    private readonly Dictionary<string, int> _restoredCounts = new Dictionary<string, int>(StringComparer.Ordinal);
 
     //==============================================================================
     // 공개 이벤트
@@ -69,10 +83,13 @@ public class InventoryController : MonoBehaviour, IInventoryService
     /// </summary>
     public void Init(
         IGameDataRepository gameDataRepository,
-        ILocalizationService localizationService)
+        ILocalizationService localizationService,
+        IProgressService progressService)
     {
         _gameDataRepository = gameDataRepository;
         _localizationService = localizationService;
+        _progressService = progressService;
+        RestoreState();
     }
 
     //==============================================================================
@@ -99,6 +116,7 @@ public class InventoryController : MonoBehaviour, IInventoryService
         }
 
         NotifyItemCountChanged(itemData.ItemId);
+        PersistState();
         return true;
     }
 
@@ -147,6 +165,7 @@ public class InventoryController : MonoBehaviour, IInventoryService
         }
 
         NotifyItemCountChanged(normalizedItemId);
+        PersistState();
         return true;
     }
 
@@ -185,6 +204,7 @@ public class InventoryController : MonoBehaviour, IInventoryService
 
         NotifyItemCountChanged(normalizedRemoveId);
         NotifyItemCountChanged(normalizedAddId);
+        PersistState();
         return true;
     }
 
@@ -387,6 +407,7 @@ public class InventoryController : MonoBehaviour, IInventoryService
         }
 
         _movingSlots.Clear();
+        PersistState();
         return true;
     }
 
@@ -415,6 +436,11 @@ public class InventoryController : MonoBehaviour, IInventoryService
 
             didFindSlot = true;
             slotData.MarkAsChecked();
+        }
+
+        if (didFindSlot)
+        {
+            PersistState();
         }
 
         return didFindSlot;
@@ -448,6 +474,7 @@ public class InventoryController : MonoBehaviour, IInventoryService
         }
 
         _resetItemIds.Clear();
+        PersistState();
     }
 
     //==============================================================================
@@ -873,5 +900,87 @@ public class InventoryController : MonoBehaviour, IInventoryService
         }
 
         return itemData.MaxStackCount;
+    }
+
+    private void PersistState()
+    {
+        if (_progressService == null)
+        {
+            return;
+        }
+
+        _saveData.Slots.Clear();
+
+        for (int i = 0; i < _slots.Count; i++)
+        {
+            _saveData.Slots.Add(_slots[i]);
+        }
+
+        _progressService.SetSystemState(INVENTORY_STATE_ID, JsonUtility.ToJson(_saveData));
+    }
+
+    private void RestoreState()
+    {
+        _slots.Clear();
+        _visibleSlots.Clear();
+        _slotIndexBySlot.Clear();
+        _movingSlots.Clear();
+
+        if (_progressService == null
+            || !_progressService.TryGetSystemState(INVENTORY_STATE_ID, out string stateJson))
+        {
+            return;
+        }
+
+        InventorySaveData loadedData;
+
+        try
+        {
+            loadedData = JsonUtility.FromJson<InventorySaveData>(stateJson);
+        }
+        catch (ArgumentException exception)
+        {
+            Debug.LogWarning($"[InventoryController] 저장 상태를 복원하지 못했습니다. {exception.Message}");
+            return;
+        }
+
+        if (loadedData == null || loadedData.Slots == null)
+        {
+            return;
+        }
+
+        _restoredSlots.Clear();
+        _restoredCounts.Clear();
+
+        for (int i = 0; i < loadedData.Slots.Count; i++)
+        {
+            TryAddRestoredSlot(loadedData.Slots[i]);
+        }
+
+        for (int i = 0; i < _restoredSlots.Count; i++)
+        {
+            _slots.Add(_restoredSlots[i]);
+        }
+    }
+
+    private bool TryAddRestoredSlot(InventorySlotData slot)
+    {
+        if (slot == null || slot.IsEmpty
+            || !TryGetItem(slot.ItemId, out ItemDefinition item)
+            || slot.Quantity > GetSafeMaxStackCount(item))
+        {
+            return false;
+        }
+
+        _restoredCounts.TryGetValue(slot.ItemId, out int currentCount);
+
+        if (currentCount > int.MaxValue - slot.Quantity)
+        {
+            return false;
+        }
+
+        _restoredCounts[slot.ItemId] = currentCount + slot.Quantity;
+        _restoredSlots.Add(slot);
+        return true;
     }
 }

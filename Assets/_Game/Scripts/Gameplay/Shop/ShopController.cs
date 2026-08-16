@@ -9,12 +9,13 @@
 
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 //=============================================================================
 //
 // Synopsis:   ShopController;
-//                - 상점별 세션 재고와 최대 거래 수량 계산
+//                - 상점별 저장 재고와 최대 거래 수량 계산
 //                - 확인 시 재검증 및 인벤토리 원자 교환 실행
 //=============================================================================
 public enum ShopTransactionResult
@@ -35,22 +36,26 @@ public enum ShopTransactionResult
 public sealed class ShopController : MonoBehaviour
 {
     private const string COIN_ITEM_ID = "ITEM_COIN";
+    private const string STOCK_STATE_PREFIX = "shop.stock.";
 
     private IGameDataRepository _gameDataRepository;
     private IInventoryService _inventoryService;
+    private IProgressService _progressService;
     private readonly Dictionary<string, Dictionary<string, int>> _stockByShopId =
         new Dictionary<string, Dictionary<string, int>>(StringComparer.Ordinal);
     private readonly List<string> _sellItemIds = new List<string>();
     private readonly HashSet<string> _sellItemIdSet = new HashSet<string>(StringComparer.Ordinal);
     private bool _isProcessing;
 
-    /// <summary>게임 데이터와 인벤토리를 연결하고 세션 재고를 초기화합니다.</summary>
+    /// <summary>게임 데이터와 인벤토리, 진행 저장을 연결하고 재고 캐시를 초기화합니다.</summary>
     public void Init(
         IGameDataRepository gameDataRepository,
-        IInventoryService inventoryService)
+        IInventoryService inventoryService,
+        IProgressService progressService)
     {
         _gameDataRepository = gameDataRepository;
         _inventoryService = inventoryService;
+        _progressService = progressService;
         _stockByShopId.Clear();
         _isProcessing = false;
     }
@@ -252,6 +257,8 @@ public sealed class ShopController : MonoBehaviour
             }
 
             stock[itemId] -= quantity;
+            PersistStock(shop.ShopId, itemId, stock[itemId]);
+            RequestSave();
             return ShopTransactionResult.SHOP_TRANSACTION_SUCCESS;
         }
         finally
@@ -270,10 +277,14 @@ public sealed class ShopController : MonoBehaviour
 
         try
         {
-            return _inventoryService.TryExchangeItem(
-                itemId, quantity, shop.CurrencyItemId, totalPrice)
-                ? ShopTransactionResult.SHOP_TRANSACTION_SUCCESS
-                : ShopTransactionResult.SHOP_TRANSACTION_INVENTORY_FAILED;
+            if (!_inventoryService.TryExchangeItem(
+                itemId, quantity, shop.CurrencyItemId, totalPrice))
+            {
+                return ShopTransactionResult.SHOP_TRANSACTION_INVENTORY_FAILED;
+            }
+
+            RequestSave();
+            return ShopTransactionResult.SHOP_TRANSACTION_SUCCESS;
         }
         finally
         {
@@ -305,11 +316,44 @@ public sealed class ShopController : MonoBehaviour
         for (int i = 0; i < shop.Stock.Count; i++)
         {
             ShopStockDefinition stockDefinition = shop.Stock[i];
-            stock.Add(stockDefinition.ItemId, stockDefinition.InitialStock);
+            stock.Add(stockDefinition.ItemId, GetSavedStock(stockDefinition));
         }
 
         _stockByShopId.Add(shop.ShopId, stock);
         return true;
+    }
+
+    private int GetSavedStock(ShopStockDefinition stockDefinition)
+    {
+        string stateId = STOCK_STATE_PREFIX + stockDefinition.ShopId + "." + stockDefinition.ItemId;
+
+        if (_progressService != null
+            && _progressService.TryGetSystemState(stateId, out string savedValue)
+            && int.TryParse(savedValue, out int savedStock)
+            && savedStock >= 0 && savedStock <= stockDefinition.InitialStock)
+        {
+            return savedStock;
+        }
+
+        return stockDefinition.InitialStock;
+    }
+
+    private void PersistStock(string shopId, string itemId, int stock)
+    {
+        if (_progressService != null)
+        {
+            _progressService.SetSystemState(
+                STOCK_STATE_PREFIX + shopId + "." + itemId,
+                stock.ToString());
+        }
+    }
+
+    private void RequestSave()
+    {
+        if (_progressService != null && Application.isPlaying)
+        {
+            _progressService.SaveAsync(this.GetCancellationTokenOnDestroy()).Forget();
+        }
     }
 
     private bool TryGetPositivePriceItem(string itemId, out ItemDefinition item)

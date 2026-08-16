@@ -133,7 +133,7 @@ public sealed class GameRoot : Singleton<GameRoot>
 
         if (_inventoryController != null)
         {
-            _inventoryController.Init(GameData, _gameDataController);
+            _inventoryController.Init(GameData, _gameDataController, _progressController);
         }
 
         if (_inventoryPresenter != null)
@@ -148,7 +148,7 @@ public sealed class GameRoot : Singleton<GameRoot>
 
         if (_shopController != null)
         {
-            _shopController.Init(GameData, _inventoryController);
+            _shopController.Init(GameData, _inventoryController, _progressController);
         }
 
         if (_shopPresenter != null)
