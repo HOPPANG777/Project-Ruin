@@ -4,10 +4,12 @@
 // Description: 주변 상호작용 대상을 탐지하고 누르기·홀드 입력을 전달한다.
 //
 // History:     07/31/2026 + 홀드 입력 계약과 저할당 탐지 흐름 추가 -- Codex
+//              08/15/2026 + 복수 상호작용 Layer와 자식 Trigger 탐지 추가 -- Codex
 //
 //=============================================================================
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 //=============================================================================
 // Synopsis:   PlayerInteractionController;
 //                - 가장 가까운 상호작용 대상 탐지와 하이라이트 관리
@@ -21,8 +23,9 @@ public sealed class PlayerInteractionController : MonoBehaviour
     [Header("Interaction")]
     [Tooltip("상호작용 탐지 기준 위치이며, 비어 있으면 플레이어 위치를 사용합니다.")]
     [SerializeField] private Transform _origin;
-    [Tooltip("상호작용 대상으로 탐지할 레이어입니다.")]
-    [SerializeField] private LayerMask _layer;
+    [Tooltip("상호작용 대상으로 탐지할 하나 이상의 레이어입니다.")]
+    [FormerlySerializedAs("_layer")]
+    [SerializeField] private LayerMask _interactionLayers;
     [Tooltip("상호작용 대상을 탐지할 반경입니다.")]
     [SerializeField] private float _interactRange = 1.0f;
     [Tooltip("누르기와 홀드에 함께 사용하는 상호작용 입력 액션입니다.")]
@@ -41,7 +44,7 @@ public sealed class PlayerInteractionController : MonoBehaviour
     private void Awake()
     {
         _contactFilter.useLayerMask = true;
-        _contactFilter.layerMask = _layer;
+        _contactFilter.layerMask = _interactionLayers;
         _contactFilter.useTriggers = true;
     }
     private void OnEnable()
@@ -105,7 +108,7 @@ public sealed class PlayerInteractionController : MonoBehaviour
             {
                 interactable = _currentTarget;
             }
-            else if (!hitCollider.TryGetComponent(out interactable))
+            else if (!TryGetInteractable(hitCollider, out interactable))
             {
                 continue;
             }
@@ -123,7 +126,7 @@ public sealed class PlayerInteractionController : MonoBehaviour
             }
             else
             {
-                hitCollider.TryGetComponent(out nearestHighlight);
+                TryGetHighlightable(hitCollider, out nearestHighlight);
             }
         }
         if (nearestTarget == null)
@@ -137,6 +140,29 @@ public sealed class PlayerInteractionController : MonoBehaviour
             return;
         }
         ChangeTarget(nearestCollider, nearestTarget, nearestHighlight);
+    }
+
+    // 자식 Trigger는 자신 또는 연결된 Rigidbody 오브젝트의 계약을 사용합니다.
+    private static bool TryGetInteractable(Collider2D targetCollider,
+        out IInteractable interactable)
+    {
+        if (targetCollider.TryGetComponent(out interactable))
+        {
+            return true;
+        }
+        Rigidbody2D attachedBody = targetCollider.attachedRigidbody;
+        return attachedBody != null && attachedBody.TryGetComponent(out interactable);
+    }
+
+    private static bool TryGetHighlightable(Collider2D targetCollider,
+        out IHighlightable highlightable)
+    {
+        if (targetCollider.TryGetComponent(out highlightable))
+        {
+            return true;
+        }
+        Rigidbody2D attachedBody = targetCollider.attachedRigidbody;
+        return attachedBody != null && attachedBody.TryGetComponent(out highlightable);
     }
     // 대상 변경은 진행 중인 홀드를 먼저 끝내 중복 상태를 남기지 않습니다.
     private void ChangeTarget(Collider2D newCollider, IInteractable newTarget,
