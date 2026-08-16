@@ -84,7 +84,7 @@ public sealed class ShopPresenter : MonoBehaviour
     /// <summary>유효한 상점 데이터를 조회해 메인 창과 두 목록을 엽니다.</summary>
     public bool Open(string shopId)
     {
-        if (_view == null || !_view.IsConfigured
+        if (!isActiveAndEnabled || _view == null || !_view.IsConfigured
             || _shopController == null || _inventoryService == null
             || _inputLock == null || !_inputLock.IsConfigured
             || !_shopController.TryGetShop(shopId, out ShopDefinition shop))
