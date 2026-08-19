@@ -216,6 +216,30 @@ internal static class GameDataEditorValidator
             out GameDataCsvFile items);
         hasAllRequiredFiles &= TryGetRequiredCsvFile(
             controllerSerializedObject,
+            "_technologiesCsv",
+            "technologies.csv",
+            report,
+            out GameDataCsvFile technologies);
+        hasAllRequiredFiles &= TryGetRequiredCsvFile(
+            controllerSerializedObject,
+            "_restorationStagesCsv",
+            "restoration_stages.csv",
+            report,
+            out GameDataCsvFile restorationStages);
+        hasAllRequiredFiles &= TryGetRequiredCsvFile(
+            controllerSerializedObject,
+            "_codexEntriesCsv",
+            "codex_entries.csv",
+            report,
+            out GameDataCsvFile codexEntries);
+        hasAllRequiredFiles &= TryGetRequiredCsvFile(
+            controllerSerializedObject,
+            "_codexIngredientsCsv",
+            "codex_ingredients.csv",
+            report,
+            out GameDataCsvFile codexIngredients);
+        hasAllRequiredFiles &= TryGetRequiredCsvFile(
+            controllerSerializedObject,
             "_questsCsv",
             "quests.csv",
             report,
@@ -306,7 +330,11 @@ internal static class GameDataEditorValidator
             puzzlePipeTiles,
             puzzleCircleRings,
             shops,
-            shopStock);
+            shopStock,
+            technologies,
+            restorationStages,
+            codexEntries,
+            codexIngredients);
         return true;
     }
 

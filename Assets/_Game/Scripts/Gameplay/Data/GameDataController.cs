@@ -42,6 +42,27 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
     private TextAsset _itemsCsv;
 
     //==============================================================================
+    // 직렬화 필드 - Technology 및 Codex
+    //==============================================================================
+
+    [Header("Technology and Codex CSV")]
+    [Tooltip("문명 기술을 정의하는 technologies.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _technologiesCsv;
+
+    [Tooltip("문명 재건 단계를 정의하는 restoration_stages.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _restorationStagesCsv;
+
+    [Tooltip("도감 항목과 표시 순서를 정의하는 codex_entries.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _codexEntriesCsv;
+
+    [Tooltip("술 도감의 재료와 위치를 정의하는 codex_ingredients.csv TextAsset입니다.")]
+    [SerializeField]
+    private TextAsset _codexIngredientsCsv;
+
+    //==============================================================================
     // 직렬화 필드 - Shop
     //==============================================================================
 
@@ -231,6 +252,10 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
             || !TryValidateRequiredAsset(_dialogueNodesCsv, "dialogue_nodes.csv", out loadError)
             || !TryValidateRequiredAsset(_dialogueChoicesCsv, "dialogue_choices.csv", out loadError)
             || !TryValidateRequiredAsset(_itemsCsv, "items.csv", out loadError)
+            || !TryValidateRequiredAsset(_technologiesCsv, "technologies.csv", out loadError)
+            || !TryValidateRequiredAsset(_restorationStagesCsv, "restoration_stages.csv", out loadError)
+            || !TryValidateRequiredAsset(_codexEntriesCsv, "codex_entries.csv", out loadError)
+            || !TryValidateRequiredAsset(_codexIngredientsCsv, "codex_ingredients.csv", out loadError)
             || !TryValidateRequiredAsset(_questsCsv, "quests.csv", out loadError)
             || !TryValidateRequiredAsset(_questObjectivesCsv, "quest_objectives.csv", out loadError)
             || !TryValidateRequiredAsset(_questRewardsCsv, "quest_rewards.csv", out loadError)
@@ -263,7 +288,11 @@ public sealed class GameDataController : MonoBehaviour, ILocalizationService
             CreateCsvFile(_puzzlePipeTilesCsv),
             CreateCsvFile(_puzzleCircleRingsCsv),
             CreateOptionalCsvFile(_shopsCsv),
-            CreateOptionalCsvFile(_shopStockCsv));
+            CreateOptionalCsvFile(_shopStockCsv),
+            CreateCsvFile(_technologiesCsv),
+            CreateCsvFile(_restorationStagesCsv),
+            CreateCsvFile(_codexEntriesCsv),
+            CreateCsvFile(_codexIngredientsCsv));
         return true;
     }
 

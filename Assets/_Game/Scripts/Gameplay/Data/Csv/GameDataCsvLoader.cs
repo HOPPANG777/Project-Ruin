@@ -57,6 +57,18 @@ public static class GameDataCsvLoader
                 source.Shops,
                 source.ShopStock,
                 out List<ShopDefinition> shops,
+                out loadError)
+            || !TechnologyCsvDefinitionLoader.TryLoad(
+                source.Technologies,
+                source.RestorationStages,
+                out List<TechnologyDefinition> technologies,
+                out List<RestorationStageDefinition> restorationStages,
+                out loadError)
+            || !CodexCsvDefinitionLoader.TryLoad(
+                source.CodexEntries,
+                source.CodexIngredients,
+                out List<CodexEntryDefinition> codexEntries,
+                out List<CodexIngredientDefinition> codexIngredients,
                 out loadError))
         {
             return false;
@@ -72,6 +84,10 @@ public static class GameDataCsvLoader
             npcQuestDialogueRoutes,
             puzzles,
             shops,
+            technologies,
+            restorationStages,
+            codexEntries,
+            codexIngredients,
             out repository,
             out GameDataRepositoryBuildError buildError))
         {

@@ -27,6 +27,9 @@ public interface IGameDataRepository
     /// <summary>등록된 상점 개수입니다.</summary>
     int ShopCount { get; }
 
+    /// <summary>기술·재건·도감 정의 저장소입니다.</summary>
+    ICodexDataRepository CodexData { get; }
+
     /// <summary>
     /// 화자 ID로 대화 화자 정의를 조회합니다.
     /// </summary>

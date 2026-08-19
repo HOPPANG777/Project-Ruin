@@ -23,6 +23,9 @@ public sealed class GameRoot : Singleton<GameRoot>
     [Tooltip("기술 획득·반납과 유적 재건 상태를 관리하는 컨트롤러입니다.")]
     [SerializeField]
     private RelicRestorationController _relicRestorationController;
+    [Tooltip("도감 영구 발견 상태와 기술 해제 상태를 관리하는 컨트롤러입니다.")]
+    [SerializeField]
+    private CodexController _codexController;
     [Tooltip("환경 스킬의 등록 정보와 영구 획득 상태를 관리하는 컨트롤러입니다.")]
     [SerializeField]
     private SkillController _skillController;
@@ -72,6 +75,8 @@ public sealed class GameRoot : Singleton<GameRoot>
     public IProgressService Progress => _progressController;
     /// <summary>유적 재건 시스템의 외부 공개 계약입니다.</summary>
     public IRelicRestorationService RelicRestoration => _relicRestorationController;
+    /// <summary>도감 발견과 해제 상태 시스템의 외부 공개 계약입니다.</summary>
+    public ICodexService Codex => _codexController;
     /// <summary>환경 스킬 획득 상태 시스템의 외부 공개 계약입니다.</summary>
     public ISkillService Skill => _skillController;
     /// <summary>퀘스트 시스템의 외부 공개 계약입니다.</summary>
@@ -115,7 +120,7 @@ public sealed class GameRoot : Singleton<GameRoot>
 
         if (_relicRestorationController != null && _progressController != null)
         {
-            _relicRestorationController.Init(_progressController);
+            _relicRestorationController.Init(GameData.CodexData, _progressController);
         }
 
         if (_skillController != null && _progressController != null)
@@ -134,6 +139,15 @@ public sealed class GameRoot : Singleton<GameRoot>
         if (_inventoryController != null)
         {
             _inventoryController.Init(GameData, _gameDataController, _progressController);
+        }
+
+        if (_codexController != null)
+        {
+            _codexController.Init(
+                GameData.CodexData,
+                _inventoryController,
+                _progressController,
+                _relicRestorationController);
         }
 
         if (_inventoryPresenter != null)

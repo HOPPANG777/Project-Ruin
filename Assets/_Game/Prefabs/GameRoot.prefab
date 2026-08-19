@@ -448,6 +448,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2878542185971289226}
   - component: {fileID: 5787683473583654242}
+  - component: {fileID: 7788990011223344556}
   m_Layer: 0
   m_Name: GameDataController
   m_TagString: Untagged
@@ -488,6 +489,10 @@ MonoBehaviour:
   _dialogueNodesCsv: {fileID: 4900000, guid: 9adf76f4c84d474f90721aad52c8244f, type: 3}
   _dialogueChoicesCsv: {fileID: 4900000, guid: 58fb3e12631f488fa6fb61bf092de93c, type: 3}
   _itemsCsv: {fileID: 4900000, guid: a8f3d2e1c4b5476a9e0f1a2b3c4d5e6f, type: 3}
+  _technologiesCsv: {fileID: 4900000, guid: b36f2558c63c4cb9a14eed08cc76752d, type: 3}
+  _restorationStagesCsv: {fileID: 4900000, guid: fee7e2547e1747888de53b1a1752b958, type: 3}
+  _codexEntriesCsv: {fileID: 4900000, guid: 4b1417dc2c4c48a0872955d6615e3f67, type: 3}
+  _codexIngredientsCsv: {fileID: 4900000, guid: b389665a6ebb4fe194a401139505493f, type: 3}
   _questsCsv: {fileID: 4900000, guid: c1f36fd7ba2e4aa5b79c83d3c8a8fe5a, type: 3}
   _questObjectivesCsv: {fileID: 4900000, guid: 5f7a71454ce945f1b4dc9e4272dafcf2, type: 3}
   _questRewardsCsv: {fileID: 4900000, guid: cd3b903b12b34bcd91625ded3124dc28, type: 3}
@@ -500,6 +505,18 @@ MonoBehaviour:
   _puzzleLightTilesCsv: {fileID: 4900000, guid: 7a26c00100004d7aa001000000000002, type: 3}
   _puzzlePipeTilesCsv: {fileID: 4900000, guid: 7a26c00100004d7aa001000000000003, type: 3}
   _puzzleCircleRingsCsv: {fileID: 4900000, guid: 7a26c00100004d7aa001000000000004, type: 3}
+--- !u!114 &7788990011223344556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442616748300081926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73457217aa2647fb83bd6d7f59f7c84a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CodexController
 --- !u!1 &1008359294462020877
 GameObject:
   m_ObjectHideFlags: 0
@@ -560,6 +577,7 @@ MonoBehaviour:
   _gameDataController: {fileID: 5787683473583654242}
   _progressController: {fileID: 3253425018199022226}
   _relicRestorationController: {fileID: 7938823001391292649}
+  _codexController: {fileID: 7788990011223344556}
   _skillController: {fileID: 3838426207590922893}
   _altarPresenter: {fileID: 0}
   _questController: {fileID: 4612708442974497604}
@@ -860,7 +878,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c70e3f41693f1641951d0bba3578309, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RelicRestorationController
-  _catalog: {fileID: 11400000, guid: 4eb8ba9888fd3294dbdd9b86b1dbce1a, type: 2}
 --- !u!1 &2092624547534193612
 GameObject:
   m_ObjectHideFlags: 0

@@ -87,6 +87,58 @@ public sealed class GameDataCsvRegressionTests
         Assert.That(repository.TryGetQuest("QUEST_RESTORE_MURAL", out QuestDefinition quest), Is.True);
         Assert.That(HasItemReward(quest, "ITEM_COIN", 100), Is.True);
         Assert.That(repository.ShopCount, Is.Zero);
+        Assert.That(repository.CodexData, Is.Not.Null);
+        Assert.That(repository.CodexData.TechnologyCount, Is.Zero);
+        Assert.That(repository.CodexData.CodexEntryCount, Is.Zero);
+    }
+
+    [Test]
+    public void ValidCodexCsvCreatesCrossReferencedRepository()
+    {
+        GameDataCsvSource source = CreateCodexTestSource();
+
+        bool didLoad = GameDataCsvLoader.TryLoad(
+            source, out GameDataRepository repository, out GameDataCsvLoadError loadError);
+
+        Assert.That(didLoad, Is.True, loadError?.ToString());
+        Assert.That(repository.CodexData.TechnologyCount, Is.EqualTo(2));
+        Assert.That(repository.CodexData.CodexEntryCount, Is.EqualTo(3));
+        Assert.That(repository.CodexData.TryGetTechnology("TECH_TEST_A", out TechnologyDefinition technology), Is.True);
+        Assert.That(technology.RestoreValue, Is.EqualTo(40));
+        Assert.That(repository.CodexData.TryGetCodexIngredients(
+            "CODEX_TEST_ALCOHOL", out var ingredients), Is.True);
+        Assert.That(ingredients.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void InvalidCodexCategoryIsRejected()
+    {
+        GameDataCsvSource source = CreateCodexTestSource();
+        GameDataCsvFile invalidEntries = new GameDataCsvFile(
+            "codex_entries.csv", source.CodexEntries.Text.Replace("RELIC", "UNKNOWN"));
+        source = CopySourceWithCodex(source, source.Technologies,
+            source.RestorationStages, invalidEntries, source.CodexIngredients);
+
+        bool didLoad = GameDataCsvLoader.TryLoad(source, out _, out GameDataCsvLoadError loadError);
+
+        Assert.That(didLoad, Is.False);
+        Assert.That(loadError.SourceName, Is.EqualTo("codex_entries.csv"));
+        Assert.That(loadError.ColumnName, Is.EqualTo("category"));
+    }
+
+    [Test]
+    public void InvalidTechnologyRestoreTotalIsRejected()
+    {
+        GameDataCsvSource source = CreateCodexTestSource();
+        GameDataCsvFile invalidTechnologies = new GameDataCsvFile(
+            "technologies.csv", source.Technologies.Text.Replace(",60", ",50"));
+        source = CopySourceWithCodex(source, invalidTechnologies,
+            source.RestorationStages, source.CodexEntries, source.CodexIngredients);
+
+        bool didLoad = GameDataCsvLoader.TryLoad(source, out _, out GameDataCsvLoadError loadError);
+
+        Assert.That(didLoad, Is.False);
+        StringAssert.Contains("합계는 100", loadError.Message);
     }
 
     /// <summary>
@@ -325,7 +377,7 @@ public sealed class GameDataCsvRegressionTests
     //==============================================================================
 
     /// <summary>
-    /// 프로젝트의 실제 런타임 CSV TextAsset 19개를 전체 게임 데이터 원본 묶음으로 생성합니다.
+    /// 프로젝트의 실제 런타임 CSV TextAsset을 전체 게임 데이터 원본 묶음으로 생성합니다.
     /// </summary>
     /// <returns>실제 런타임 CSV 원본 묶음입니다.</returns>
     private static GameDataCsvSource CreateRuntimeSource()
@@ -349,7 +401,11 @@ public sealed class GameDataCsvRegressionTests
             LoadRequiredCsv("puzzle_pipe_tiles.csv"),
             LoadRequiredCsv("puzzle_circle_rings.csv"),
             LoadRequiredCsv("shops.csv"),
-            LoadRequiredCsv("shop_stock.csv"));
+            LoadRequiredCsv("shop_stock.csv"),
+            LoadRequiredCsv("technologies.csv"),
+            LoadRequiredCsv("restoration_stages.csv"),
+            LoadRequiredCsv("codex_entries.csv"),
+            LoadRequiredCsv("codex_ingredients.csv"));
     }
 
     private static bool HasItemReward(QuestDefinition quest, string itemId, int amount)
@@ -387,6 +443,34 @@ public sealed class GameDataCsvRegressionTests
             new GameDataCsvFile("shop_stock.csv", stockText));
     }
 
+    private static GameDataCsvSource CreateCodexTestSource()
+    {
+        GameDataCsvSource source = CreateRuntimeSource();
+        string itemText = source.Items.Text.TrimEnd()
+            + "\nITEM_TEST_RELIC,item.coin.name,item.coin.description,,0,false,ITEM_RELIC_COLLECTIBLE,1"
+            + "\nITEM_TEST_ALCOHOL,item.coin.name,item.coin.description,,0,false,ITEM_ALCOHOL_COLLECTIBLE,1"
+            + "\nITEM_TEST_INGREDIENT,item.coin.name,item.coin.description,,0,false,ITEM_MISC,99";
+        source = CopySourceWithItems(source, new GameDataCsvFile("items.csv", itemText));
+        GameDataCsvFile technologies = new GameDataCsvFile(
+            "technologies.csv",
+            "technology_id,display_name_key,description_text_key,operation_text_key,icon_id,derived_skill_id,chapter,restore_value\n"
+            + "TECH_TEST_A,item.coin.name,item.coin.description,item.coin.name,,,1,40\n"
+            + "TECH_TEST_B,item.coin.name,item.coin.description,item.coin.name,,,2,60");
+        GameDataCsvFile stages = new GameDataCsvFile(
+            "restoration_stages.csv", "stage,required_restore\n1,40\n2,100");
+        GameDataCsvFile entries = new GameDataCsvFile(
+            "codex_entries.csv",
+            "entry_id,category,display_order,source_id,chapter\n"
+            + "CODEX_TEST_RELIC,RELIC,0,ITEM_TEST_RELIC,1\n"
+            + "CODEX_TEST_ALCOHOL,ALCOHOL,0,ITEM_TEST_ALCOHOL,1\n"
+            + "CODEX_TEST_TECH,TECHNOLOGY,0,TECH_TEST_A,1");
+        GameDataCsvFile ingredients = new GameDataCsvFile(
+            "codex_ingredients.csv",
+            "entry_id,ingredient_order,item_id,location_text_key\n"
+            + "CODEX_TEST_ALCOHOL,0,ITEM_TEST_INGREDIENT,item.coin.name");
+        return CopySourceWithCodex(source, technologies, stages, entries, ingredients);
+    }
+
     /// <summary>
     /// 런타임 CSV 원본 묶음을 복사하면서 Dialogue Actors 원본만 교체합니다.
     /// </summary>
@@ -416,7 +500,11 @@ public sealed class GameDataCsvRegressionTests
             source.PuzzlePipeTiles,
             source.PuzzleCircleRings,
             source.Shops,
-            source.ShopStock);
+            source.ShopStock,
+            source.Technologies,
+            source.RestorationStages,
+            source.CodexEntries,
+            source.CodexIngredients);
     }
 
     /// <summary>
@@ -445,7 +533,11 @@ public sealed class GameDataCsvRegressionTests
             source.PuzzlePipeTiles,
             source.PuzzleCircleRings,
             source.Shops,
-            source.ShopStock);
+            source.ShopStock,
+            source.Technologies,
+            source.RestorationStages,
+            source.CodexEntries,
+            source.CodexIngredients);
     }
 
     /// <summary>
@@ -474,7 +566,11 @@ public sealed class GameDataCsvRegressionTests
             source.PuzzlePipeTiles,
             source.PuzzleCircleRings,
             source.Shops,
-            source.ShopStock);
+            source.ShopStock,
+            source.Technologies,
+            source.RestorationStages,
+            source.CodexEntries,
+            source.CodexIngredients);
     }
 
     private static GameDataCsvSource CopySourceWithShops(
@@ -501,7 +597,28 @@ public sealed class GameDataCsvRegressionTests
             source.PuzzlePipeTiles,
             source.PuzzleCircleRings,
             shops,
-            shopStock);
+            shopStock,
+            source.Technologies,
+            source.RestorationStages,
+            source.CodexEntries,
+            source.CodexIngredients);
+    }
+
+    private static GameDataCsvSource CopySourceWithCodex(
+        GameDataCsvSource source,
+        GameDataCsvFile technologies,
+        GameDataCsvFile stages,
+        GameDataCsvFile entries,
+        GameDataCsvFile ingredients)
+    {
+        return new GameDataCsvSource(
+            source.DialogueActors, source.DialoguePortraits, source.DialogueGraphs,
+            source.DialogueNodes, source.DialogueChoices, source.Items, source.Quests,
+            source.QuestObjectives, source.QuestRewards, source.QuestConsumeItems,
+            source.Localization, source.NpcDialogueBindings, source.NpcQuestDialogueRoutes,
+            source.Puzzles, source.PuzzleLightTiles, source.PuzzlePipeTiles,
+            source.PuzzleCircleRings, source.Shops, source.ShopStock,
+            technologies, stages, entries, ingredients);
     }
 
     /// <summary>
