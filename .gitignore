@@ -440,6 +440,7 @@ FodyWeavers.xsd
 .codex-doc-review/
 .docx_review_tech/
 .agents/
+.codex_tmp/
 
 
 ### Unity ###
