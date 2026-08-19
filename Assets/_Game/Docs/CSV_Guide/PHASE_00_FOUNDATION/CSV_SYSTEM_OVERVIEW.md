@@ -4,7 +4,7 @@
 
 ## CSV가 무엇인가
 
-CSV는 표를 쉼표로 나누어 저장한 텍스트 파일입니다. 첫 행은 열 이름인 **헤더**, 두 번째 행부터는 실제 데이터입니다. Project Ruin에서는 대화, 퀘스트, 아이템, 문장, NPC 연결, 퍼즐, 상점의 기획 데이터를 CSV로 관리합니다.
+CSV는 표를 쉼표로 나누어 저장한 텍스트 파일입니다. 첫 행은 열 이름인 **헤더**, 두 번째 행부터는 실제 데이터입니다. Project Ruin에서는 대화, 퀘스트, 아이템, 문장, NPC 연결, 퍼즐, 상점, 문명 기술과 도감의 기획 데이터를 CSV로 관리합니다.
 
 ## 게임이 CSV를 읽는 흐름
 
@@ -16,12 +16,12 @@ flowchart LR
     D --> E["CsvParser: 쉼표·따옴표 해석"]
     E --> F["도메인 Loader: 헤더·형식·중복 검사"]
     F --> G["GameDataRepository: CSV 간 참조 검사"]
-    G --> H["Dialogue·Quest·Inventory·Puzzle·Shop 실행"]
+    G --> H["Dialogue·Quest·Inventory·Puzzle·Shop·Codex 실행"]
 ```
 
 현재 CSV는 빌드된 게임이 외부 파일을 실시간으로 읽는 구조가 아닙니다. Unity가 CSV를 `TextAsset`으로 가져오고, 게임 초기화 시 연결된 내용을 한 번 읽습니다.
 
-## 19종 전체 지도
+## 현재 구현 23종 전체 지도
 
 ```mermaid
 flowchart TD
@@ -37,6 +37,8 @@ flowchart TD
     PUZZLE --> LIGHT["puzzle_light_tiles.csv"]
     PUZZLE --> CIRCLE["puzzle_circle_rings.csv"]
     SHOP["shops.csv"] --> STOCK["shop_stock.csv"]
+    TECH["technologies.csv"] --> STAGE["restoration_stages.csv"]
+    CODEX["codex_entries.csv"] --> ING["codex_ingredients.csv"]
     LOC -. "문장 Key" .-> ITEM
     LOC -. "문장 Key" .-> ACTOR
     LOC -. "문장 Key" .-> NODE
@@ -49,6 +51,10 @@ flowchart TD
     ITEM -. "화폐·상품" .-> SHOP
     GRAPH -. "기본·상태별 대화" .-> BIND
     QUEST -. "상태 조건" .-> ROUTE
+    LOC -. "기술 문장 Key" .-> TECH
+    ITEM -. "유물·술 원본" .-> CODEX
+    TECH -. "기술 원본" .-> CODEX
+    ITEM -. "재료 Item" .-> ING
 ```
 
 ## 필수와 선택
@@ -57,7 +63,7 @@ flowchart TD
 
 | 연결 종류 | CSV |
 | --- | --- |
-| 항상 연결해야 하는 15종 | Dialogue 5종, `items.csv`, Quest 4종, `localization.csv`, Puzzle 4종 |
+| 항상 연결해야 하는 19종 | Dialogue 5종, `items.csv`, Quest 4종, `localization.csv`, Puzzle 4종, Technology·Codex 4종 |
 | 기능을 사용할 때 연결하는 선택 4종 | NPC 2종, Shop 2종 |
 
 주의할 점:
@@ -66,6 +72,7 @@ flowchart TD
 - NPC Route는 Binding 없이는 사용할 수 없습니다.
 - Shop 두 파일은 선택이지만 상점을 사용할 때는 함께 연결하는 것이 안전합니다. Stock만 연결하면 부모 `shop_id`를 찾지 못합니다.
 - 현재 실제 `shops.csv`와 `shop_stock.csv`는 헤더만 있고 행은 없습니다. `GameRoot.prefab`에도 Shop 두 필드의 직렬화 연결이 아직 보이지 않아 현재 Repository의 Shop 수는 0입니다.
+- `technologies.csv`, `restoration_stages.csv`, `codex_entries.csv`, `codex_ingredients.csv`는 필수 연결이며 콘텐츠 확정 전에는 정확한 헤더만 유지할 수 있습니다.
 
 ## 한 행의 의미
 
@@ -78,6 +85,8 @@ flowchart TD
 | Shop | 상점 하나 | 진열 상품 하나 |
 | Localization | 문장 Key 하나 | 별도 자식 없음 |
 | Items | 아이템 하나 | 별도 자식 없음 |
+| Technology | 문명 기술 하나 | 별도 재건 단계 목록 |
+| Codex | 도감 항목 하나 | 술 제조 재료 하나 |
 
 ## 파일명과 헤더가 중요한 이유
 
@@ -96,6 +105,7 @@ flowchart TD
 | NPC ID와 대화 경로 | Scene의 `NpcDialogueInteractable.Npc Id` |
 | `puzzle_id`, 종류, 상세 데이터 | Scene/Prefab의 퍼즐 매니저 `Puzzle Id` |
 | `pattern_index` | 원형 퍼즐 매니저 `_ringPrefabs` 목록 |
+| 기술·도감의 `icon_id` | `ItemVisualCatalogSO` 또는 승인된 기술 아이콘 Catalog의 Sprite |
 
 비주얼 ID가 카탈로그에 없으면 Editor 검증기는 주로 **경고**를 냅니다. 반면 잘못된 CSV 헤더나 끊어진 필수 참조는 **오류**이며 Repository 생성을 막습니다.
 
@@ -109,4 +119,3 @@ flowchart TD
 - 일반 Progress 문서는 소문자 점 표기 ID를 예로 들지만, CSV의 Progress Flag 열은 현재 로더가 시스템 ID 규칙을 적용해 대문자·숫자·밑줄만 받습니다.
 
 전체 교정 근거는 [기존 가이드 교정표](EXISTING_GUIDE_CORRECTIONS.md)에 기록했습니다.
-

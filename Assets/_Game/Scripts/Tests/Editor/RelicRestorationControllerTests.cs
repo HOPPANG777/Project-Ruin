@@ -61,6 +61,7 @@ public sealed class RelicRestorationControllerTests
         Assert.That(buffer[0].TechnologyId, Is.EqualTo(TECHNOLOGY_POWER));
         Assert.That(_controller.TryReturnTechnology(TECHNOLOGY_POWER, out _, out _), Is.True);
         Assert.That(_controller.FillReturnableTechnologies(buffer), Is.Zero);
+        Assert.That(_controller.IsAcquired(TECHNOLOGY_POWER), Is.True);
     }
     [Test]
     public void TechnologyCannotBeAcquiredTwice()

@@ -2,7 +2,7 @@
 
 [도감·박물관 가이드](README.md) · [기술](technologies_csv.md)
 
-> 상태: 계획 계약. 현재 데이터는 `RelicRestorationCatalogSO.AltarDestinations`에 있으며 실제 Catalog는 비어 있습니다.
+> 상태: 계획 계약. 기존의 빈 ScriptableObject Catalog는 Phase 1에서 제거했으며, 실제 목적지가 확정되면 Phase 4에서 CSV 런타임 계약으로 구현합니다.
 
 ## 1. 이 CSV의 목적
 
@@ -90,8 +90,6 @@ Phase 4 구현 시 헤더, 필수값, ID·SpawnPoint 중복 여부, 이름 Key, 
 
 ## 13. 관련 문서와 코드
 
-- [현재 복원 Catalog](../../../Scripts/Gameplay/Relics/RelicRestorationCatalogSO.cs)
 - [현재 AltarInteractable](../../../Scripts/Gameplay/Relics/AltarInteractable.cs)
 - [공통 작성 규칙](../PHASE_00_FOUNDATION/COMMON_AUTHORING_RULES.md)
 - [Progress 저장 가이드](../../ES3_PROGRESS_SAVE_GUIDE.md)
-

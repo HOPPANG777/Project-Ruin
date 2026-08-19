@@ -2,7 +2,7 @@
 
 [도감·박물관 가이드](README.md) · [기술](technologies_csv.md)
 
-> 상태: 계획 계약. 현재 단계와 Timeline은 `RelicRestorationCatalogSO`에 있습니다.
+> 상태: Phase 1 런타임 계약. 요구 재건도는 CSV가 원본이며 Timeline은 Unity 전용 연결로 남습니다.
 
 ## 1. 이 CSV의 목적
 
@@ -68,7 +68,7 @@ stage,required_restore
 
 ## 10. 자동 또는 Unity 검증 항목
 
-Phase 1 구현 시 정확한 2열 헤더, 단계 연속성, 요구값 1~100, 엄격한 오름차순, 마지막 값 100을 오류로 검사합니다. Unity Editor에서는 모든 단계에 Timeline이 연결되었는지 별도로 확인합니다. 현재는 이 CSV용 검증이 구현되지 않았습니다.
+현재 Loader와 Repository가 정확한 2열 헤더, 단계 연속성, 요구값 1~100, 엄격한 오름차순, 마지막 값 100을 오류로 검사합니다. Unity Editor에서는 모든 단계에 Timeline이 연결되었는지 별도로 확인합니다.
 
 ## 11. 수정과 삭제 시 주의사항
 
@@ -85,6 +85,6 @@ Phase 1 구현 시 정확한 2열 헤더, 단계 연속성, 요구값 1~100, 엄
 ## 13. 관련 문서와 코드
 
 - [기술 CSV](technologies_csv.md)
-- [현재 복원 Catalog](../../../Scripts/Gameplay/Relics/RelicRestorationCatalogSO.cs)
+- [기술·재건 런타임 정의](../../../Scripts/Gameplay/Relics/Data/TechnologyDefinition.cs)
+- [복원 시스템 Controller](../../../Scripts/Gameplay/Relics/RelicRestorationController.cs)
 - [Progress 저장 가이드](../../ES3_PROGRESS_SAVE_GUIDE.md)
-

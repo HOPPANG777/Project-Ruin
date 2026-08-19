@@ -19,7 +19,7 @@
 | 클릭한 조명 타일 | 옛 구현 계획은 자기 자신 포함을 규칙처럼 요구 | 현재 매니저는 클릭 타일을 자동 반전하지 않음. 목록에 자기 ID가 있을 때만 반전 | 자동 반전 아님을 반복 명시 |
 | 조명 퍼즐 파일 구조 | 옛 계획은 `lighting_puzzles/tiles/effects.csv` 3개 | 현재는 `puzzles.csv` + `puzzle_light_tiles.csv`, 영향 목록은 `|` 압축 셀 | 옛 구조는 향후 정규화 참고안으로만 기록 |
 | 조명 퍼즐 해결 가능성 | 옛 계획은 자동 해결 가능성 검사를 예정 | 현재 로더·회귀 테스트는 구조와 참조만 검사하고 해답 존재를 검사하지 않음 | Play Mode 검수 항목으로 이동 |
-| 필수 CSV | `GameDataCsvSource` 생성자 기본값만 보면 Puzzle도 선택처럼 보일 수 있음 | 현재 `GameDataController`는 Dialogue 5 + Items 1 + Quest 4 + Localization 1 + Puzzle 4 = 15종을 필수 연결 | Controller 실제 흐름 기준으로 확정 |
+| 필수 CSV | `GameDataCsvSource` 생성자 기본값만 보면 일부 파일이 선택처럼 보일 수 있음 | 현재 `GameDataController`는 기존 15종 + Technology·Codex 4종 = 19종을 필수 연결 | Controller 실제 흐름 기준으로 확정 |
 | 선택 CSV | NPC·Shop의 역할이 자료마다 다름 | NPC 2종과 Shop 2종은 null/공백 입력 허용 | 기능 사용 시 연결하는 선택 CSV로 확정 |
 | `SET_PROGRESS_FLAG` | 오래된 Dialogue 가이드에 단일 이름 | 실제 값은 `SET_PROGRESS_FLAG_TRUE`, `SET_PROGRESS_FLAG_FALSE` | 허용하지 않는 옛 이름으로 표시 |
 | Progress Flag 표기 | Progress 가이드 예시는 `story.npc...` 또는 소문자 밑줄 | CSV의 Flag 열은 `TryGetRequired/OptionalSystemId`를 사용해 대문자·숫자·밑줄만 허용 | CSV에서는 `FLAG_...` 형식을 사용하도록 교정 |
@@ -35,4 +35,3 @@
 2. `owner_npc_id`는 형식만 자동 검사합니다. 실제 NPC Scene ID나 Binding과 일치하는지는 기획자와 Unity 담당자가 별도로 확인합니다.
 3. `pattern_index`의 실제 상한은 CSV가 아니라 각 원형 퍼즐 매니저의 Unity 목록 길이입니다.
 4. 비주얼 카탈로그 누락은 경고일 수 있지만 출시 화면 품질에는 영향을 줍니다.
-

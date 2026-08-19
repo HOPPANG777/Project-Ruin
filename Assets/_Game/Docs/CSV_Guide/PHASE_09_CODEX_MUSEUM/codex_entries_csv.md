@@ -2,7 +2,7 @@
 
 [도감·박물관 가이드](README.md) · [술 재료](codex_ingredients_csv.md) · [기술](technologies_csv.md)
 
-> 상태: 계획 계약. 이 파일과 런타임 로더는 아직 존재하지 않습니다.
+> 상태: Phase 1 런타임 계약. 현재 파일은 콘텐츠 미확정으로 헤더만 있습니다.
 
 ## 1. 이 CSV의 목적
 
@@ -82,7 +82,7 @@ CODEX_EXAMPLE_TECH,TECHNOLOGY,0,TECH_EXAMPLE_GLIDE,1
 
 ## 10. 자동 또는 Unity 검증 항목
 
-Phase 1 구현 시 정확한 헤더, 필수값, ID 형식·중복, 카테고리 3종, 표시 순서, 원본 존재, ItemType 일치, 동일 원본 중복, 술 재료 존재를 오류로 검사합니다. `icon_id`는 원본 데이터의 Unity Catalog 연결을 경고로 검사합니다. 현재는 자동 검증이 없습니다.
+현재 Loader와 Repository가 정확한 헤더, 필수값, ID 형식·중복, 카테고리 3종, 표시 순서, 원본 존재, ItemType 일치, 동일 원본 중복, 술 재료 존재를 오류로 검사합니다. `icon_id`는 원본 데이터의 Unity Catalog 연결 대상입니다.
 
 ## 11. 수정과 삭제 시 주의사항
 

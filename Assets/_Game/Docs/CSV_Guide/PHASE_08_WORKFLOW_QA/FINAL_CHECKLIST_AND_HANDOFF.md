@@ -53,6 +53,14 @@
 - [ ] `initial_stock=0`을 무한으로 해석하지 않았다.
 - [ ] 선택 TextAsset 연결과 `OPEN_SHOP` 흐름을 확인했다.
 
+### 기술·도감
+
+- [ ] 기술 기여도 합계와 마지막 재건 단계가 100이다.
+- [ ] 도감 카테고리와 ItemType 또는 Technology 원본이 일치한다.
+- [ ] 술 도감 항목에 재료가 한 개 이상 있다.
+- [ ] 최초 획득 후 아이템 수량이 0이 되어도 발견 상태가 유지된다.
+- [ ] 기술 반환 후에도 기술 도감 해제 상태가 유지된다.
+
 ## 3. 기술 검증 체크
 
 - [ ] CSV 파싱 오류가 없다.
@@ -91,7 +99,7 @@ PlayMode 시나리오와 결과:
 
 ## 6. 문서 세트 자체 점검
 
-- [ ] [README](../README.md)에 19개 CSV 링크가 있다.
+- [ ] [README](../README.md)에 현재 23개 CSV와 계획 5개 CSV 링크가 있다.
 - [ ] 각 CSV 문서에 목적·헤더·열 규칙·작성 흐름·검증·관련 코드가 있다.
 - [ ] [CodeList](../PHASE_00_FOUNDATION/CODELIST_MASTER.md)가 현재 코드와 일치한다.
 - [ ] [LIGHT 매핑](../PHASE_05_PUZZLE/LIGHT_PUZZLE_READABLE_MAPPING.md)이 현재 원본 9행과 일치한다.

@@ -2,7 +2,7 @@
 
 [도감·박물관 가이드](README.md) · [도감 항목](codex_entries_csv.md) · [items.csv](../PHASE_01_LOCALIZATION_ITEMS/items_csv.md)
 
-> 상태: 계획 계약. 이 파일과 런타임 로더는 아직 존재하지 않습니다.
+> 상태: Phase 1 런타임 계약. 현재 파일은 콘텐츠 미확정으로 헤더만 있습니다.
 
 ## 1. 이 CSV의 목적
 
@@ -72,7 +72,7 @@ CODEX_EXAMPLE_ALCOHOL,1,ITEM_EXAMPLE_WATER,item.example_water.location
 
 ## 10. 자동 또는 Unity 검증 항목
 
-Phase 1 구현 시 정확한 4열 헤더, 필수값, 부모 존재와 카테고리, 순서 범위·중복, Item 존재, 재료 중복, 위치 Key 존재, 모든 술 Entry의 재료 1개 이상을 검사합니다. Item 아이콘 누락은 Unity Catalog 경고로 구분합니다. 현재는 이 CSV용 자동 검증이 없습니다.
+현재 Loader와 Repository가 정확한 4열 헤더, 필수값, 부모 존재와 카테고리, 순서 범위·중복, Item 존재, 재료 중복, 위치 Key 존재, 모든 술 Entry의 재료 1개 이상을 검사합니다. Item 아이콘은 Unity Catalog 연결 대상입니다.
 
 ## 11. 수정과 삭제 시 주의사항
 
@@ -93,4 +93,3 @@ Phase 1 구현 시 정확한 4열 헤더, 필수값, 부모 존재와 카테고�
 - [items.csv](../PHASE_01_LOCALIZATION_ITEMS/items_csv.md)
 - [localization.csv](../PHASE_01_LOCALIZATION_ITEMS/localization_csv.md)
 - [공통 작성 규칙](../PHASE_00_FOUNDATION/COMMON_AUTHORING_RULES.md)
-

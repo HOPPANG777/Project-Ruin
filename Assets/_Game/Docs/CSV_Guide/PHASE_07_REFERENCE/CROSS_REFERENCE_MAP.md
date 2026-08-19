@@ -125,7 +125,7 @@ flowchart LR
 
 ## 6. 도감·박물관 계획 참조 지도
 
-아래 9종은 아직 런타임에 연결되지 않은 계획 계약이다. 점선은 Unity Catalog 또는 씬 ID 연결이다.
+아래 중 기술·재건·도감 4종은 Phase 1 런타임 계약이고, 박물관 5종은 계획 계약이다. 점선은 Unity Catalog 또는 씬 ID 연결이다.
 
 ```mermaid
 flowchart LR

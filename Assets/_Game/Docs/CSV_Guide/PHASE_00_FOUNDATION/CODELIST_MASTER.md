@@ -203,7 +203,7 @@ CodeList는 드롭다운 enum만 뜻하지 않습니다. 이 문서에서는 입
 
 Localization Key 20개 전체는 [localization.csv 문서](../PHASE_01_LOCALIZATION_ITEMS/localization_csv.md)에 현재 패턴 중심으로 설명합니다. 새 데이터 작성 시에는 반드시 실제 CSV를 다시 읽어 드롭다운 목록을 갱신합니다.
 
-도감·박물관 9종은 아직 실제 CSV가 없으므로 현재 동적 목록도 없습니다. 예시 `EXAMPLE_...` ID를 실제 선택지로 사용하지 않습니다.
+기술·재건·도감 4종은 실제 CSV가 있지만 현재 헤더만 있어 동적 목록이 비어 있습니다. 박물관 5종은 아직 실제 CSV가 없습니다. 예시 `EXAMPLE_...` ID를 실제 선택지로 사용하지 않습니다.
 
 ## 6. 복합 입력 형식
 

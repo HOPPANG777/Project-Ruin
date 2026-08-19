@@ -37,6 +37,7 @@ public sealed class CodexDataRepository : ICodexDataRepository
         _technologies = Copy(technologies);
         _stages = Copy(stages);
         _entries = Copy(entries);
+        Array.Sort(_entries, CompareEntries);
         _technologyById = new Dictionary<string, TechnologyDefinition>(StringComparer.Ordinal);
         _entryById = new Dictionary<string, CodexEntryDefinition>(StringComparer.Ordinal);
         _entryBySource = new Dictionary<string, CodexEntryDefinition>(StringComparer.Ordinal);
@@ -112,6 +113,16 @@ public sealed class CodexDataRepository : ICodexDataRepository
     private static string CreateSourceKey(CodexCategory category, string sourceId) =>
         string.Concat((int)category, ":", sourceId ?? string.Empty);
 
+    private static int CompareEntries(CodexEntryDefinition left, CodexEntryDefinition right)
+    {
+        int categoryComparison = left.Category.CompareTo(right.Category);
+        if (categoryComparison != 0) return categoryComparison;
+        int orderComparison = left.DisplayOrder.CompareTo(right.DisplayOrder);
+        return orderComparison != 0
+            ? orderComparison
+            : string.CompareOrdinal(left.EntryId, right.EntryId);
+    }
+
     private static T[] Copy<T>(IReadOnlyList<T> source)
     {
         int count = source != null ? source.Count : 0;
@@ -120,4 +131,3 @@ public sealed class CodexDataRepository : ICodexDataRepository
         return copy;
     }
 }
-

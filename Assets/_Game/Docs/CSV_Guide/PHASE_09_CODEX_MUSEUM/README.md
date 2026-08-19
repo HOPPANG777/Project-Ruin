@@ -2,14 +2,14 @@
 
 [전체 README로 돌아가기](../README.md) · [공통 작성 규칙](../PHASE_00_FOUNDATION/COMMON_AUTHORING_RULES.md) · [CodeList Master](../PHASE_00_FOUNDATION/CODELIST_MASTER.md)
 
-> 문서 상태: **Phase 1 이후 구현할 계획 계약**  
-> 이 폴더의 CSV 9종은 아직 `Assets/_Game/Data/Csv/`에 생성되지 않았고 현재 런타임 로더에도 연결되지 않았습니다. 이 문서는 기획자와 개발자가 구현 전에 헤더·참조·검증 기준을 합의하기 위한 작성 기준서입니다.
+> 문서 상태: **Phase 1 데이터 기반 구현 완료 + 박물관 계획 계약**
+> 기술·재건·도감 CSV 4종은 런타임과 검증기에 연결됐으며 현재는 콘텐츠 미확정으로 헤더만 있습니다. 박물관 CSV 5종은 이후 Phase에서 구현합니다.
 
 ## 1. 데이터 운영 원칙
 
 - 기획자가 작성하는 이름 Key, 설명 Key, 순서, 챕터, 보상, 요구 목록은 CSV를 런타임 원본으로 사용합니다.
 - Sprite, Timeline, Material, Particle, Trigger, SpawnPoint 같은 Unity 전용 참조는 CSV에 에셋 경로를 쓰지 않습니다. CSV의 안정적인 ID를 Unity Catalog 또는 씬 컴포넌트가 연결합니다.
-- ScriptableObject를 기획 데이터의 중복 원본으로 유지하지 않습니다. 기존 `TechnologyDataSO`와 `RelicRestorationCatalogSO` 데이터는 CSV 전환 시 마이그레이션 대상으로 취급합니다.
+- ScriptableObject를 기획 데이터의 중복 원본으로 유지하지 않습니다. 기존의 빈 `TechnologyDataSO`·`RelicRestorationCatalogSO` 계약과 Catalog 에셋은 Phase 1에서 제거했습니다.
 - 발견, 보유, 투입, 전시, 반환, 벽화 개봉, 보상 수령은 서로 다른 런타임 상태입니다. CSV에는 플레이 중 변하는 상태를 기록하지 않습니다.
 - 아직 확정되지 않은 보상·벽화·아이템은 `TODO`, `NONE`, 가짜 ID로 채우지 않습니다. 해당 가이드가 허용하는 빈칸 또는 헤더 전용 파일을 사용합니다.
 
@@ -68,5 +68,4 @@
 
 ## 6. 구현 전 주의
 
-이 문서를 추가했다고 자동 검증이나 런타임 로딩이 생기지는 않습니다. Phase 1에서 Definition, Loader, Repository, `GameDataController`, Editor Validator, 회귀 테스트를 함께 구현한 뒤에만 이 헤더가 실행 계약이 됩니다. 구현 중 헤더를 바꿔야 한다면 코드와 이 문서를 같은 변경에서 수정합니다.
-
+기술·재건·도감 4종은 Definition, Loader, Repository, `GameDataController`, Editor Validator, 회귀 테스트가 연결된 실행 계약입니다. 나머지 박물관 5종은 아직 문서 계약이며 실제 구현 시 코드와 문서를 같은 변경에서 수정합니다.

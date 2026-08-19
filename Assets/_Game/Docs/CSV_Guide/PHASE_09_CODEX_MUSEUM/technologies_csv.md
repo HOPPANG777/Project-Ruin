@@ -2,7 +2,7 @@
 
 [도감·박물관 가이드](README.md) · [도감 항목](codex_entries_csv.md) · [벽화](museum_murals_csv.md)
 
-> 상태: 계획 계약. 현재 런타임은 `TechnologyDataSO`와 `RelicRestorationCatalogSO`를 사용하며 CSV 전환은 아직 구현되지 않았습니다.
+> 상태: Phase 1 런타임 계약. 현재 파일은 콘텐츠 미확정으로 헤더만 있으며 기술·재건 런타임은 이 CSV Definition을 사용합니다.
 
 ## 1. 이 CSV의 목적
 
@@ -82,7 +82,7 @@ TECH_EXAMPLE_ARCHIVE,technology.example_archive.name,technology.example_archive.
 
 ## 10. 자동 또는 Unity 검증 항목
 
-Phase 1 구현 시 다음을 오류로 검증합니다.
+현재 Loader와 Repository가 다음을 오류로 검증합니다.
 
 - 정확한 8열 헤더와 필수값
 - 기술 ID 형식·중복
@@ -91,7 +91,7 @@ Phase 1 구현 시 다음을 오류로 검증합니다.
 - 전체 재건 기여도 합계 100
 - 도감·벽화의 기술 참조 존재
 
-Unity Editor에서는 `icon_id`와 `derived_skill_id` 연결 누락을 경고로 확인합니다. 현재는 아직 이 CSV용 자동 검증이 없습니다.
+Unity 전용 `icon_id`와 `derived_skill_id`의 실제 Catalog 연결은 후속 Editor 경고 범위입니다.
 
 ## 11. 수정과 삭제 시 주의사항
 
@@ -112,6 +112,5 @@ Unity Editor에서는 `icon_id`와 `derived_skill_id` 연결 누락을 경고로
 - [공통 작성 규칙](../PHASE_00_FOUNDATION/COMMON_AUTHORING_RULES.md)
 - [CodeList Master](../PHASE_00_FOUNDATION/CODELIST_MASTER.md)
 - [ID 변경 영향](../PHASE_07_REFERENCE/ID_CHANGE_IMPACT_MAP.md)
-- [현재 TechnologyDataSO](../../../Scripts/Gameplay/Relics/Data/TechnologyDataSO.cs)
-- [현재 복원 Catalog](../../../Scripts/Gameplay/Relics/RelicRestorationCatalogSO.cs)
-
+- [기술 런타임 정의](../../../Scripts/Gameplay/Relics/Data/TechnologyDefinition.cs)
+- [도감 데이터 저장소](../../../Scripts/Gameplay/Codex/CodexDataRepository.cs)

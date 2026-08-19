@@ -24,20 +24,22 @@ public sealed class GameDataCsvRegressionTests
     // 라이트 퍼즐 참조 오류 테스트에서 사용하는 존재하지 않는 타일 ID입니다.
     private const string INVALID_LIGHT_AFFECTED_IDS = "1|2|999";
 
-    // 제거된 레거시 Dialogue, Quest, Inventory ScriptableObject 타입 이름 목록입니다.
+    // CSV로 전환해 제거한 레거시 ScriptableObject 타입 이름 목록입니다.
     private static readonly string[] LEGACY_TYPE_NAMES =
     {
         "DialogueActorSO",
         "DialogueGraphSO",
         "QuestDataSO",
         "ItemDataSO",
+        "TechnologyDataSO",
+        "RelicRestorationCatalogSO",
         "LightPuzzleParser",
         "PipeParser",
         "CirclePuzzleParser",
         "PuzzleLevelData"
     };
 
-    // 제거된 레거시 Dialogue, Quest, Inventory 에셋 경로 목록입니다.
+    // CSV로 전환해 제거한 레거시 에셋 경로 목록입니다.
     private static readonly string[] LEGACY_ASSET_PATHS =
     {
         "Assets/_Game/Data/DialogueData/TestNPC/PlayerDialogueActor.asset",
@@ -46,6 +48,7 @@ public sealed class GameDataCsvRegressionTests
         "Assets/_Game/Data/QuestData/QuestData.asset",
         "Assets/_Game/Data/InventoryData/Coin.asset",
         "Assets/_Game/Data/InventoryData/RepairKit.asset",
+        "Assets/_Game/Data/RelicCatalog/RelicRestorationCatalog.asset",
         "Assets/_Game/Data/PuzzleData/Light/Stage01.txt",
         "Assets/_Game/Data/PuzzleData/Pipe/Stage01.txt",
         "Assets/_Game/Data/PuzzleData/Circle/Stage01.txt"
@@ -103,6 +106,10 @@ public sealed class GameDataCsvRegressionTests
         Assert.That(didLoad, Is.True, loadError?.ToString());
         Assert.That(repository.CodexData.TechnologyCount, Is.EqualTo(2));
         Assert.That(repository.CodexData.CodexEntryCount, Is.EqualTo(3));
+        Assert.That(repository.CodexData.CodexEntries[0].Category,
+            Is.EqualTo(CodexCategory.CODEX_CATEGORY_RELIC));
+        Assert.That(repository.CodexData.CodexEntries[2].Category,
+            Is.EqualTo(CodexCategory.CODEX_CATEGORY_TECHNOLOGY));
         Assert.That(repository.CodexData.TryGetTechnology("TECH_TEST_A", out TechnologyDefinition technology), Is.True);
         Assert.That(technology.RestoreValue, Is.EqualTo(40));
         Assert.That(repository.CodexData.TryGetCodexIngredients(
@@ -139,6 +146,41 @@ public sealed class GameDataCsvRegressionTests
 
         Assert.That(didLoad, Is.False);
         StringAssert.Contains("합계는 100", loadError.Message);
+    }
+
+    [Test]
+    public void DuplicateCodexEntryIdIsRejected()
+    {
+        GameDataCsvSource source = CreateCodexTestSource();
+        GameDataCsvFile invalidEntries = new GameDataCsvFile(
+            "codex_entries.csv",
+            source.CodexEntries.Text
+                + "\nCODEX_TEST_RELIC,RELIC,1,ITEM_TEST_INGREDIENT,1");
+        source = CopySourceWithCodex(source, source.Technologies,
+            source.RestorationStages, invalidEntries, source.CodexIngredients);
+
+        bool didLoad = GameDataCsvLoader.TryLoad(source, out _, out GameDataCsvLoadError loadError);
+
+        Assert.That(didLoad, Is.False);
+        Assert.That(loadError.ColumnName, Is.EqualTo("CodexEntry"));
+        StringAssert.Contains("Entry ID", loadError.Message);
+    }
+
+    [Test]
+    public void MissingCodexItemReferenceIsRejected()
+    {
+        GameDataCsvSource source = CreateCodexTestSource();
+        GameDataCsvFile invalidEntries = new GameDataCsvFile(
+            "codex_entries.csv",
+            source.CodexEntries.Text.Replace("ITEM_TEST_RELIC", "ITEM_UNKNOWN"));
+        source = CopySourceWithCodex(source, source.Technologies,
+            source.RestorationStages, invalidEntries, source.CodexIngredients);
+
+        bool didLoad = GameDataCsvLoader.TryLoad(source, out _, out GameDataCsvLoadError loadError);
+
+        Assert.That(didLoad, Is.False);
+        Assert.That(loadError.ColumnName, Is.EqualTo("CodexEntry"));
+        StringAssert.Contains("원본 ID", loadError.Message);
     }
 
     /// <summary>
@@ -337,7 +379,7 @@ public sealed class GameDataCsvRegressionTests
     }
 
     /// <summary>
-    /// CSV 전환이 끝난 Dialogue, Quest, Inventory 레거시 ScriptableObject 타입이 런타임 어셈블리에 없는지 검증합니다.
+    /// CSV 전환이 끝난 레거시 ScriptableObject 타입이 런타임 어셈블리에 없는지 검증합니다.
     /// </summary>
     [Test]
     public void LegacyGameDataTypesAreRemoved()
@@ -356,7 +398,7 @@ public sealed class GameDataCsvRegressionTests
     }
 
     /// <summary>
-    /// 제거된 Dialogue, Quest, Inventory 레거시 에셋이 프로젝트에 다시 포함되지 않았는지 검증합니다.
+    /// 제거된 레거시 에셋이 프로젝트에 다시 포함되지 않았는지 검증합니다.
     /// </summary>
     [Test]
     public void LegacyGameDataAssetsAreRemoved()
@@ -461,9 +503,9 @@ public sealed class GameDataCsvRegressionTests
         GameDataCsvFile entries = new GameDataCsvFile(
             "codex_entries.csv",
             "entry_id,category,display_order,source_id,chapter\n"
-            + "CODEX_TEST_RELIC,RELIC,0,ITEM_TEST_RELIC,1\n"
+            + "CODEX_TEST_TECH,TECHNOLOGY,0,TECH_TEST_A,1\n"
             + "CODEX_TEST_ALCOHOL,ALCOHOL,0,ITEM_TEST_ALCOHOL,1\n"
-            + "CODEX_TEST_TECH,TECHNOLOGY,0,TECH_TEST_A,1");
+            + "CODEX_TEST_RELIC,RELIC,0,ITEM_TEST_RELIC,1");
         GameDataCsvFile ingredients = new GameDataCsvFile(
             "codex_ingredients.csv",
             "entry_id,ingredient_order,item_id,location_text_key\n"
