@@ -150,6 +150,12 @@ public sealed class SkillSystemTests
 
         public bool GetFlag(string flagId) =>
             _flags.TryGetValue(flagId, out bool value) && value;
+        public void SetSystemState(string stateId, string stateJson) { }
+        public bool TryGetSystemState(string stateId, out string stateJson)
+        {
+            stateJson = null;
+            return false;
+        }
         public void SetObjectState(int stageNumber, string objectId, string stateJson) { }
         public bool TryGetObjectState(int stageNumber, string objectId, out string stateJson)
         {

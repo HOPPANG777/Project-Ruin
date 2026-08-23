@@ -96,6 +96,9 @@ public sealed class GameDataRepository : IGameDataRepository
     // 상점 ID별 상점 정의 인덱스입니다.
     private readonly Dictionary<string, ShopDefinition> _shopById;
 
+    // 기술·재건·도감 정의의 분리된 읽기 전용 저장소입니다.
+    private CodexDataRepository _codexData;
+
     //==============================================================================
     // 공개 프로퍼티
     //==============================================================================
@@ -120,6 +123,9 @@ public sealed class GameDataRepository : IGameDataRepository
 
     /// <summary>등록된 상점 개수입니다.</summary>
     public int ShopCount => _shopById.Count;
+
+    /// <summary>기술·재건·도감 정의 저장소입니다.</summary>
+    public ICodexDataRepository CodexData => _codexData;
 
     //==============================================================================
     // 생성자
@@ -170,6 +176,42 @@ public sealed class GameDataRepository : IGameDataRepository
         IReadOnlyList<NpcQuestDialogueRouteDefinition> npcQuestDialogueRoutes,
         IReadOnlyList<PuzzleDefinition> puzzles,
         IReadOnlyList<ShopDefinition> shops,
+        out GameDataRepository repository,
+        out GameDataRepositoryBuildError buildError)
+    {
+        return TryCreate(
+            dialogueActors,
+            dialogueGraphs,
+            items,
+            quests,
+            localizationEntries,
+            npcDialogueBindings,
+            npcQuestDialogueRoutes,
+            puzzles,
+            shops,
+            Array.Empty<TechnologyDefinition>(),
+            Array.Empty<RestorationStageDefinition>(),
+            Array.Empty<CodexEntryDefinition>(),
+            Array.Empty<CodexIngredientDefinition>(),
+            out repository,
+            out buildError);
+    }
+
+    /// <summary>전체 게임 정의와 도감 정의를 검증해 읽기 전용 저장소를 생성합니다.</summary>
+    public static bool TryCreate(
+        IReadOnlyList<DialogueActorDefinition> dialogueActors,
+        IReadOnlyList<DialogueGraphDefinition> dialogueGraphs,
+        IReadOnlyList<ItemDefinition> items,
+        IReadOnlyList<QuestDefinition> quests,
+        IReadOnlyList<LocalizationEntryDefinition> localizationEntries,
+        IReadOnlyList<NpcDialogueBindingDefinition> npcDialogueBindings,
+        IReadOnlyList<NpcQuestDialogueRouteDefinition> npcQuestDialogueRoutes,
+        IReadOnlyList<PuzzleDefinition> puzzles,
+        IReadOnlyList<ShopDefinition> shops,
+        IReadOnlyList<TechnologyDefinition> technologies,
+        IReadOnlyList<RestorationStageDefinition> restorationStages,
+        IReadOnlyList<CodexEntryDefinition> codexEntries,
+        IReadOnlyList<CodexIngredientDefinition> codexIngredients,
         out GameDataRepository repository,
         out GameDataRepositoryBuildError buildError)
     {
@@ -224,6 +266,18 @@ public sealed class GameDataRepository : IGameDataRepository
         }
 
         if (!candidateRepository.TryValidateReferences(out buildError))
+        {
+            return false;
+        }
+
+        if (!CodexDataRepository.TryCreate(
+            technologies,
+            restorationStages,
+            codexEntries,
+            codexIngredients,
+            candidateRepository,
+            out candidateRepository._codexData,
+            out buildError))
         {
             return false;
         }

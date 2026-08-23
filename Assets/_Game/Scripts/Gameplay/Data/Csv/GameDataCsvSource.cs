@@ -91,6 +91,18 @@ public sealed class GameDataCsvSource
     // 선택 입력인 상점 초기 재고 CSV 원본입니다.
     private readonly GameDataCsvFile _shopStock;
 
+    // 문명 기술 CSV 원본입니다.
+    private readonly GameDataCsvFile _technologies;
+
+    // 문명 재건 단계 CSV 원본입니다.
+    private readonly GameDataCsvFile _restorationStages;
+
+    // 도감 항목 CSV 원본입니다.
+    private readonly GameDataCsvFile _codexEntries;
+
+    // 술 도감 재료 CSV 원본입니다.
+    private readonly GameDataCsvFile _codexIngredients;
+
     /// <summary>대화 화자 CSV 원본입니다.</summary>
     public GameDataCsvFile DialogueActors => _dialogueActors;
 
@@ -148,6 +160,18 @@ public sealed class GameDataCsvSource
     /// <summary>선택 입력인 상점 초기 재고 CSV 원본입니다.</summary>
     public GameDataCsvFile ShopStock => _shopStock;
 
+    /// <summary>문명 기술 CSV 원본입니다.</summary>
+    public GameDataCsvFile Technologies => _technologies;
+
+    /// <summary>문명 재건 단계 CSV 원본입니다.</summary>
+    public GameDataCsvFile RestorationStages => _restorationStages;
+
+    /// <summary>도감 항목 CSV 원본입니다.</summary>
+    public GameDataCsvFile CodexEntries => _codexEntries;
+
+    /// <summary>술 도감 재료 CSV 원본입니다.</summary>
+    public GameDataCsvFile CodexIngredients => _codexIngredients;
+
     /// <summary>
     /// 게임 데이터 저장소를 구성할 CSV 원본 묶음을 생성합니다.
     /// </summary>
@@ -188,7 +212,11 @@ public sealed class GameDataCsvSource
         GameDataCsvFile puzzlePipeTiles = null,
         GameDataCsvFile puzzleCircleRings = null,
         GameDataCsvFile shops = null,
-        GameDataCsvFile shopStock = null)
+        GameDataCsvFile shopStock = null,
+        GameDataCsvFile technologies = null,
+        GameDataCsvFile restorationStages = null,
+        GameDataCsvFile codexEntries = null,
+        GameDataCsvFile codexIngredients = null)
     {
         _dialogueActors = dialogueActors;
         _dialoguePortraits = dialoguePortraits;
@@ -209,5 +237,9 @@ public sealed class GameDataCsvSource
         _puzzleCircleRings = puzzleCircleRings;
         _shops = shops;
         _shopStock = shopStock;
+        _technologies = technologies;
+        _restorationStages = restorationStages;
+        _codexEntries = codexEntries;
+        _codexIngredients = codexIngredients;
     }
 }

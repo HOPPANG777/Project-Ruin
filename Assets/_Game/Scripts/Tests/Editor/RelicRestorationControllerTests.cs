@@ -5,12 +5,10 @@
 //              07/31/2026 + Technology 데이터 적용 -- Codex
 //=============================================================================
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.Timeline;
 //=============================================================================
 // Synopsis:   RelicRestorationControllerTests;
 //                - 잘못되거나 중복된 기술 상태 변경 방지
@@ -23,48 +21,39 @@ public sealed class RelicRestorationControllerTests
     private const string TECHNOLOGY_POWER = "TECHNOLOGY_POWER";
     private const string TECHNOLOGY_CRAFT = "TECHNOLOGY_CRAFT";
     private const string TECHNOLOGY_LIFE = "TECHNOLOGY_LIFE";
-    private readonly List<Object> _createdObjects = new List<Object>();
     private RelicRestorationController _controller;
+    private GameObject _gameObject;
     private FakeProgressService _progress;
     [SetUp]
     public void SetUp()
     {
-        RelicRestorationCatalogSO catalog = CreateObject<RelicRestorationCatalogSO>();
-        SetField(catalog, "_technologies", new List<TechnologyDataSO>
+        List<TechnologyDefinition> technologies = new List<TechnologyDefinition>
         {
             CreateTechnology(TECHNOLOGY_MOVE, 0, 0),
             CreateTechnology(TECHNOLOGY_POWER, 1, 30),
             CreateTechnology(TECHNOLOGY_CRAFT, 2, 30),
             CreateTechnology(TECHNOLOGY_LIFE, 3, 40)
-        });
-        TimelineAsset timeline = CreateObject<TimelineAsset>();
-        SetField(catalog, "_stages", new List<RelicRestorationCatalogSO.RestorationStageEntry>
+        };
+        List<RestorationStageDefinition> stages = new List<RestorationStageDefinition>
         {
-            CreateStage(1, 30, timeline), CreateStage(2, 60, timeline),
-            CreateStage(3, 100, timeline)
-        });
-        SetField(catalog, "_altarDestinations",
-            new List<RelicRestorationCatalogSO.AltarDestinationEntry> { CreateAltar() });
-        GameObject gameObject = new GameObject(nameof(RelicRestorationControllerTests));
-        _createdObjects.Add(gameObject);
-        _controller = gameObject.AddComponent<RelicRestorationController>();
-        SetField(_controller, "_catalog", catalog);
+            new RestorationStageDefinition(1, 30),
+            new RestorationStageDefinition(2, 60),
+            new RestorationStageDefinition(3, 100)
+        };
+        _gameObject = new GameObject(nameof(RelicRestorationControllerTests));
+        _controller = _gameObject.AddComponent<RelicRestorationController>();
         _progress = new FakeProgressService();
-        Assert.That(_controller.Init(_progress), Is.True);
+        Assert.That(_controller.Init(new FakeCodexDataRepository(technologies, stages), _progress), Is.True);
     }
     [TearDown]
     public void TearDown()
     {
-        for (int i = 0; i < _createdObjects.Count; i++)
-        {
-            Object.DestroyImmediate(_createdObjects[i]);
-        }
-        _createdObjects.Clear();
+        Object.DestroyImmediate(_gameObject);
     }
     [Test]
     public void AcquiredTechnologyIsReturnableUntilReturned()
     {
-        List<TechnologyDataSO> buffer = new List<TechnologyDataSO>();
+        List<TechnologyDefinition> buffer = new List<TechnologyDefinition>();
         bool acquired = _controller.TryAcquireTechnology(TECHNOLOGY_POWER, out _);
         int count = _controller.FillReturnableTechnologies(buffer);
         Assert.That(acquired, Is.True);
@@ -72,6 +61,7 @@ public sealed class RelicRestorationControllerTests
         Assert.That(buffer[0].TechnologyId, Is.EqualTo(TECHNOLOGY_POWER));
         Assert.That(_controller.TryReturnTechnology(TECHNOLOGY_POWER, out _, out _), Is.True);
         Assert.That(_controller.FillReturnableTechnologies(buffer), Is.Zero);
+        Assert.That(_controller.IsAcquired(TECHNOLOGY_POWER), Is.True);
     }
     [Test]
     public void TechnologyCannotBeAcquiredTwice()
@@ -137,44 +127,55 @@ public sealed class RelicRestorationControllerTests
         Assert.That(_controller.TryAcquireTechnology(technologyId, out _), Is.True);
         Assert.That(_controller.TryReturnTechnology(technologyId, out _, out _), Is.True);
     }
-    private TechnologyDataSO CreateTechnology(string technologyId, int chapter, int restoreValue)
+    private static TechnologyDefinition CreateTechnology(string technologyId, int chapter, int restoreValue)
     {
-        TechnologyDataSO technology = CreateObject<TechnologyDataSO>();
-        SetField(technology, "_technologyId", technologyId);
-        SetField(technology, "_displayNameKey", string.Concat("name.", technologyId));
-        SetField(technology, "_descriptionKey", string.Concat("description.", technologyId));
-        SetField(technology, "_chapter", chapter);
-        SetField(technology, "_restoreValue", restoreValue);
-        return technology;
+        return new TechnologyDefinition(
+            technologyId,
+            string.Concat("name.", technologyId),
+            string.Concat("description.", technologyId),
+            string.Concat("operation.", technologyId),
+            string.Empty,
+            string.Empty,
+            chapter,
+            restoreValue);
     }
-    private static RelicRestorationCatalogSO.RestorationStageEntry CreateStage(
-        int stage, int requiredRestore, TimelineAsset timeline)
+    private sealed class FakeCodexDataRepository : ICodexDataRepository
     {
-        var entry = new RelicRestorationCatalogSO.RestorationStageEntry();
-        SetField(entry, "_stage", stage);
-        SetField(entry, "_requiredRestore", requiredRestore);
-        SetField(entry, "_timeline", timeline);
-        return entry;
-    }
-    private static RelicRestorationCatalogSO.AltarDestinationEntry CreateAltar()
-    {
-        var entry = new RelicRestorationCatalogSO.AltarDestinationEntry();
-        SetField(entry, "_altarId", "MAIN_ALTAR");
-        SetField(entry, "_displayNameKey", "altar.main");
-        SetField(entry, "_spawnPointId", "SPAWN_MAIN_ALTAR");
-        return entry;
-    }
-    private T CreateObject<T>() where T : ScriptableObject
-    {
-        T createdObject = ScriptableObject.CreateInstance<T>();
-        _createdObjects.Add(createdObject);
-        return createdObject;
-    }
-    private static void SetField(object target, string fieldName, object value)
-    {
-        FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.That(field, Is.Not.Null, fieldName);
-        field.SetValue(target, value);
+        private readonly IReadOnlyList<TechnologyDefinition> _technologies;
+        private readonly IReadOnlyList<RestorationStageDefinition> _stages;
+        public FakeCodexDataRepository(
+            IReadOnlyList<TechnologyDefinition> technologies,
+            IReadOnlyList<RestorationStageDefinition> stages)
+        {
+            _technologies = technologies;
+            _stages = stages;
+        }
+        public int MaxRestore => 100;
+        public int TechnologyCount => _technologies.Count;
+        public int CodexEntryCount => 0;
+        public IReadOnlyList<TechnologyDefinition> Technologies => _technologies;
+        public IReadOnlyList<RestorationStageDefinition> RestorationStages => _stages;
+        public IReadOnlyList<CodexEntryDefinition> CodexEntries => System.Array.Empty<CodexEntryDefinition>();
+        public bool TryGetTechnology(string technologyId, out TechnologyDefinition technology)
+        {
+            for (int i = 0; i < _technologies.Count; i++)
+            {
+                if (_technologies[i].TechnologyId == technologyId)
+                {
+                    technology = _technologies[i];
+                    return true;
+                }
+            }
+            technology = null;
+            return false;
+        }
+        public bool TryGetCodexEntry(string entryId, out CodexEntryDefinition entry)
+        { entry = null; return false; }
+        public bool TryGetCodexEntryBySource(CodexCategory category, string sourceId,
+            out CodexEntryDefinition entry) { entry = null; return false; }
+        public bool TryGetCodexIngredients(string entryId,
+            out IReadOnlyList<CodexIngredientDefinition> ingredients)
+        { ingredients = null; return false; }
     }
     private sealed class FakeProgressService : IProgressService
     {
@@ -189,6 +190,12 @@ public sealed class RelicRestorationControllerTests
             _flags[flagId] = value;
         }
         public bool GetFlag(string flagId) => _flags.TryGetValue(flagId, out bool value) && value;
+        public void SetSystemState(string stateId, string stateJson) { }
+        public bool TryGetSystemState(string stateId, out string stateJson)
+        {
+            stateJson = null;
+            return false;
+        }
         public void SetObjectState(int stageNumber, string objectId, string stateJson) { }
         public bool TryGetObjectState(int stageNumber, string objectId, out string stateJson)
         {

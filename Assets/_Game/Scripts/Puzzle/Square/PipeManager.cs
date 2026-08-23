@@ -7,6 +7,7 @@ using UnityEngine;
 // Description: CSV 파이프 퍼즐 정의로 격자를 생성하고 이동, 회전 및 물 연결을 판정한다.
 //
 // History:     07/26/2026 + CSV Definition 기반 생성으로 전환 -- VicZero
+//              08/21/2026 + 보드/챕터 오브젝트와 타일 프리팹 비주얼 적용 -- VicZero
 //
 //=============================================================================
 public sealed class PipeManager : BasePuzzleManager
@@ -15,6 +16,32 @@ public sealed class PipeManager : BasePuzzleManager
     [Tooltip("생성한 파이프 타일이 배치될 UI 부모입니다.")]
     [SerializeField]
     private RectTransform _gridParent;
+
+    [Header("Board Prefabs")]
+    [Tooltip("3x3 보드 오브젝트입니다.")]
+    [SerializeField]
+    private GameObject _board3x3;
+
+    [Tooltip("4x4 보드 오브젝트입니다.")]
+    [SerializeField]
+    private GameObject _board4x4;
+
+    [Tooltip("5x5 보드 오브젝트입니다.")]
+    [SerializeField]
+    private GameObject _board5x5;
+
+    [Header("Chapter Prefabs")]
+    [Tooltip("챕터 0~3 배경 오브젝트입니다. 인덱스 0이 Chap0입니다.")]
+    [SerializeField]
+    private GameObject[] _chapterBackgrounds;
+
+    [Tooltip("보드 한 변의 UI 크기입니다.")]
+    [SerializeField]
+    private float _boardDisplaySize = 640f;
+
+    [Tooltip("보드에서 실제 칸이 차지하는 비율입니다.")]
+    [SerializeField]
+    private float _boardInnerFill = 0.84f;
 
     [Header("Drag")]
     [Tooltip("드래그 방향을 확정하기 위해 필요한 최소 화면 이동 거리입니다.")]
@@ -60,6 +87,15 @@ public sealed class PipeManager : BasePuzzleManager
     private bool _isDragging;
     private bool _isDirectionSet;
     private Vector2 _dragStartScreenPosition;
+    private float _cellSpacing;
+    private int _chapterIndex;
+
+    /// <summary>챕터 배경 오브젝트 인덱스를 바꾸고, 이미 열려 있으면 배경만 다시 적용합니다.</summary>
+    public void SetChapterIndex(int chapterIndex)
+    {
+        _chapterIndex = chapterIndex < 0 ? 0 : chapterIndex;
+        ApplyChapterBackground();
+    }
 
     /// <summary>CSV에서 현재 파이프 퍼즐을 조회하고 UI 격자를 다시 생성합니다.</summary>
     public override void InitializePuzzle()
@@ -67,6 +103,7 @@ public sealed class PipeManager : BasePuzzleManager
         ClearGrid();
         IsClear = false;
         ResetDragState();
+        _cellSpacing = ItemSpacing;
 
         if (!AreRequiredReferencesAssigned())
         {
@@ -84,10 +121,9 @@ public sealed class PipeManager : BasePuzzleManager
         _rows = puzzleDefinition.Rows;
         _columns = puzzleDefinition.Columns;
         _grid = new PipeComponent[_rows, _columns];
-        Vector3 startLocalPosition = new Vector3(
-            -(_columns - 1) * ItemSpacing / 2f,
-            (_rows - 1) * ItemSpacing / 2f,
-            0f);
+        ApplyBoardAndSpacing();
+        ApplyChapterBackground();
+        Vector3 startLocalPosition = CreateGridStartLocalPosition();
 
         for (int i = 0; i < puzzleDefinition.PipeTiles.Count; i++)
         {
@@ -102,9 +138,10 @@ public sealed class PipeManager : BasePuzzleManager
             tileObject.name = $"UI_PipeTile_{tileDefinition.Row}_{tileDefinition.Column}_{tileData.type}";
 
             RectTransform tileRect = tileObject.GetComponent<RectTransform>();
+            tileRect.sizeDelta = new Vector2(_cellSpacing, _cellSpacing);
             tileRect.localPosition = startLocalPosition + new Vector3(
-                tileDefinition.Column * ItemSpacing,
-                -tileDefinition.Row * ItemSpacing,
+                tileDefinition.Column * _cellSpacing,
+                -tileDefinition.Row * _cellSpacing,
                 0f);
 
             PipeComponent tileComponent = tileObject.GetComponent<PipeComponent>();
@@ -257,13 +294,10 @@ public sealed class PipeManager : BasePuzzleManager
     /// <summary>행과 열 좌표를 중앙 정렬된 UI 로컬 좌표로 변환합니다.</summary>
     public Vector3 GetGridLocalPosition(int row, int column)
     {
-        Vector3 startLocalPosition = new Vector3(
-            -(_columns - 1) * ItemSpacing / 2f,
-            (_rows - 1) * ItemSpacing / 2f,
-            0f);
+        Vector3 startLocalPosition = CreateGridStartLocalPosition();
         return startLocalPosition + new Vector3(
-            column * ItemSpacing,
-            -row * ItemSpacing,
+            column * _cellSpacing,
+            -row * _cellSpacing,
             0f);
     }
 
@@ -460,6 +494,62 @@ public sealed class PipeManager : BasePuzzleManager
             && _pipeCornerPrefab != null
             && _pipeTPrefab != null
             && _pipeCrossPrefab != null;
+    }
+
+    private Vector3 CreateGridStartLocalPosition()
+    {
+        return new Vector3(
+            -(_columns - 1) * _cellSpacing / 2f,
+            (_rows - 1) * _cellSpacing / 2f,
+            0f);
+    }
+
+    private void ApplyBoardAndSpacing()
+    {
+        float boardSize = _boardDisplaySize > 0f ? _boardDisplaySize : ItemSpacing * _columns;
+        float innerFill = Mathf.Clamp01(_boardInnerFill);
+        if (innerFill <= 0f)
+        {
+            innerFill = 1f;
+        }
+
+        SetBoardActive(_board3x3, _rows == 3 && _columns == 3, boardSize);
+        SetBoardActive(_board4x4, _rows == 4 && _columns == 4, boardSize);
+        SetBoardActive(_board5x5, _rows == 5 && _columns == 5, boardSize);
+
+        int gridSize = _rows >= _columns ? _rows : _columns;
+        _cellSpacing = gridSize > 0 ? boardSize * innerFill / gridSize : ItemSpacing;
+    }
+
+    private static void SetBoardActive(GameObject boardObject, bool isActive, float boardSize)
+    {
+        if (boardObject == null)
+        {
+            return;
+        }
+
+        boardObject.SetActive(isActive);
+        RectTransform boardRect = boardObject.GetComponent<RectTransform>();
+        if (boardRect != null)
+        {
+            boardRect.sizeDelta = new Vector2(boardSize, boardSize);
+        }
+    }
+
+    private void ApplyChapterBackground()
+    {
+        if (_chapterBackgrounds == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _chapterBackgrounds.Length; i++)
+        {
+            if (_chapterBackgrounds[i] != null)
+            {
+                _chapterBackgrounds[i].SetActive(i == _chapterIndex);
+            }
+        }
     }
 
     private GameObject GetTilePrefab(PipeType type)

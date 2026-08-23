@@ -88,6 +88,9 @@ public sealed class ProgressController : MonoBehaviour, IProgressService
 
         /// <summary>스테이지별 씬 오브젝트 상태입니다.</summary>
         public List<ObjectStateSaveEntry> ObjectStates = new List<ObjectStateSaveEntry>();
+
+        /// <summary>인벤토리와 상점 등 전역 시스템의 직렬화 상태입니다.</summary>
+        public Dictionary<string, string> SystemStates = new Dictionary<string, string>();
     }
 
     //========================================
@@ -108,6 +111,9 @@ public sealed class ProgressController : MonoBehaviour, IProgressService
 
     private readonly Dictionary<ObjectStateKey, string> _objectStates =
         new Dictionary<ObjectStateKey, string>();
+
+    private readonly Dictionary<string, string> _systemStates =
+        new Dictionary<string, string>(StringComparer.Ordinal);
 
     // 저장 중 값이 바뀌어도 최신 Dirty 상태를 유지하기 위한 변경 번호입니다.
     private int _changeVersion;
@@ -261,6 +267,32 @@ public sealed class ProgressController : MonoBehaviour, IProgressService
         return _globalFlags.TryGetValue(flagId, out bool value) && value;
     }
 
+    /// <summary>전역 시스템의 직렬화 상태를 메모리에 저장합니다.</summary>
+    public void SetSystemState(string stateId, string stateJson)
+    {
+        if (string.IsNullOrWhiteSpace(stateId) || string.IsNullOrWhiteSpace(stateJson))
+        {
+            return;
+        }
+
+        if (_systemStates.TryGetValue(stateId, out string currentState)
+            && string.Equals(currentState, stateJson, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _systemStates[stateId] = stateJson;
+        MarkDirty();
+    }
+
+    /// <summary>전역 시스템의 직렬화 상태를 메모리에서 조회합니다.</summary>
+    public bool TryGetSystemState(string stateId, out string stateJson)
+    {
+        stateJson = null;
+        return !string.IsNullOrWhiteSpace(stateId)
+            && _systemStates.TryGetValue(stateId, out stateJson);
+    }
+
     /// <summary>특정 스테이지의 오브젝트 상태를 메모리에 저장합니다.</summary>
     /// <param name="stageNumber">스테이지 번호입니다.</param>
     /// <param name="objectId">씬 오브젝트 고유 ID입니다.</param>
@@ -308,6 +340,7 @@ public sealed class ProgressController : MonoBehaviour, IProgressService
     {
         _globalFlags.Clear();
         _objectStates.Clear();
+        _systemStates.Clear();
         MarkDirty();
     }
 
@@ -344,6 +377,11 @@ public sealed class ProgressController : MonoBehaviour, IProgressService
             });
         }
 
+        foreach (KeyValuePair<string, string> state in _systemStates)
+        {
+            saveData.SystemStates.Add(state.Key, state.Value);
+        }
+
         return saveData;
     }
 
@@ -351,6 +389,7 @@ public sealed class ProgressController : MonoBehaviour, IProgressService
     {
         _globalFlags.Clear();
         _objectStates.Clear();
+        _systemStates.Clear();
 
         if (saveData.GlobalFlags != null)
         {
@@ -365,7 +404,7 @@ public sealed class ProgressController : MonoBehaviour, IProgressService
 
         if (saveData.ObjectStates == null)
         {
-            return;
+            saveData.ObjectStates = new List<ObjectStateSaveEntry>();
         }
 
         for (int i = 0; i < saveData.ObjectStates.Count; i++)
@@ -382,6 +421,19 @@ public sealed class ProgressController : MonoBehaviour, IProgressService
 
             ObjectStateKey key = new ObjectStateKey(entry.StageNumber, entry.ObjectId);
             _objectStates[key] = entry.StateJson;
+        }
+
+        if (saveData.SystemStates == null)
+        {
+            return;
+        }
+
+        foreach (KeyValuePair<string, string> state in saveData.SystemStates)
+        {
+            if (!string.IsNullOrWhiteSpace(state.Key) && !string.IsNullOrWhiteSpace(state.Value))
+            {
+                _systemStates[state.Key] = state.Value;
+            }
         }
     }
 

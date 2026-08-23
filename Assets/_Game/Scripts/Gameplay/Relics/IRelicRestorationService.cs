@@ -37,7 +37,7 @@ public readonly struct RelicRestorationResult
 {
     /// <summary>기술 반환 결과를 생성합니다.</summary>
     public RelicRestorationResult(
-        TechnologyDataSO technology,
+        TechnologyDefinition technology,
         int previousRestore,
         int currentRestore,
         int previousStage,
@@ -53,7 +53,7 @@ public readonly struct RelicRestorationResult
     }
 
     /// <summary>반환된 기술 정의입니다.</summary>
-    public TechnologyDataSO Technology { get; }
+    public TechnologyDefinition Technology { get; }
 
     /// <summary>기술 반환 전 재건도입니다.</summary>
     public int PreviousRestore { get; }
@@ -96,11 +96,11 @@ public interface IRelicRestorationService
     /// <summary>현재 문명 복원 단계입니다.</summary>
     int RestoreStage { get; }
 
-    /// <summary>Catalog에 등록된 기술인지 확인합니다.</summary>
+    /// <summary>CSV에 등록된 기술인지 확인합니다.</summary>
     bool IsKnownTechnology(string technologyId);
 
     /// <summary>반환 가능한 기술을 재사용 목록에 채웁니다.</summary>
-    int FillReturnableTechnologies(List<TechnologyDataSO> buffer);
+    int FillReturnableTechnologies(List<TechnologyDefinition> buffer);
 
     /// <summary>기술 획득 여부를 확인합니다.</summary>
     bool IsAcquired(string technologyId);

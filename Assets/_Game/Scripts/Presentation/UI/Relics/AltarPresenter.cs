@@ -25,12 +25,12 @@ public sealed class AltarPresenter : MonoBehaviour
     [Tooltip("제단 UI가 열린 동안 이동을 막을 플레이어 컨트롤러입니다.")]
     [SerializeField] private PlayerMoveController _playerMoveController;
 
-    private readonly List<TechnologyDataSO> _returnableTechnologies =
-        new List<TechnologyDataSO>();
+    private readonly List<TechnologyDefinition> _returnableTechnologies =
+        new List<TechnologyDefinition>();
     private IRelicRestorationService _restorationService;
     private IProgressService _progressService;
     private ILocalizationService _localizationService;
-    private TechnologyDataSO _selectedTechnology;
+    private TechnologyDefinition _selectedTechnology;
     private bool _isBusy;
     private bool _isOpen;
 
@@ -122,7 +122,7 @@ public sealed class AltarPresenter : MonoBehaviour
     private async UniTask ReturnSelectedTechnologyAsync(CancellationToken cancellationToken)
     {
         _isBusy = true;
-        TechnologyDataSO selectedTechnology = _selectedTechnology;
+        TechnologyDefinition selectedTechnology = _selectedTechnology;
         if (!_restorationService.TryReturnTechnology(selectedTechnology.TechnologyId,
             out RelicRestorationResult result, out RelicRestorationFailure failure))
         {

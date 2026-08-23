@@ -57,6 +57,18 @@ public sealed class MazePlatePuzzleTests
     }
 
     [Test]
+    public void ChildTriggerFindsInteractableOnAttachedRigidbody()
+    {
+        PushableStone stone = CreateStone(Vector2.zero);
+        Collider2D trigger = CreateChildCollider(stone.gameObject, "InteractionTrigger");
+        trigger.isTrigger = true;
+        MethodInfo method = typeof(PlayerInteractionController).GetMethod("TryGetInteractable", BindingFlags.Static | BindingFlags.NonPublic);
+        object[] arguments = { trigger, null };
+        Assert.That(method.Invoke(null, arguments), Is.True);
+        Assert.That(arguments[1], Is.SameAs(stone));
+    }
+
+    [Test]
     public void MultipleCollidersFromOnePlayerKeepPlatePressedUntilLastExit()
     {
         PuzzleFixture fixture = CreateFixture(1);
@@ -87,8 +99,7 @@ public sealed class MazePlatePuzzleTests
         Enter(fixture.Plates[1], stone);
         Enter(fixture.Plates[1], stone);
 
-        Assert.That(fixture.Controller.State,
-            Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_COMPLETED));
+        Assert.That(fixture.Controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_COMPLETED));
         Assert.That(fixture.Unsolved.activeSelf, Is.False);
         Assert.That(fixture.Solved.activeSelf, Is.True);
         Assert.That(solvedCount, Is.EqualTo(1));
@@ -105,8 +116,7 @@ public sealed class MazePlatePuzzleTests
         Exit(fixture.Plates[0], player);
         Enter(fixture.Plates[1], CreateStoneCollider());
 
-        Assert.That(fixture.Controller.State,
-            Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_IN_PROGRESS));
+        Assert.That(fixture.Controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_IN_PROGRESS));
     }
 
     [Test]
@@ -117,16 +127,14 @@ public sealed class MazePlatePuzzleTests
 
         fixture.Controller.TryBeginPuzzle();
 
-        Assert.That(fixture.Controller.State,
-            Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_COMPLETED));
+        Assert.That(fixture.Controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_COMPLETED));
     }
 
     [Test]
     public void BeginTriggerIgnoresStoneAndStartsForPlayer()
     {
         PuzzleFixture fixture = CreateFixture(2);
-        MazePlatePuzzleTrigger trigger = CreateTrigger(
-            fixture, MazePlatePuzzleTriggerAction.MAZE_PLATE_TRIGGER_BEGIN);
+        MazePlatePuzzleTrigger trigger = CreateTrigger(fixture, MazePlatePuzzleTriggerAction.MAZE_PLATE_TRIGGER_BEGIN);
 
         EnterTrigger(trigger, CreateStoneCollider());
         Assert.That(fixture.Controller.State,
@@ -143,8 +151,7 @@ public sealed class MazePlatePuzzleTests
         Vector2 initialPosition = new Vector2(2f, 3f);
         PushableStone stone = CreateStone(initialPosition);
         PuzzleFixture fixture = CreateFixture(2, null, new[] { stone });
-        MazePlatePuzzleTrigger trigger = CreateTrigger(
-            fixture, MazePlatePuzzleTriggerAction.MAZE_PLATE_TRIGGER_RESET);
+        MazePlatePuzzleTrigger trigger = CreateTrigger(fixture, MazePlatePuzzleTriggerAction.MAZE_PLATE_TRIGGER_RESET);
         Collider2D player = CreatePlayerCollider();
         fixture.Controller.TryBeginPuzzle();
         Enter(fixture.Plates[0], player);

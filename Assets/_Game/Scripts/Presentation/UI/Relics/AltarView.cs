@@ -31,13 +31,13 @@ public sealed class AltarView : MonoBehaviour
         [Tooltip("기술 반환 시 증가하는 재건도를 표시하는 텍스트입니다.")]
         [SerializeField] private TMP_Text _restoreText;
 
-        internal void Show(TechnologyDataSO technology, string displayName)
+        internal void Show(TechnologyDefinition technology, string displayName, Sprite icon)
         {
             _root?.SetActive(true);
             if (_icon != null)
             {
-                _icon.sprite = technology.Icon;
-                _icon.enabled = technology.Icon != null;
+                _icon.sprite = icon;
+                _icon.enabled = icon != null;
             }
             if (_nameText != null)
             {
@@ -57,6 +57,9 @@ public sealed class AltarView : MonoBehaviour
     [SerializeField] private GameObject _noReturnableRoot;
     [Tooltip("선택한 기술 반환을 확인하는 팝업 오브젝트입니다.")]
     [SerializeField] private GameObject _confirmPopupRoot;
+    [Header("Visual")]
+    [Tooltip("technologies.csv의 icon_id를 Sprite로 연결하는 카탈로그입니다.")]
+    [SerializeField] private ItemVisualCatalogSO _visualCatalog;
     [Header("Buttons")]
     [Tooltip("최대 기술 수만큼 미리 배치해 재사용할 고정 버튼 목록입니다.")]
     [SerializeField] private TechnologyButtonBinding[] _technologyButtons =
@@ -113,7 +116,7 @@ public sealed class AltarView : MonoBehaviour
     }
 
     /// <summary>반환 가능한 기술을 고정 버튼 풀과 빈 상태에 반영합니다.</summary>
-    public void RefreshTechnologies(IReadOnlyList<TechnologyDataSO> technologies,
+    public void RefreshTechnologies(IReadOnlyList<TechnologyDefinition> technologies,
         ILocalizationService localizationService)
     {
         if (technologies == null || localizationService == null)
@@ -133,8 +136,13 @@ public sealed class AltarView : MonoBehaviour
                 binding.Hide();
                 continue;
             }
-            TechnologyDataSO technology = technologies[i];
-            binding.Show(technology, localizationService.GetText(technology.DisplayNameKey));
+            TechnologyDefinition technology = technologies[i];
+            Sprite icon = null;
+            if (_visualCatalog != null && !string.IsNullOrWhiteSpace(technology.IconId))
+            {
+                _visualCatalog.TryGetIcon(technology.IconId, out icon);
+            }
+            binding.Show(technology, localizationService.GetText(technology.DisplayNameKey), icon);
         }
         _technologyListRoot?.SetActive(technologies.Count > 0);
         _noReturnableRoot?.SetActive(technologies.Count == 0);

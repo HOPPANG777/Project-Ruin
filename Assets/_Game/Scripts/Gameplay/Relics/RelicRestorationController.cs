@@ -16,11 +16,11 @@ public sealed class RelicRestorationController : MonoBehaviour, IRelicRestoratio
 {
     private readonly struct TechnologyRecord
     {
-        internal readonly TechnologyDataSO Technology;
+        internal readonly TechnologyDefinition Technology;
         internal readonly string AcquiredFlagId;
         internal readonly string ReturnedFlagId;
 
-        internal TechnologyRecord(TechnologyDataSO technology)
+        internal TechnologyRecord(TechnologyDefinition technology)
         {
             Technology = technology;
             AcquiredFlagId = string.Concat(
@@ -29,16 +29,10 @@ public sealed class RelicRestorationController : MonoBehaviour, IRelicRestoratio
                 IRelicRestorationService.TECHNOLOGY_RETURNED_FLAG_PREFIX, technology.TechnologyId);
         }
     }
-    //========================================
-    // 직렬화 필드
-    //========================================
-    [Header("Data")]
-    [Tooltip("기술, 복원 단계와 제단 목적지를 정의한 재건 Catalog입니다.")]
-    [SerializeField] private RelicRestorationCatalogSO _catalog;
-
     // 저장 Key 문자열은 초기화에서 한 번만 생성합니다.
     private readonly Dictionary<string, TechnologyRecord> _technologyById =
         new Dictionary<string, TechnologyRecord>(StringComparer.Ordinal);
+    private ICodexDataRepository _data;
     private IProgressService _progressService;
     private int _currentRestore;
     private int _restoreStage;
@@ -47,28 +41,23 @@ public sealed class RelicRestorationController : MonoBehaviour, IRelicRestoratio
     /// <summary>현재 문명 재건도입니다.</summary>
     public int CurrentRestore => _currentRestore;
     /// <summary>최대 문명 재건도입니다.</summary>
-    public int MaxRestore => _catalog != null ? _catalog.MaxRestore : 0;
+    public int MaxRestore => _data != null ? _data.MaxRestore : 0;
     /// <summary>현재 문명 복원 단계입니다.</summary>
     public int RestoreStage => _restoreStage;
 
-    /// <summary>진행 상태를 주입하고 기술 ID와 저장 Key 캐시를 구성합니다.</summary>
-    public bool Init(IProgressService progressService)
+    /// <summary>CSV 기술 정의와 진행 상태를 주입하고 저장 Key 캐시를 구성합니다.</summary>
+    public bool Init(ICodexDataRepository data, IProgressService progressService)
     {
-        ResetState(progressService);
-        if (_progressService == null || _catalog == null)
+        ResetState(data, progressService);
+        if (_progressService == null || _data == null)
         {
-            Debug.LogWarning("[RelicRestorationController] Progress 또는 Catalog가 연결되지 않았습니다.");
+            Debug.LogWarning("[RelicRestorationController] Progress 또는 CSV 기술 데이터가 연결되지 않았습니다.");
             return false;
         }
-        if (!_catalog.TryValidate(out string errorMessage))
-        {
-            Debug.LogWarning($"[RelicRestorationController] Catalog 검증 실패: {errorMessage}");
-            return false;
-        }
-        IReadOnlyList<TechnologyDataSO> technologies = _catalog.Technologies;
+        IReadOnlyList<TechnologyDefinition> technologies = _data.Technologies;
         for (int i = 0; i < technologies.Count; i++)
         {
-            TechnologyDataSO technology = technologies[i];
+            TechnologyDefinition technology = technologies[i];
             _technologyById.Add(technology.TechnologyId, new TechnologyRecord(technology));
         }
         _isInitialized = true;
@@ -76,18 +65,18 @@ public sealed class RelicRestorationController : MonoBehaviour, IRelicRestoratio
         return true;
     }
 
-    /// <summary>Catalog에 등록된 기술인지 확인합니다.</summary>
+    /// <summary>CSV에 등록된 기술인지 확인합니다.</summary>
     public bool IsKnownTechnology(string technologyId) =>
         TryGetRecord(technologyId, out _, out _);
 
     /// <summary>반환 가능한 기술을 전달받은 재사용 목록에 채웁니다.</summary>
-    public int FillReturnableTechnologies(List<TechnologyDataSO> buffer)
+    public int FillReturnableTechnologies(List<TechnologyDefinition> buffer)
     {
         if (buffer == null) return 0;
         buffer.Clear();
         if (!_isInitialized) return 0;
 
-        IReadOnlyList<TechnologyDataSO> technologies = _catalog.Technologies;
+        IReadOnlyList<TechnologyDefinition> technologies = _data.Technologies;
         for (int i = 0; i < technologies.Count; i++)
         {
             TechnologyRecord record = _technologyById[technologies[i].TechnologyId];
@@ -145,9 +134,10 @@ public sealed class RelicRestorationController : MonoBehaviour, IRelicRestoratio
         return true;
     }
 
-    private void ResetState(IProgressService progressService)
+    private void ResetState(ICodexDataRepository data, IProgressService progressService)
     {
         _isInitialized = false;
+        _data = data;
         _progressService = progressService;
         _technologyById.Clear();
         _currentRestore = 0;
@@ -180,7 +170,7 @@ public sealed class RelicRestorationController : MonoBehaviour, IRelicRestoratio
     private void RefreshRestoreState()
     {
         int restoreValue = 0;
-        IReadOnlyList<TechnologyDataSO> technologies = _catalog.Technologies;
+        IReadOnlyList<TechnologyDefinition> technologies = _data.Technologies;
         for (int i = 0; i < technologies.Count; i++)
         {
             TechnologyRecord record = _technologyById[technologies[i].TechnologyId];
@@ -188,7 +178,7 @@ public sealed class RelicRestorationController : MonoBehaviour, IRelicRestoratio
         }
         _currentRestore = Mathf.Clamp(restoreValue, 0, MaxRestore);
         _restoreStage = 0;
-        IReadOnlyList<RelicRestorationCatalogSO.RestorationStageEntry> stages = _catalog.Stages;
+        IReadOnlyList<RestorationStageDefinition> stages = _data.RestorationStages;
         for (int i = 0; i < stages.Count && _currentRestore >= stages[i].RequiredRestore; i++)
         {
             _restoreStage = stages[i].Stage;

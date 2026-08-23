@@ -262,9 +262,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteractionController
   _origin: {fileID: 6161023}
-  _layer:
+  _interactionLayers:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 256
   _interactRange: 1
   _interactAction: {fileID: 1781555164194001046, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   _canInteract: 1
