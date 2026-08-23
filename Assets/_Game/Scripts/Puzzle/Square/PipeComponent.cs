@@ -2,36 +2,66 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+//=============================================================================
+// File:        PipeComponent.cs
+//
+// Description: 파이프 타일의 회전, 드래그 입력과 프리팹에 붙인 Off/On 표시를 담당한다.
+//
+// History:     07/26/2026 + Created -- VicZero
+//              08/21/2026 + Off/On Image 프리팹 전환 -- VicZero
+//
+//=============================================================================
 public class PipeComponent : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    [Header("Visuals")]
+    [Tooltip("연결 전 파이프 Image입니다. 프리팹 자식 Off에 연결합니다.")]
+    [SerializeField]
+    private Image _offImage;
+
+    [Tooltip("연결 후 파이프 Image입니다. 프리팹 자식 On에 연결합니다.")]
+    [SerializeField]
+    private Image _onImage;
+
+    [Tooltip("Sprite 기본 각도가 논리 방향과 다를 때 더할 시계 방향 90도 횟수입니다.")]
+    [SerializeField]
+    private int _visualRotationOffset;
+
     public PipeData Data { get; private set; }
     public int Row { get; set; }
     public int Col { get; set; }
-    public bool IsWatered { get; set; } = false;
+    public bool IsWatered { get; set; }
 
-    private Image tileImage;
-    private PipeManager ownerSpawner;
-    private RectTransform rectTransform;
+    private PipeManager _ownerSpawner;
+    private RectTransform _rectTransform;
 
     private void Awake()
     {
-        tileImage = GetComponent<Image>();
-        rectTransform = GetComponent<RectTransform>();
+        _rectTransform = GetComponent<RectTransform>();
     }
 
-    public void Setup(PipeData tileData, int r, int c, PipeManager spawner)
+    /// <summary>타일 데이터와 격자 위치를 저장하고 프리팹 비주얼을 맞춥니다.</summary>
+    public void Setup(PipeData tileData, int row, int column, PipeManager spawner)
     {
         Data = tileData;
-        Row = r;
-        Col = c;
-        ownerSpawner = spawner;
+        Row = row;
+        Col = column;
+        _ownerSpawner = spawner;
+
+        if (_rectTransform == null)
+        {
+            _rectTransform = GetComponent<RectTransform>();
+        }
+
         UpdateVisualRotation();
+        UpdateVisualColor();
     }
 
-    // 우클릭 분기 (인터페이스를 통해 독립 처리)
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (ownerSpawner != null && ownerSpawner.IsClear) return;
+        if (_ownerSpawner != null && _ownerSpawner.IsClear)
+        {
+            return;
+        }
 
         if (eventData.button == PointerEventData.InputButton.Right)
         {
@@ -42,70 +72,77 @@ public class PipeComponent : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     public void Rotate()
     {
         if (Data.type == PipeType.Empty || Data.type == PipeType.Start || Data.type == PipeType.End)
+        {
             return;
+        }
 
         PipeData updatedData = Data;
         updatedData.rotationIndex = (updatedData.rotationIndex + 1) % 4;
         Data = updatedData;
 
         UpdateVisualRotation();
-        ownerSpawner.OnTileStateChanged();
+        if (_ownerSpawner != null)
+        {
+            _ownerSpawner.OnTileStateChanged();
+        }
     }
 
-    // 좌클릭 슬라이딩 드래그 분기 시작
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (ownerSpawner != null && !ownerSpawner.IsClear && eventData.button == PointerEventData.InputButton.Left)
+        if (_ownerSpawner != null && !_ownerSpawner.IsClear && eventData.button == PointerEventData.InputButton.Left)
         {
-            ownerSpawner.OnTileBeginDrag(this, eventData.position);
+            _ownerSpawner.OnTileBeginDrag(this, eventData.position);
         }
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (ownerSpawner != null && !ownerSpawner.IsClear && eventData.button == PointerEventData.InputButton.Left)
+        if (_ownerSpawner != null && !_ownerSpawner.IsClear && eventData.button == PointerEventData.InputButton.Left)
         {
-            ownerSpawner.OnTileDrag(eventData.position);
+            _ownerSpawner.OnTileDrag(eventData.position);
         }
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (ownerSpawner != null && eventData.button == PointerEventData.InputButton.Left)
+        if (_ownerSpawner != null && eventData.button == PointerEventData.InputButton.Left)
         {
-            ownerSpawner.OnTileEndDrag();
+            _ownerSpawner.OnTileEndDrag();
         }
     }
 
+    /// <summary>물 연결 여부에 따라 프리팹의 Off/On Image를 켭니다.</summary>
     public void UpdateVisualColor()
     {
-        if (tileImage == null) return;
+        bool showOn = IsWatered;
 
-        if (!IsWatered)
+        if (_onImage != null)
         {
-            tileImage.color = Color.white;
-            return;
+            _onImage.enabled = showOn || _offImage == null;
+            _onImage.gameObject.SetActive(showOn || _offImage == null);
         }
 
-        tileImage.color = Data.type == PipeType.Start ? Color.green : Color.cyan;
+        if (_offImage != null)
+        {
+            _offImage.enabled = !showOn;
+            _offImage.gameObject.SetActive(!showOn);
+        }
     }
 
     private void UpdateVisualRotation()
     {
-        // 혹시 Awake 타이밍 문제로 rectTransform이 null이라면 여기서 직접 할당
-        if (rectTransform == null)
+        if (_rectTransform == null)
         {
-            rectTransform = GetComponent<RectTransform>();
+            _rectTransform = GetComponent<RectTransform>();
         }
 
-        // 예외 상황 방어
-        if (rectTransform == null)
+        if (_rectTransform == null)
         {
-            Debug.LogError($"[{gameObject.name}] RectTransform 컴포넌트를 찾을 수 없습니다!");
+            Debug.LogError($"[{gameObject.name}] RectTransform 컴포넌트를 찾을 수 없습니다.");
             return;
         }
 
-        // UI 회전 처리
-        rectTransform.localRotation = Quaternion.Euler(0, 0, -Data.rotationIndex * 90f);
+        int visualRotation = (Data.rotationIndex + _visualRotationOffset) & 3;
+        _rectTransform.localRotation = Quaternion.Euler(0f, 0f, -visualRotation * 90f);
     }
 }
