@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f71802bdd7cf2e45a222a42f71c6dfa, type: 3}
+  m_Script: {fileID: 11500000, guid: 7b340139c9e4d054f904d8b452798652, type: 3}
   m_Name: ES3Defaults
   m_EditorClassIdentifier: Assembly-CSharp-firstpass::ES3Defaults
   settings:
@@ -35,13 +35,8 @@ MonoBehaviour:
     referenceMode: 2
     serializationDepthLimit: 64
     assemblyNames:
-    - Assembly-CSharp
     - Assembly-CSharp-firstpass
-    - UniTask
-    - UniTask.Addressables
-    - UniTask.DOTween
-    - UniTask.Linq
-    - UniTask.TextMeshPro
+    - Assembly-CSharp
     showAdvancedSettings: 0
   addMgrToSceneAutomatically: 0
   autoUpdateReferences: 1
