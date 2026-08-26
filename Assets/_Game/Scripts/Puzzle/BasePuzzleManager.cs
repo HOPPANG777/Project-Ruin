@@ -32,6 +32,19 @@ public abstract class BasePuzzleManager : MonoBehaviour
     /// <summary>현재 매니저가 조회할 CSV 퍼즐 ID입니다.</summary>
     protected string PuzzleId => _puzzleId;
 
+    /// <summary>팝업을 열기 전에 월드 오브젝트가 사용할 CSV 퍼즐 ID를 지정합니다.</summary>
+    public bool TrySetPuzzleId(string puzzleId)
+    {
+        if (string.IsNullOrWhiteSpace(puzzleId))
+        {
+            Debug.LogError($"[{GetType().Name}] 설정할 Puzzle ID가 비어 있습니다.");
+            return false;
+        }
+
+        _puzzleId = puzzleId.Trim();
+        return true;
+    }
+
     /// <summary>퍼즐 구성 요소 사이의 UI 간격입니다.</summary>
     protected float ItemSpacing => _itemSpacing;
 

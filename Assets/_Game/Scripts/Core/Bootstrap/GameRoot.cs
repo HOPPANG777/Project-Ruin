@@ -26,12 +26,21 @@ public sealed class GameRoot : Singleton<GameRoot>
     [Tooltip("도감 영구 발견 상태와 기술 해제 상태를 관리하는 컨트롤러입니다.")]
     [SerializeField]
     private CodexController _codexController;
+    [Tooltip("박물관 벽화 개봉 상태와 제단 이동 정의를 관리하는 컨트롤러입니다.")]
+    [SerializeField]
+    private MuseumController _museumController;
+    [Tooltip("챕터별 술병 진행과 투입 보상을 관리하는 컨트롤러입니다.")]
+    [SerializeField]
+    private MuseumBottleController _museumBottleController;
     [Tooltip("환경 스킬의 등록 정보와 영구 획득 상태를 관리하는 컨트롤러입니다.")]
     [SerializeField]
     private SkillController _skillController;
     [Tooltip("제단 기술 목록과 반납 확인 UI를 중개하는 Presenter입니다.")]
     [SerializeField]
     private AltarPresenter _altarPresenter;
+    [Tooltip("술병의 투입 가능한 술 선택 UI를 중개하는 Presenter입니다.")]
+    [SerializeField]
+    private MuseumBottlePresenter _museumBottlePresenter;
     [Tooltip("퀘스트 상태 전환과 목표 및 보상 처리를 관리하는 컨트롤러입니다.")]
     [SerializeField]
     private QuestController _questController;
@@ -77,6 +86,12 @@ public sealed class GameRoot : Singleton<GameRoot>
     public IRelicRestorationService RelicRestoration => _relicRestorationController;
     /// <summary>도감 발견과 해제 상태 시스템의 외부 공개 계약입니다.</summary>
     public ICodexService Codex => _codexController;
+    /// <summary>박물관 벽화와 제단 목적지 시스템의 외부 공개 계약입니다.</summary>
+    public IMuseumService Museum => _museumController;
+    /// <summary>술병 진행과 투입 시스템의 외부 공개 계약입니다.</summary>
+    public IMuseumBottleService MuseumBottles => _museumBottleController;
+    /// <summary>씬 술병 상호작용이 사용할 선택 UI Presenter입니다.</summary>
+    public MuseumBottlePresenter MuseumBottlePresenter => _museumBottlePresenter;
     /// <summary>환경 스킬 획득 상태 시스템의 외부 공개 계약입니다.</summary>
     public ISkillService Skill => _skillController;
     /// <summary>퀘스트 시스템의 외부 공개 계약입니다.</summary>
@@ -123,6 +138,11 @@ public sealed class GameRoot : Singleton<GameRoot>
             _relicRestorationController.Init(GameData.CodexData, _progressController);
         }
 
+        if (!TryInitializeMuseum())
+        {
+            return;
+        }
+
         if (_skillController != null && _progressController != null)
         {
             _skillController.Init(_progressController);
@@ -139,6 +159,17 @@ public sealed class GameRoot : Singleton<GameRoot>
         if (_inventoryController != null)
         {
             _inventoryController.Init(GameData, _gameDataController, _progressController);
+        }
+
+        if (!TryInitializeMuseumBottles())
+        {
+            return;
+        }
+
+        if (_museumBottlePresenter != null)
+        {
+            _museumBottlePresenter.Init(
+                _museumBottleController, _inventoryController, _gameDataController);
         }
 
         if (_codexController != null)
@@ -212,10 +243,7 @@ public sealed class GameRoot : Singleton<GameRoot>
     // 내부 로직
     //==============================================================================
 
-    /// <summary>
-    /// CSV 게임 데이터 컨트롤러를 가장 먼저 초기화합니다.
-    /// </summary>
-    /// <returns>검증된 게임 데이터 저장소를 생성했으면 true입니다.</returns>
+    /// <summary>CSV 게임 데이터 컨트롤러를 가장 먼저 초기화합니다.</summary>
     private bool TryInitializeGameData()
     {
         if (_gameDataController == null)
@@ -233,6 +261,42 @@ public sealed class GameRoot : Singleton<GameRoot>
             ? loadError.ToString()
             : "알 수 없는 CSV 게임 데이터 초기화 오류입니다.";
         Debug.LogError($"[GameRoot] 게임 데이터 초기화에 실패했습니다. {errorMessage}");
+        return false;
+    }
+
+    /// <summary>박물관 CSV와 기술 반환·Progress 상태를 연결합니다.</summary>
+    private bool TryInitializeMuseum()
+    {
+        if (_museumController == null)
+        {
+            Debug.LogWarning("[GameRoot] MuseumController가 연결되지 않았습니다.");
+            return true;
+        }
+
+        if (_museumController.TryInit(
+                GameData, _progressController, _relicRestorationController,
+                out GameDataCsvLoadError loadError))
+        {
+            return true;
+        }
+
+        Debug.LogError($"[GameRoot] 박물관 데이터 초기화에 실패했습니다. {loadError}");
+        return false;
+    }
+
+    /// <summary>술병 CSV와 인벤토리·Progress 상태를 연결합니다.</summary>
+    private bool TryInitializeMuseumBottles()
+    {
+        if (_museumBottleController == null)
+        {
+            Debug.LogWarning("[GameRoot] MuseumBottleController가 연결되지 않았습니다.");
+            return true;
+        }
+        if (_museumBottleController.TryInit(
+                GameData, _inventoryController, _progressController,
+                out GameDataCsvLoadError loadError))
+            return true;
+        Debug.LogError($"[GameRoot] 술병 데이터 초기화에 실패했습니다. {loadError}");
         return false;
     }
 }

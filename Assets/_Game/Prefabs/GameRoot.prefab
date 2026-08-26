@@ -529,6 +529,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2305819821877646456}
   - component: {fileID: 4132607794765692391}
+  - component: {fileID: 833039383459303240}
+  - component: {fileID: 2360621031874003977}
   m_Layer: 0
   m_Name: GameRoot
   m_TagString: Untagged
@@ -563,6 +565,8 @@ Transform:
   - {fileID: 9123456789012345602}
   - {fileID: 7084171487972394903}
   - {fileID: 4025202935242525629}
+  - {fileID: 2157851383054692413}
+  - {fileID: 8415296842391513968}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4132607794765692391
@@ -582,8 +586,11 @@ MonoBehaviour:
   _progressController: {fileID: 3253425018199022226}
   _relicRestorationController: {fileID: 7938823001391292649}
   _codexController: {fileID: 7788990011223344556}
+  _museumController: {fileID: 833039383459303240}
+  _museumBottleController: {fileID: 2360621031874003977}
   _skillController: {fileID: 3838426207590922893}
   _altarPresenter: {fileID: 0}
+  _museumBottlePresenter: {fileID: 5013487694180552863}
   _questController: {fileID: 4612708442974497604}
   _inventoryController: {fileID: 9012345678901234567}
   _inventoryPresenter: {fileID: 5266415508649538833}
@@ -593,6 +600,34 @@ MonoBehaviour:
   _dialogueController: {fileID: 5682704680682971946}
   _stageFlowController: {fileID: 6413104067889454956}
   _sceneStateBridge: {fileID: 2285303300801334074}
+--- !u!114 &833039383459303240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1008359294462020877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d36ca0843213442fa70521b9b448c04b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MuseumController
+  _museumMuralsCsv: {fileID: 4900000, guid: b9841bb8887446239f65e7ed75278902, type: 3}
+  _altarDestinationsCsv: {fileID: 4900000, guid: 853a50cf237e4e84984b8a10a660ae68, type: 3}
+--- !u!114 &2360621031874003977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1008359294462020877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fc80fb311a6493bad6cd67e4eec7f3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MuseumBottleController
+  _museumBottlesCsv: {fileID: 4900000, guid: ec31dd072ac347759ae46b2b834c3b6f, type: 3}
+  _museumBottleItemsCsv: {fileID: 4900000, guid: 181fcab7843a45a1863f00846407b1e9, type: 3}
 --- !u!1 &1026423296325697472
 GameObject:
   m_ObjectHideFlags: 0
@@ -2612,6 +2647,181 @@ MonoBehaviour:
 CanvasGroup:
   m_CorrespondingSourceObject: {fileID: 4770238987187731101, guid: 827facd105b062547aa2f170133c6cfa, type: 3}
   m_PrefabInstance: {fileID: 2172826233545688263}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2233026875033686854
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2305819821877646456}
+    m_Modifications:
+    - target: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2883244318014482362, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+      propertyPath: m_Name
+      value: PuzzleUiRoot
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+--- !u!4 &2157851383054692413 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 220522978147296123, guid: 9f6d64b9ba6c7c242bdd6f0829915cee, type: 3}
+  m_PrefabInstance: {fileID: 2233026875033686854}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4281496140444126243
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2305819821877646456}
+    m_Modifications:
+    - target: {fileID: 5154276277380983273, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_Name
+      value: MuseumBottleUi
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+--- !u!114 &5013487694180552863 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9149505131590212796, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+  m_PrefabInstance: {fileID: 4281496140444126243}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cc64ba8974f408d9dd4695799649327, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MuseumBottlePresenter
+--- !u!224 &8415296842391513968 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 5738656757058021203, guid: 0ec305443e618f8489d0b1b5d31535de, type: 3}
+  m_PrefabInstance: {fileID: 4281496140444126243}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5493048787762504378
 PrefabInstance:
