@@ -2,7 +2,7 @@
 
 [도감·박물관 가이드](README.md) · [기술](technologies_csv.md)
 
-> 상태: 계획 계약. 기존의 빈 ScriptableObject Catalog는 Phase 1에서 제거했으며, 실제 목적지가 확정되면 Phase 4에서 CSV 런타임 계약으로 구현합니다.
+> 상태: Phase 4 런타임 계약. 실제 목적지가 미확정이므로 현재 CSV는 헤더만 유지합니다.
 
 ## 1. 이 CSV의 목적
 
@@ -22,7 +22,7 @@ altar_id,display_name_key,stage_number,spawn_point_id,is_main_altar
 
 | 열 이름 | 쉬운 설명 | 필수 여부 | 형식 | 입력 가능 값 | 참조 대상 | 올바른 예 |
 | --- | --- | --- | --- | --- | --- | --- |
-| `altar_id` | 제단과 저장·상호작용 연결 ID | 필수 | 시스템 ID | 전체 제단에서 고유 | 씬 AltarInteractable | `ALTAR_EXAMPLE_MAIN` |
+| `altar_id` | 제단과 저장·상호작용 연결 ID | 필수 | 시스템 ID | 전체 제단에서 고유 | 씬 이동 패드 | `ALTAR_EXAMPLE_MAIN` |
 | `display_name_key` | 텔레포트 UI 목적지 이름 Key | 필수 | Localization Key | 실제 `text_key` | `localization.csv` | `altar.example_main.name` |
 | `stage_number` | 제단이 위치한 스테이지 번호 | 필수 | 0 이상 정수 | 0 이상 | Stage Flow | `0` |
 | `spawn_point_id` | 이동 후 플레이어 배치 지점 ID | 필수 | 시스템 ID | 해당 스테이지의 실제 ID | 씬 SpawnPoint | `SPAWN_EXAMPLE_ALTAR_MAIN` |
@@ -34,13 +34,13 @@ altar_id,display_name_key,stage_number,spawn_point_id,is_main_altar
 - `altar_id`, `spawn_point_id`: 시스템 ID 형식입니다.
 - `display_name_key`: `localization.csv.text_key` 동적 목록입니다.
 - `stage_number`: 0 이상 정수입니다.
-- `is_main_altar=true` 행은 정확히 한 개를 권장하며 구현 계약에서 한 개로 검증합니다.
+- 행이 하나라도 있으면 `is_main_altar=true` 행은 정확히 한 개여야 합니다.
 
 ## 6. 다른 CSV와의 연결
 
 - 참조함: 이름 → `localization.csv`
-- 씬: `altar_id` → `AltarInteractable`, `spawn_point_id` → 해당 Stage의 SpawnPoint
-- 진행 조건: 원형 퍼즐 완료 등 활성화 조건은 기존 Progress/Stage Flow가 담당하며 이 CSV에 Flag ID를 중복 작성하지 않습니다.
+- 씬: `altar_id` → `MuseumSceneTransitionPad`, `spawn_point_id` → 해당 Stage의 SpawnPoint
+- 진행 조건: 원형 퍼즐 완료 등 활성화 조건은 기존 Progress Flag가 담당하며 이 CSV에 Flag ID를 중복 작성하지 않습니다.
 - Unity 전용: 실제 Transform, 씬 이름, 전환 효과는 CSV 열이 아닙니다.
 
 ## 7. 작성 순서
@@ -73,11 +73,11 @@ ALTAR_EXAMPLE_STAGE1,altar.example_stage1.name,1,SPAWN_EXAMPLE_ALTAR_STAGE1,fals
 
 ## 10. 자동 또는 Unity 검증 항목
 
-Phase 4 구현 시 헤더, 필수값, ID·SpawnPoint 중복 여부, 이름 Key, 스테이지 범위, Boolean, 메인 제단 정확히 한 개를 검사합니다. 실제 Stage·AltarInteractable·SpawnPoint 존재와 이동 성공은 Unity Editor/PlayMode 검증입니다. 현재 CSV 자동 검증은 없습니다.
+런타임 Loader와 Build Validator가 헤더, 필수값, ID·SpawnPoint 중복, 이름 Key, 스테이지 범위, Boolean과 작성된 데이터의 메인 제단 정확히 한 개를 검사합니다. Build Validator는 CSV의 모든 `altar_id`와 씬의 `MuseumSceneTransitionPad`가 1:1인지, `stage_number`가 `SceneCatalog`에 있는지, 목적지 씬에 `spawn_point_id`가 실제로 있는지도 검사합니다. `MuseumSceneTransitionPad`는 기존 `TransitionPadBase`와 Stage Flow를 재사용합니다. 원형 퍼즐 활성화 Flag와 실제 이동 연출은 콘텐츠 배치 시 PlayMode에서 확인합니다.
 
 ## 11. 수정과 삭제 시 주의사항
 
-`altar_id`는 씬 오브젝트와 UI 선택의 계약입니다. 변경할 때 모든 AltarInteractable과 저장 참조를 검색합니다. `spawn_point_id` 변경은 저장 호환보다 씬 이동 안전성에 직접 영향을 주므로 해당 Stage에서 실제 이동을 다시 테스트합니다.
+`altar_id`는 씬 오브젝트와 이동 선택의 계약입니다. 변경할 때 모든 `MuseumSceneTransitionPad`와 저장 참조를 검색합니다. `spawn_point_id` 변경은 저장 호환보다 씬 이동 안전성에 직접 영향을 주므로 해당 Stage에서 실제 이동을 다시 테스트합니다.
 
 ## 12. 빠른 체크리스트
 
@@ -86,10 +86,10 @@ Phase 4 구현 시 헤더, 필수값, ID·SpawnPoint 중복 여부, 이름 Key, 
 - [ ] 이름 Key와 실제 씬 대상이 존재하는가?
 - [ ] 스테이지 번호가 0 이상인가?
 - [ ] Boolean을 소문자로 썼는가?
-- [ ] 메인 제단이 정확히 한 개인가?
+- [ ] 작성된 데이터에 메인 제단이 정확히 한 개인가?
 
 ## 13. 관련 문서와 코드
 
-- [현재 AltarInteractable](../../../Scripts/Gameplay/Relics/AltarInteractable.cs)
+- [기존 전환 패드](../../../Scripts/Gameplay/World/SceneTransitionPad.cs)
 - [공통 작성 규칙](../PHASE_00_FOUNDATION/COMMON_AUTHORING_RULES.md)
 - [Progress 저장 가이드](../../ES3_PROGRESS_SAVE_GUIDE.md)

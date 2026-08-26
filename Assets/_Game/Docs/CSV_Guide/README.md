@@ -1,13 +1,13 @@
 # Project Ruin CSV 시스템 설계·작성 문서
 
-> 기준일: 2026-08-19  
-> 현재 단계: CSV 23종이 현재 런타임 계약이며, 박물관 CSV 5종은 이후 Phase에서 구현할 계획 계약입니다.
+> 기준일: 2026-08-24  
+> 현재 단계: 기존 CSV 23종과 도감·박물관 CSV 8종이 런타임 계약입니다. 유물 Milestone 1종만 이후 Phase의 계획 계약입니다.
 
 ## 이 문서 세트의 목적과 독자
 
 이 문서 세트는 개발 경험이 없는 기획자가 Project Ruin의 현재 CSV 23종과 계획 중인 박물관 CSV 5종을 안전하게 작성할 수 있도록 규칙을 쉬운 한국어로 풀어쓴 기준서입니다. 헤더, 필수값, 입력 가능 값, 다른 CSV와의 연결, 자동 검증, Unity에서 따로 연결할 항목을 한곳에서 찾을 수 있습니다.
 
-현재 구현된 게임 데이터 원본은 [`Assets/_Game/Data/Csv/`](../../Data/Csv/)의 CSV입니다. 이 Markdown은 데이터를 대신하지 않습니다. Phase 09 중 기술·재건·도감 4종은 Phase 1에서 연결됐고, 박물관 5종은 아직 런타임에서 읽히지 않습니다.
+현재 구현된 게임 데이터 원본은 [`Assets/_Game/Data/Csv/`](../../Data/Csv/)의 CSV입니다. 이 Markdown은 데이터를 대신하지 않습니다. 기술·재건·도감 4종은 Phase 1, 벽화·제단 2종은 Phase 4, 술병 2종은 Phase 5에서 런타임과 자동 검증에 연결됐습니다.
 
 ## 규칙을 확정한 우선순위
 
@@ -63,7 +63,7 @@
 
 ## 도감·박물관 확장 CSV 9종
 
-`구현` 4종은 Phase 1 런타임 계약이며 현재 콘텐츠 미확정으로 헤더만 있습니다. `계획` 5종은 아직 실제 CSV와 로더가 없습니다.
+`구현` 8종은 현재 런타임 계약입니다. `계획` 1종은 유물 전시 Phase에서 구현합니다. 콘텐츠 미확정 CSV는 실제 파일을 헤더만 둡니다.
 
 | 상태 | 분류 | CSV 파일 | 한 행의 의미 | 상세 문서 |
 | --- | --- | --- | --- | --- |
@@ -71,11 +71,11 @@
 | 구현 | Restoration | `restoration_stages.csv` | 재건도 단계 한 개 | [열기](PHASE_09_CODEX_MUSEUM/restoration_stages_csv.md) |
 | 구현 | Codex | `codex_entries.csv` | 도감 항목 한 개 | [열기](PHASE_09_CODEX_MUSEUM/codex_entries_csv.md) |
 | 구현 | Codex | `codex_ingredients.csv` | 술 도감 재료 한 개 | [열기](PHASE_09_CODEX_MUSEUM/codex_ingredients_csv.md) |
-| 계획 | Museum | `museum_bottles.csv` | 챕터 술병 한 개 | [열기](PHASE_09_CODEX_MUSEUM/museum_bottles_csv.md) |
-| 계획 | Museum | `museum_bottle_items.csv` | 술병에 인정되는 술 한 종류 | [열기](PHASE_09_CODEX_MUSEUM/museum_bottle_items_csv.md) |
+| 구현 | Museum | `museum_bottles.csv` | 챕터 술병 한 개 | [열기](PHASE_09_CODEX_MUSEUM/museum_bottles_csv.md) |
+| 구현 | Museum | `museum_bottle_items.csv` | 술병에 인정되는 술 한 종류 | [열기](PHASE_09_CODEX_MUSEUM/museum_bottle_items_csv.md) |
 | 계획 | Museum | `museum_relic_milestones.csv` | 유물 전시 보상 한 단계 | [열기](PHASE_09_CODEX_MUSEUM/museum_relic_milestones_csv.md) |
-| 계획 | Teleport | `altar_destinations.csv` | 제단 목적지 한 곳 | [열기](PHASE_09_CODEX_MUSEUM/altar_destinations_csv.md) |
-| 계획 | Museum | `museum_murals.csv` | 벽화와 기술 연결 한 개 | [열기](PHASE_09_CODEX_MUSEUM/museum_murals_csv.md) |
+| 구현 | Teleport | `altar_destinations.csv` | 제단 목적지 한 곳 | [열기](PHASE_09_CODEX_MUSEUM/altar_destinations_csv.md) |
+| 구현 | Museum | `museum_murals.csv` | 벽화와 기술 연결 한 개 | [열기](PHASE_09_CODEX_MUSEUM/museum_murals_csv.md) |
 
 전체 운영 원칙과 작성 순서는 [도감·박물관 CSV 가이드](PHASE_09_CODEX_MUSEUM/README.md)에서 확인합니다.
 
@@ -84,7 +84,7 @@
 - 필수 연결 19종: Dialogue 5, Items 1, Quest 4, Localization 1, Puzzle 4, Technology·Codex 4
 - 선택 연결 4종: NPC 2, Shop 2
 - 현재 행이 있는 선택 CSV: NPC 2종
-- 현재 헤더만 있고 데이터 행이 없는 CSV: `shops.csv`, `shop_stock.csv`, 기술·재건·도감 4종
+- 현재 헤더만 있고 데이터 행이 없는 CSV: `shops.csv`, `shop_stock.csv`, 기술·재건·도감 4종, 벽화·제단 2종, 술병 2종
 - 현재 실제 데이터 행: Dialogue 17, Items 2, Localization 20, Quest 6, NPC 3, Puzzle 32, Shop 0
 
 ## 페이즈별 문서
@@ -133,4 +133,4 @@
 - [x] 향후 Excel에서 LIGHT 타일 생성 시 `N×N` 영향 체크리스트 자동 생성·확장 요구사항
 - [x] 기존 문서·Excel의 불일치 교정
 - [x] 기획자 워크플로·검증·인수인계 체크리스트
-- [x] Phase 1 도감 CSV 4종의 런타임 계약과 박물관 계획 CSV 5종의 작성 정책
+- [x] Phase 1 도감 4종, Phase 4 벽화·제단 2종, Phase 5 술병 2종의 런타임 계약과 유물 Milestone 작성 정책

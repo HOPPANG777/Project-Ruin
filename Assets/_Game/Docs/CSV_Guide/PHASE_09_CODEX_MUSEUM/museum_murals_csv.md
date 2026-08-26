@@ -2,7 +2,7 @@
 
 [도감·박물관 가이드](README.md) · [기술](technologies_csv.md)
 
-> 상태: 선택 계획 계약. 벽화 ID와 실제 챕터 배치가 확정될 때 사용하며, 현재 런타임 로더는 없습니다.
+> 상태: Phase 4 런타임 계약. 벽화 ID와 실제 챕터 배치가 미확정이므로 현재 CSV는 헤더만 유지합니다.
 
 ## 1. 이 CSV의 목적
 
@@ -23,7 +23,7 @@ mural_id,chapter,technology_id
 | 열 이름 | 쉬운 설명 | 필수 여부 | 형식 | 입력 가능 값 | 참조 대상 | 올바른 예 |
 | --- | --- | --- | --- | --- | --- | --- |
 | `mural_id` | 벽화와 개봉 상태를 찾는 ID | 필수 | 시스템 ID | 전체 벽화에서 고유 | 씬·개봉 완료 Flag | `MURAL_EXAMPLE_CH1` |
-| `chapter` | 벽화가 표현하는 챕터 | 필수 | 0 이상 정수 | 연결 기술 챕터와 일치 | 박물관 배치 | `1` |
+| `chapter` | 벽화가 표현하는 챕터 | 필수 | 0 이상 정수 | `0`, `1`, `2`, `3` | 박물관 배치 | `1` |
 | `technology_id` | 반환 여부를 확인할 문명 기술 | 필수 | 시스템 ID | 실제 Technology ID | `technologies.csv` | `TECH_EXAMPLE_GLIDE` |
 
 ## 5. CodeList 및 입력 가능 값
@@ -31,15 +31,15 @@ mural_id,chapter,technology_id
 - 고정 enum은 없습니다.
 - `technology_id`: `technologies.csv.technology_id` 동적 목록입니다.
 - 같은 기술을 여러 벽화에 연결하지 않습니다.
-- `chapter`는 연결 기술의 챕터와 같아야 합니다.
-- 챕터 0~2 벽화는 박물관 홀, 챕터 3 벽화는 최종 보상 방에 둔다는 현재 공간 정책은 씬에서 검증합니다.
+- `chapter`는 0~3이며 연결 기술의 챕터와 같아야 합니다.
+- 챕터 0~2 벽화는 박물관 홀, 챕터 3 벽화는 최종 보상 방에 둡니다.
 
 ## 6. 다른 CSV와의 연결
 
 - 참조함: `technology_id` → `technologies.csv`
 - 상태 조건: 기술 반환 `skill.returned.{technology_id}`가 참일 때 Trigger 진입으로 개봉 가능
-- 별도 저장: `mural_id`별 개봉 연출 완료 상태
-- 씬: 같은 `mural_id`를 가진 벽화 컴포넌트가 Renderer, 효과, Trigger를 보관합니다.
+- 별도 저장: `museum.mural.revealed.{mural_id}` 개봉 완료 Flag
+- 씬: 같은 `mural_id`를 가진 `MuseumMural`이 가림, 원본, 빛 Particle과 Trigger를 보관합니다.
 
 기술 반환 상태와 벽화 개봉 완료 상태를 같은 Flag로 사용하지 않습니다.
 
@@ -73,7 +73,7 @@ MURAL_EXAMPLE_CH3,3,TECH_EXAMPLE_ARCHIVE
 
 ## 10. 자동 또는 Unity 검증 항목
 
-Phase 4 구현 시 헤더, 모든 필수값, Mural ID·Technology 중복, 기술 존재, 챕터 일치를 검사합니다. Unity Editor에서는 CSV Mural ID와 씬 컴포넌트의 1:1 연결, 가림/원본/효과/Trigger 참조, 챕터 3의 최종 방 배치를 확인합니다. 현재 자동 검증은 없습니다.
+런타임 Loader와 Build Validator가 헤더, 모든 필수값, Mural ID·Technology 중복, 기술 존재, 챕터 0~3 일치를 검사합니다. Build Validator는 CSV의 모든 `mural_id`와 씬의 `MuseumMural`이 1:1인지도 검사합니다. `MuseumMural`은 Trigger 진입, 반환 여부, 1회 개봉 Flag, 최초 성공 직후 저장 요청과 재활성화·로드 최종 상태를 처리합니다. 챕터 3 최종 방의 실제 위치와 연출 품질은 콘텐츠 배치 시 Unity에서 확인합니다.
 
 ## 11. 수정과 삭제 시 주의사항
 
@@ -85,7 +85,7 @@ Phase 4 구현 시 헤더, 모든 필수값, Mural ID·Technology 중복, 기술
 - [ ] Mural ID가 고유한 시스템 ID인가?
 - [ ] Technology가 존재하고 챕터가 같은가?
 - [ ] 같은 기술을 중복 연결하지 않았는가?
-- [ ] 씬 컴포넌트와 연출 참조가 연결되었는가?
+- [ ] 씬 컴포넌트와 표시·연출 참조가 연결되었는가?
 - [ ] 반환 상태와 개봉 완료 상태를 분리했는가?
 - [ ] 챕터 3 벽화가 최종 보상 방에 있는가?
 
@@ -95,4 +95,3 @@ Phase 4 구현 시 헤더, 모든 필수값, Mural ID·Technology 중복, 기술
 - [현재 복원 서비스](../../../Scripts/Gameplay/Relics/IRelicRestorationService.cs)
 - [Progress 저장 가이드](../../ES3_PROGRESS_SAVE_GUIDE.md)
 - [검증과 문제 해결](../PHASE_08_WORKFLOW_QA/VALIDATION_AND_TROUBLESHOOTING.md)
-
