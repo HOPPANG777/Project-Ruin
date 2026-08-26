@@ -67,7 +67,8 @@ internal static class GeneratedUiBazziFontApplier
 
     private static void ApplyToPrefab(string prefabPath, TMP_FontAsset bazziFont)
     {
-        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+        GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (prefabAsset == null || !ContainsLiberationSans(prefabAsset))
             return;
 
         GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
@@ -93,6 +94,19 @@ internal static class GeneratedUiBazziFontApplier
         {
             PrefabUtility.UnloadPrefabContents(prefabRoot);
         }
+    }
+
+    private static bool ContainsLiberationSans(GameObject prefabAsset)
+    {
+        TMP_Text[] texts = prefabAsset.GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < texts.Length; i++)
+        {
+            TMP_FontAsset font = texts[i].font;
+            if (font != null
+                && font.name.StartsWith("LiberationSans", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 }
 
