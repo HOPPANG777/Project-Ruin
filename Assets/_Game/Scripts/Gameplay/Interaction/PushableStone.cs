@@ -178,7 +178,8 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
             LogValidationIssue("필요 스킬은 ID가 있는 홀드 이동 스킬이어야 합니다.", true);
         }
         if (_playerMoveController == null
-            && !UnityEditor.PrefabUtility.IsPartOfPrefabAsset(gameObject))
+            && !UnityEditor.PrefabUtility.IsPartOfPrefabAsset(gameObject)
+            && !UnityEditor.SceneManagement.EditorSceneManager.IsPreviewScene(gameObject.scene))
         {
             LogValidationIssue("PlayerMoveController가 연결되지 않았습니다.", true);
         }
