@@ -24,7 +24,7 @@ using UnityEngine;
 //
 //=============================================================================
 [DisallowMultipleComponent]
-public sealed class ProgressController : MonoBehaviour, IProgressService
+public sealed class ProgressController : MonoBehaviour, IProgressService, IProgressStateTransactionService
 {
     //========================================
     // 상수
@@ -283,6 +283,36 @@ public sealed class ProgressController : MonoBehaviour, IProgressService
 
         _systemStates[stateId] = stateJson;
         MarkDirty();
+    }
+
+    //=============================================================================
+    // Description: 외부 콜백 없이 두 상태를 함께 적용하여 부분 저장을 방지합니다.
+    // Parameters: firstId/firstJson, secondId/secondJson — 서로 다른 시스템 상태.
+    // Return: 두 상태를 적용했으면 true, 입력/적용 실패 시 false.
+    //=============================================================================
+    /// <summary>인벤토리와 연동 도메인의 상태를 원자적으로 메모리에 적용합니다.</summary>
+    public bool TrySetSystemStates(string firstId, string firstJson, string secondId, string secondJson)
+    {
+        if (string.IsNullOrWhiteSpace(firstId) || string.IsNullOrWhiteSpace(firstJson)
+            || string.IsNullOrWhiteSpace(secondId) || string.IsNullOrWhiteSpace(secondJson)
+            || firstId == secondId) return false;
+        bool hadFirst = _systemStates.TryGetValue(firstId, out string previousFirst);
+        bool hadSecond = _systemStates.TryGetValue(secondId, out string previousSecond);
+        try
+        {
+            _systemStates[firstId] = firstJson;
+            _systemStates[secondId] = secondJson;
+        }
+        catch (Exception)
+        {
+            if (hadFirst) _systemStates[firstId] = previousFirst;
+            else _systemStates.Remove(firstId);
+            if (hadSecond) _systemStates[secondId] = previousSecond;
+            else _systemStates.Remove(secondId);
+            return false;
+        }
+        if (previousFirst != firstJson || previousSecond != secondJson) MarkDirty();
+        return true;
     }
 
     /// <summary>전역 시스템의 직렬화 상태를 메모리에서 조회합니다.</summary>

@@ -4,6 +4,7 @@
 // Description: 도감 영구 발견 상태와 기술 해제 상태를 조회·동기화한다.
 //
 // History:     08/19/2026 + Created -- Codex
+//              08/31/2026 + 발견 조회 키를 초기화 시 캐시하여 반복 문자열 할당 제거 -- Codex
 //=============================================================================
 
 using System;
@@ -39,6 +40,11 @@ public sealed class CodexController : MonoBehaviour, ICodexService
     private IProgressService _progress;
     private IRelicRestorationService _restoration;
     private bool _isInitialized;
+    // 초기화 때만 생성하는 조회 키입니다. 발견 bool은 Progress에서 직접 읽습니다.
+    private readonly Dictionary<string, CodexEntryDefinition> _itemEntries =
+        new Dictionary<string, CodexEntryDefinition>(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _discoveryFlagIds =
+        new Dictionary<string, string>(StringComparer.Ordinal);
 
     /// <summary>아이템 도감 항목이 처음 발견될 때 Entry ID를 전달합니다.</summary>
     public event Action<string> DiscoveryChanged;
@@ -65,6 +71,7 @@ public sealed class CodexController : MonoBehaviour, ICodexService
             return false;
         }
 
+        BuildItemLookup();
         _inventory.ItemCountChanged += HandleItemCountChanged;
         ReconcileOwnedItems();
         return true;
@@ -87,11 +94,25 @@ public sealed class CodexController : MonoBehaviour, ICodexService
     /// <summary>유물 또는 술 Item ID가 영구 발견됐는지 확인합니다.</summary>
     public bool IsItemDiscovered(string itemId)
     {
-        if (!_isInitialized || !TryGetItemEntry(itemId, out _))
+        if (!_isInitialized || string.IsNullOrWhiteSpace(itemId)
+            || !_discoveryFlagIds.TryGetValue(itemId, out string flagId))
         {
             return false;
         }
-        return _progress.GetFlag(CreateDiscoveryFlagId(itemId));
+        return _progress.GetFlag(flagId);
+    }
+
+    // 첫 발견 알림을 보내기 전에 모든 항목의 조회 키가 준비돼 있어야 합니다.
+    private void BuildItemLookup()
+    {
+        IReadOnlyList<CodexEntryDefinition> entries = _data.CodexEntries;
+        for (int i = 0; i < entries.Count; i++)
+        {
+            CodexEntryDefinition entry = entries[i];
+            if (entry.Category == CodexCategory.CODEX_CATEGORY_TECHNOLOGY) continue;
+            _itemEntries[entry.SourceId] = entry;
+            _discoveryFlagIds[entry.SourceId] = CreateDiscoveryFlagId(entry.SourceId);
+        }
     }
 
     private void ReconcileOwnedItems()
@@ -119,7 +140,7 @@ public sealed class CodexController : MonoBehaviour, ICodexService
 
     private bool TryMarkDiscovered(CodexEntryDefinition entry)
     {
-        string flagId = CreateDiscoveryFlagId(entry.SourceId);
+        string flagId = _discoveryFlagIds[entry.SourceId];
         if (_progress.GetFlag(flagId))
         {
             return false;
@@ -136,8 +157,7 @@ public sealed class CodexController : MonoBehaviour, ICodexService
         {
             return false;
         }
-        return _data.TryGetCodexEntryBySource(CodexCategory.CODEX_CATEGORY_RELIC, itemId, out entry)
-            || _data.TryGetCodexEntryBySource(CodexCategory.CODEX_CATEGORY_ALCOHOL, itemId, out entry);
+        return _itemEntries.TryGetValue(itemId, out entry);
     }
 
     private static string CreateDiscoveryFlagId(string itemId) =>
@@ -150,6 +170,8 @@ public sealed class CodexController : MonoBehaviour, ICodexService
             _inventory.ItemCountChanged -= HandleItemCountChanged;
         }
         _isInitialized = false;
+        _itemEntries.Clear();
+        _discoveryFlagIds.Clear();
         _data = null;
         _inventory = null;
         _progress = null;

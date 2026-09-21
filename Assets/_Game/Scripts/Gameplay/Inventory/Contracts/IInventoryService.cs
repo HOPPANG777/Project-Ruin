@@ -1,6 +1,22 @@
 using System;
 using System.Collections.Generic;
 
+/// <summary>아이템 변경과 연동 도메인 상태 적용의 실패 원인입니다.</summary>
+public enum InventoryStateChangeFailure
+{
+    INVENTORY_STATE_CHANGE_NONE = 0,
+    INVENTORY_STATE_CHANGE_INVALID,
+    INVENTORY_STATE_CHANGE_APPLY_FAILED
+}
+
+/// <summary>아이템과 연동 상태를 함께 확정한 뒤에만 이벤트를 발행하는 선택적 계약입니다.</summary>
+public interface IInventoryStateTransactionService
+{
+    /// <summary>수량 0인 쪽은 생략합니다. 실패 시 수량·슬롯·저장 상태를 보존합니다.</summary>
+    bool TryApplyWithSystemState(string removeId, int removeAmount, string addId, int addAmount,
+        string stateId, string stateJson, out InventoryStateChangeFailure failure);
+}
+
 //==============================================================================
 // 기능: interface::IInventoryService
 // 설명: 인벤토리 아이템 보관, 조회, 소모, 카테고리 슬롯 조회에 대한 외부 공개 계약

@@ -2,7 +2,7 @@
 
 [도감·박물관 가이드](README.md) · [기술](technologies_csv.md)
 
-> 상태: Phase 4 런타임 계약. 벽화 ID와 실제 챕터 배치가 미확정이므로 현재 CSV는 헤더만 유지합니다.
+> 상태: Phase 4 개봉 계약 + Phase 7 최종 방 연결. 벽화 ID와 실제 챕터 배치가 미확정이므로 현재 CSV는 헤더만 유지합니다.
 
 ## 1. 이 CSV의 목적
 
@@ -43,6 +43,8 @@ mural_id,chapter,technology_id
 
 기술 반환 상태와 벽화 개봉 완료 상태를 같은 Flag로 사용하지 않습니다.
 
+개인 테스트용 벽화 관련 퀘스트는 필수 진행 조건이 아닙니다. 이 CSV에 Quest ID나 퀘스트 완료 조건을 추가하지 않습니다. 저장된 가림·원본 표시를 다시 반영하는 처리는 퀘스트 수행과 무관합니다.
+
 ## 7. 작성 순서
 
 1. Technology와 박물관 공간 배치를 확정합니다.
@@ -76,6 +78,8 @@ MURAL_EXAMPLE_CH3,3,TECH_EXAMPLE_ARCHIVE
 런타임 Loader와 Build Validator가 헤더, 모든 필수값, Mural ID·Technology 중복, 기술 존재, 챕터 0~3 일치를 검사합니다. Build Validator는 CSV의 모든 `mural_id`와 씬의 `MuseumMural`이 1:1인지도 검사합니다. `MuseumMural`은 Trigger 진입, 반환 여부, 1회 개봉 Flag, 최초 성공 직후 저장 요청과 재활성화·로드 최종 상태를 처리합니다. 챕터 3 최종 방의 실제 위치와 연출 품질은 콘텐츠 배치 시 Unity에서 확인합니다.
 
 ## 11. 수정과 삭제 시 주의사항
+
+챕터 3 벽화는 `MuseumRewardRoom`의 Chapter 3 Mural에 연결하며, 벽화 원점이 Room Bounds 내부인지 Phase 7 검증 메뉴로 확인합니다. [최종 방 Inspector 연결 순서](README.md#8-최종-보상-방-연결--unity-담당자)를 참고하세요. 문 개방은 벽화를 자동 개봉시키지 않으며, 기존 기술 반환·Trigger·개봉 Flag와 연출을 그대로 사용합니다.
 
 `mural_id`는 개봉 완료 저장 Key입니다. 변경하면 로드 후 이미 본 연출이 다시 재생될 수 있습니다. 연결 기술을 바꾸면 기존 반환·개봉 상태의 의미가 달라지므로 출시 후에는 마이그레이션 없이 수정하지 않습니다.
 

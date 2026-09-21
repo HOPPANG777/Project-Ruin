@@ -1,9 +1,10 @@
 //=============================================================================
 // File:        UnitPlayer.cs
 //
-// Description: 플레이어의 카메라 대상과 피격 후 무적 시간을 관리합니다.
+// Description: 플레이어의 카메라 대상·피격 무적과 현재 메뉴 입력 참조 등록을 관리합니다.
 //
 // History:     08/08/2026 + 시간값 기반 피격 무적 처리 추가 -- Codex
+//              08/31/2026 + 활성 플레이어의 메뉴 입력 참조 등록 및 안전한 해제 -- Codex
 //
 //=============================================================================
 
@@ -22,6 +23,29 @@ public sealed class UnitPlayer : UnitBase, ICameraTarget
     [SerializeField] private float _invulnerabilityDuration = 0.75f;
 
     private float _invulnerableUntil;
+    // 종료 시 전역 접근 없이 해제할 수 있도록 등록 대상과 자기 입력 참조를 보관합니다.
+    private GameRoot _menuRoot;
+    private PlayerInteractionController _menuInteraction;
+    private PlayerMoveController _menuMovement;
+
+    // 최초 씬에서는 모든 Awake 이후 Start에서 다시 연결하고, 이후 씬은 OnEnable로 연결합니다.
+    private void OnEnable() => BindMenuInput();
+    private void Start() => BindMenuInput();
+    private void OnDisable()
+    {
+        if (_menuRoot != null) _menuRoot.UnbindMenuPlayer(_menuInteraction, _menuMovement);
+        _menuRoot = null;
+    }
+
+    private void BindMenuInput()
+    {
+        if (!GameRoot.HasInstance) return;
+        _menuInteraction = GetComponent<PlayerInteractionController>();
+        _menuMovement = GetComponent<PlayerMoveController>();
+        if (_menuInteraction == null && _menuMovement == null) return;
+        _menuRoot = GameRoot.Instance;
+        _menuRoot.BindMenuPlayer(_menuInteraction, _menuMovement);
+    }
 
     /// <summary>카메라가 추적할 플레이어 대상입니다.</summary>
     public GameObject CameraTarget => _cameraTarget != null ? _cameraTarget : gameObject;

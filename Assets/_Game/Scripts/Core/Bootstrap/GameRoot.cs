@@ -1,3 +1,8 @@
+//=============================================================================
+// File:        GameRoot.cs
+// Description: 전역 Controller의 직렬화 참조와 저장 복구 이후 초기화 순서를 관리합니다.
+// History:     09/01/2026 + 도감 초기화 완료 및 플레이어 메뉴 참조 주입 연결 -- Codex
+//=============================================================================
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -32,6 +37,12 @@ public sealed class GameRoot : Singleton<GameRoot>
     [Tooltip("챕터별 술병 진행과 투입 보상을 관리하는 컨트롤러입니다.")]
     [SerializeField]
     private MuseumBottleController _museumBottleController;
+    [Tooltip("유물 전시대별 배치와 박물관 마일스톤을 관리하는 컨트롤러입니다.")]
+    [SerializeField]
+    private MuseumRelicDisplayController _museumRelicDisplayController;
+    [Tooltip("도감 영구 발견에 따른 최종 방 개방과 방 보상 수령을 연결합니다.")]
+    [SerializeField]
+    private MuseumRewardRoomController _museumRewardRoomController;
     [Tooltip("환경 스킬의 등록 정보와 영구 획득 상태를 관리하는 컨트롤러입니다.")]
     [SerializeField]
     private SkillController _skillController;
@@ -41,6 +52,9 @@ public sealed class GameRoot : Singleton<GameRoot>
     [Tooltip("술병의 투입 가능한 술 선택 UI를 중개하는 Presenter입니다.")]
     [SerializeField]
     private MuseumBottlePresenter _museumBottlePresenter;
+    [Tooltip("전시대의 유물 전용 선택 UI를 중개하는 Presenter입니다.")]
+    [SerializeField]
+    private MuseumRelicPresenter _museumRelicPresenter;
     [Tooltip("퀘스트 상태 전환과 목표 및 보상 처리를 관리하는 컨트롤러입니다.")]
     [SerializeField]
     private QuestController _questController;
@@ -50,6 +64,8 @@ public sealed class GameRoot : Singleton<GameRoot>
     [Tooltip("인벤토리 UI와 선택 입력을 중개하는 Presenter입니다.")]
     [SerializeField]
     private InventoryPresenter _inventoryPresenter;
+    [Tooltip("초기화 완료 후 한 번 연결할 도감 입력과 창 전환 Presenter입니다.")]
+    [SerializeField] private CodexNavigationPresenter _codexNavigationPresenter;
     [Tooltip("ITEM_COIN 아이콘과 현재 수량을 표시하는 HUD Presenter입니다.")]
     [SerializeField]
     private CurrencyHudPresenter _currencyHudPresenter;
@@ -92,6 +108,12 @@ public sealed class GameRoot : Singleton<GameRoot>
     public IMuseumBottleService MuseumBottles => _museumBottleController;
     /// <summary>씬 술병 상호작용이 사용할 선택 UI Presenter입니다.</summary>
     public MuseumBottlePresenter MuseumBottlePresenter => _museumBottlePresenter;
+    /// <summary>유물 전시대와 마일스톤 시스템의 외부 공개 계약입니다.</summary>
+    public IMuseumRelicDisplayService MuseumRelicDisplays => _museumRelicDisplayController;
+    /// <summary>최종 보상 방 개방과 보상 수령 시스템의 외부 공개 계약입니다.</summary>
+    public IMuseumRewardRoomService MuseumRewardRoom => _museumRewardRoomController;
+    /// <summary>씬 전시대가 사용할 유물 전용 선택 UI Presenter입니다.</summary>
+    public MuseumRelicPresenter MuseumRelicPresenter => _museumRelicPresenter;
     /// <summary>환경 스킬 획득 상태 시스템의 외부 공개 계약입니다.</summary>
     public ISkillService Skill => _skillController;
     /// <summary>퀘스트 시스템의 외부 공개 계약입니다.</summary>
@@ -104,6 +126,22 @@ public sealed class GameRoot : Singleton<GameRoot>
     public IDialogueService Dialogue => _dialogueController;
     /// <summary>스테이지 전환 시스템의 외부 공개 계약입니다.</summary>
     public IStageFlowService StageFlow => _stageFlowController;
+    /// <summary>저장 복구와 모든 필수 시스템·도감 UI 연결이 완료됐는지 반환합니다.</summary>
+    public bool IsInitialized { get; private set; }
+
+    //=============================================================================
+    // BindMenuPlayer / UnbindMenuPlayer
+    // Description: 플레이어 소유자가 등록·해제한 참조만 UI에 전달합니다.
+    // Parameters: PlayerInteractionController interaction, PlayerMoveController movement
+    // Return: void
+    //=============================================================================
+    /// <summary>활성 플레이어가 제공한 입력 참조를 도감에 전달합니다.</summary>
+    public void BindMenuPlayer(PlayerInteractionController interaction, PlayerMoveController movement) =>
+        _codexNavigationPresenter?.BindPlayer(interaction, movement);
+
+    /// <summary>현재 연결과 일치하는 플레이어만 해제합니다. 이전 씬의 늦은 해제는 무시합니다.</summary>
+    public void UnbindMenuPlayer(PlayerInteractionController interaction, PlayerMoveController movement) =>
+        _codexNavigationPresenter?.UnbindPlayer(interaction, movement);
 
     //==============================================================================
     // 유니티 생명주기
@@ -123,6 +161,7 @@ public sealed class GameRoot : Singleton<GameRoot>
     /// <param name="cancellationToken">GameRoot 생명주기와 연결된 취소 토큰입니다.</param>
     private async UniTask InitializeAsync(CancellationToken cancellationToken)
     {
+        IsInitialized = false;
         if (!TryInitializeGameData())
         {
             return;
@@ -130,7 +169,12 @@ public sealed class GameRoot : Singleton<GameRoot>
 
         if (_progressController != null)
         {
-            await _progressController.LoadAsync(cancellationToken);
+            if (!await _progressController.LoadAsync(cancellationToken))
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                    Debug.LogError("[GameRoot] 진행 상태 불러오기에 실패하여 초기화를 중단합니다.");
+                return;
+            }
         }
 
         if (_relicRestorationController != null && _progressController != null)
@@ -172,6 +216,11 @@ public sealed class GameRoot : Singleton<GameRoot>
                 _museumBottleController, _inventoryController, _gameDataController);
         }
 
+        if (!TryInitializeMuseumRelicDisplays())
+        {
+            return;
+        }
+
         if (_codexController != null)
         {
             _codexController.Init(
@@ -181,9 +230,25 @@ public sealed class GameRoot : Singleton<GameRoot>
                 _relicRestorationController);
         }
 
+        // 도감의 구버전 보유 아이템 동기화까지 끝난 뒤 문 개방을 평가합니다.
+        if (_museumRewardRoomController != null
+            && !_museumRewardRoomController.Init(
+                GameData.CodexData, _codexController, _progressController,
+                _museumRelicDisplayController))
+        {
+            Debug.LogError("[GameRoot] 최종 보상 방 초기화에 실패했습니다.");
+            return;
+        }
+
         if (_inventoryPresenter != null)
         {
             _inventoryPresenter.Init(_inventoryController);
+        }
+
+        if (_museumRelicPresenter != null)
+        {
+            _museumRelicPresenter.Init(
+                _museumRelicDisplayController, _inventoryController, _inventoryPresenter);
         }
 
         if (_currencyHudPresenter != null)
@@ -237,6 +302,13 @@ public sealed class GameRoot : Singleton<GameRoot>
             return;
         }
         _cameraController.Init();
+        if (_codexNavigationPresenter == null || !_codexNavigationPresenter.TryInitialize(
+                GameData.CodexData, _codexController, _inventoryController, _gameDataController))
+        {
+            Debug.LogError("[GameRoot] 도감 UI 초기화 연결이 누락되거나 유효하지 않습니다.");
+            return;
+        }
+        IsInitialized = true;
     }
 
     //==============================================================================
@@ -297,6 +369,25 @@ public sealed class GameRoot : Singleton<GameRoot>
                 out GameDataCsvLoadError loadError))
             return true;
         Debug.LogError($"[GameRoot] 술병 데이터 초기화에 실패했습니다. {loadError}");
+        return false;
+    }
+
+    /// <summary>유물 전시 CSV와 인벤토리·Progress 상태를 연결합니다.</summary>
+    private bool TryInitializeMuseumRelicDisplays()
+    {
+        if (_museumRelicDisplayController == null)
+        {
+            Debug.LogWarning("[GameRoot] MuseumRelicDisplayController가 연결되지 않았습니다.");
+            return true;
+        }
+        if (_museumRelicDisplayController.TryInit(
+                GameData, _inventoryController, _progressController,
+                out GameDataCsvLoadError loadError))
+        {
+            return true;
+        }
+
+        Debug.LogError($"[GameRoot] 유물 전시 데이터 초기화에 실패했습니다. {loadError}");
         return false;
     }
 }

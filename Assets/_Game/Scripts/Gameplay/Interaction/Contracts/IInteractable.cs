@@ -15,3 +15,16 @@ public interface IInteractable
     /// </summary>
     void Interact();
 }
+
+/// <summary>
+/// 상호작용을 실행한 플레이어의 입력 컨트롤러가 필요한 대상의 선택적 계약입니다.
+/// </summary>
+public interface IInteractionContextReceiver
+{
+    /// <summary>상호작용 직전에 플레이어 입력 컨트롤러를 전달합니다.</summary>
+    /// <param name="interactionController">상호작용을 실행한 플레이어 컨트롤러입니다.</param>
+    /// <param name="moveController">같은 플레이어의 이동 컨트롤러입니다.</param>
+    void SetInteractionContext(
+        PlayerInteractionController interactionController,
+        PlayerMoveController moveController);
+}

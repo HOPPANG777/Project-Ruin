@@ -1,10 +1,18 @@
+//=============================================================================
+// File:        CodexNavigationPhase3Tests.cs
+// Description: 현재 프리팹을 변경하지 않고 도감·인벤토리 전환 및 입력 잠금을 검증
+// History:     08/31/2026 + 재생성 없는 읽기 전용 회귀 검사로 변경 -- Codex
+//=============================================================================
 using System.Reflection;
+using System.Collections;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.UI;
+using UnityEngine.TestTools;
 
 [TestFixture]
 public sealed class CodexNavigationPhase3Tests
@@ -28,16 +36,11 @@ public sealed class CodexNavigationPhase3Tests
     private Button _inventoryButton;
     private Button _mapButton;
 
-    [OneTimeSetUp]
-    public void BuildPrefabs()
+    [UnitySetUp]
+    public IEnumerator SetUp()
     {
-        CodexUiPrefabBuilder.Rebuild();
-        GameUiPrefabIntegrator.Integrate();
-    }
-
-    [SetUp]
-    public void SetUp()
-    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        yield return new EnterPlayMode();
         _codexRoot = CreateInstance(BookPath);
         _inventoryRoot = CreateInstance(InventoryPath);
         _codex = _codexRoot.GetComponent<CodexPresenter>();
@@ -65,12 +68,13 @@ public sealed class CodexNavigationPhase3Tests
         ReadyNextTransition();
     }
 
-    [TearDown]
-    public void TearDown()
+    [UnityTearDown]
+    public IEnumerator TearDown()
     {
         if (_codexRoot != null) Object.DestroyImmediate(_codexRoot);
         if (_inventoryRoot != null) Object.DestroyImmediate(_inventoryRoot);
         if (_playerRoot != null) Object.DestroyImmediate(_playerRoot);
+        yield return new ExitPlayMode();
     }
 
     [Test]
@@ -136,10 +140,17 @@ public sealed class CodexNavigationPhase3Tests
     public void CapsLockPressTogglesOnlyOncePerFrame()
     {
         Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+        var originalSettings = InputSystem.settings;
+        var settings = Object.Instantiate(originalSettings);
+        settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+        settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+        InputSystem.settings = settings;
         try
         {
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.CapsLock));
-            InputSystem.Update();
+            typeof(InputSystem).GetMethod("Update", BindingFlags.Static | BindingFlags.NonPublic,
+                null, new[] { typeof(InputUpdateType) }, null)
+                .Invoke(null, new object[] { InputUpdateType.Dynamic });
             InvokePrivate(_navigation, "Update");
             InvokePrivate(_navigation, "Update");
             Assert.That(_codex.IsOpen, Is.True);
@@ -147,6 +158,8 @@ public sealed class CodexNavigationPhase3Tests
         finally
         {
             InputSystem.RemoveDevice(keyboard);
+            InputSystem.settings = originalSettings;
+            Object.DestroyImmediate(settings);
         }
     }
 

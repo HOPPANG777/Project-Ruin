@@ -7,7 +7,7 @@ using UnityEngine;
 // 설명: 아이템 보관, 중첩, 소모, 카테고리 조회를 담당하는 인벤토리 컨트롤러
 //==============================================================================
 [DisallowMultipleComponent]
-public class InventoryController : MonoBehaviour, IInventoryService
+public class InventoryController : MonoBehaviour, IInventoryService, IInventoryStateTransactionService
 {
     //==============================================================================
     // 상수
@@ -206,6 +206,73 @@ public class InventoryController : MonoBehaviour, IInventoryService
         NotifyItemCountChanged(normalizedAddId);
         PersistState();
         return true;
+    }
+
+    //=============================================================================
+    // Description: 슬롯을 임시 복제해 변경하고 연동 상태와 함께 확정합니다.
+    // Parameters: 제거/추가 ID·수량, 연동 시스템 ID·JSON, 실패 결과.
+    // Return: 두 상태가 함께 적용됐으면 true.
+    //=============================================================================
+    /// <summary>인벤토리 수량·슬롯과 연동 상태를 원자적으로 적용합니다.</summary>
+    public bool TryApplyWithSystemState(string removeId, int removeAmount, string addId, int addAmount,
+        string stateId, string stateJson, out InventoryStateChangeFailure failure)
+    {
+        failure = InventoryStateChangeFailure.INVENTORY_STATE_CHANGE_INVALID;
+        ItemDefinition addItem = null;
+        if (!(_progressService is IProgressStateTransactionService transaction)
+            || removeAmount < 0 || addAmount < 0 || (removeAmount == 0 && addAmount == 0)
+            || (removeAmount > 0 && (!TryNormalizeItemId(removeId, out removeId)
+                || GetItemCount(removeId) < removeAmount))
+            || (addAmount > 0 && (!TryGetItem(addId, out addItem) || !CanAddItem(addId, addAmount)))
+            || (removeAmount > 0 && addAmount > 0 && removeId == addItem.ItemId)) return false;
+        // 기존 슬롯 객체까지 보존하여 실패 시 new 표시·수동 순서·UI 참조를 유지합니다.
+        List<InventorySlotData> original = new List<InventorySlotData>(_slots);
+        bool committed = false;
+        failure = InventoryStateChangeFailure.INVENTORY_STATE_CHANGE_APPLY_FAILED;
+        try
+        {
+            _slots.Clear();
+            for (int i = 0; i < original.Count; i++)
+            {
+                InventorySlotData source = original[i];
+                InventorySlotData copy = new InventorySlotData();
+                if (source != null) copy.TrySetSlot(source.ItemId, source.Quantity,
+                    source.IsNewItem, source.ManualSlotOrder);
+                _slots.Add(source == null ? null : copy);
+            }
+            if (removeAmount > 0 && !RemoveItemAmount(removeId, removeAmount)) return false;
+            if (addAmount > 0 && !AddItemAmount(addItem, addAmount)) return false;
+            InventorySaveData save = new InventorySaveData { Slots = _slots };
+            committed = transaction.TrySetSystemStates(
+                INVENTORY_STATE_ID, JsonUtility.ToJson(save), stateId, stateJson);
+            if (!committed) return false;
+        }
+        catch (Exception) { return false; }
+        finally
+        {
+            if (!committed)
+            {
+                _slots.Clear();
+                _slots.AddRange(original);
+            }
+        }
+        failure = InventoryStateChangeFailure.INVENTORY_STATE_CHANGE_NONE;
+        if (removeAmount > 0) NotifyCommittedItemChange(removeId);
+        if (addAmount > 0) NotifyCommittedItemChange(addItem.ItemId);
+        return true;
+    }
+
+    // 커밋 후 구독자 예외는 성공한 상태를 실패로 바꾸거나 후속 저장을 건너뛰지 않습니다.
+    private void NotifyCommittedItemChange(string itemId)
+    {
+        Delegate[] handlers = ItemCountChanged?.GetInvocationList();
+        if (handlers == null) return;
+        int count = GetItemCount(itemId);
+        for (int i = 0; i < handlers.Length; i++)
+        {
+            try { ((Action<string, int>)handlers[i])(itemId, count); }
+            catch (Exception exception) { Debug.LogException(exception, this); }
+        }
     }
 
     private bool RemoveItemAmount(string itemId, int amount)

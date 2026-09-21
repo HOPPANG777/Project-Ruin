@@ -3,6 +3,8 @@
 // Description: 도감 입력, 창 전환과 플레이어 입력 잠금 생명주기를 관리한다.
 // History:     08/22/2026 + Created -- Codex
 //              08/23/2026 + 실제 인벤토리 표시 상태와 양방향 전환 연결 -- Codex
+//              08/30/2026 + 유물 전용 선택 UI의 외부 이동 차단 -- Codex
+//              08/31/2026 + 초기화 및 플레이어 참조를 GameRoot에서 명시적으로 주입 -- Codex
 //=============================================================================
 
 using UnityEngine;
@@ -41,16 +43,20 @@ public sealed class CodexNavigationPresenter : MonoBehaviour
 
     private bool _isInitialized;
     private bool _ownsPlayerLock;
-    private bool _attemptedPlayerResolution;
     private bool _previousCanInteract = true;
     private bool _previousCanMove = true;
     private int _transitionFrame = -1;
 
+    /// <summary>도감 전환 입력을 받을 준비가 끝났는지 반환합니다.</summary>
     public bool IsInitialized => _isInitialized;
+
+    private void Awake()
+    {
+        if (_hudOpenButton != null) _hudOpenButton.interactable = false;
+    }
 
     private void Update()
     {
-        if (!_isInitialized) TryInitializeFromGameRoot();
         if (!_isInitialized) return;
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null && keyboard.capsLockKey.wasPressedThisFrame) ToggleCodex();
@@ -87,6 +93,7 @@ public sealed class CodexNavigationPresenter : MonoBehaviour
         if (_mapButton != null) _mapButton.interactable = false;
         if (_inventoryButton != null) _inventoryButton.interactable = canNavigateInventory;
         if (_inventoryCodexButton != null) _inventoryCodexButton.interactable = canNavigateInventory;
+        if (_hudOpenButton != null) _hudOpenButton.interactable = _isInitialized;
         if (!_isInitialized) return false;
         RegisterListeners();
         _codexPresenter.Close();
@@ -94,14 +101,17 @@ public sealed class CodexNavigationPresenter : MonoBehaviour
         return true;
     }
 
+    /// <summary>외부 전용 UI의 잠금을 존중하며 도감을 엽니다.</summary>
     public void OpenCodex()
     {
-        if (!TryBeginTransition() || _codexPresenter.IsOpen) return;
+        if (IsExternalNavigationBlocked || !TryBeginTransition()
+            || _codexPresenter.IsOpen) return;
         _inventoryPresenter?.Close();
         _codexPresenter.Open();
         SyncPlayerLock();
     }
 
+    /// <summary>도감을 닫고 보유한 입력 잠금을 해제합니다.</summary>
     public void CloseCodex()
     {
         if (!TryBeginTransition()) return;
@@ -109,9 +119,10 @@ public sealed class CodexNavigationPresenter : MonoBehaviour
         SyncPlayerLock();
     }
 
+    /// <summary>같은 프레임의 중복 전환을 차단하며 도감을 토글합니다.</summary>
     public void ToggleCodex()
     {
-        if (!TryBeginTransition()) return;
+        if (IsExternalNavigationBlocked || !TryBeginTransition()) return;
         if (_codexPresenter.IsOpen) _codexPresenter.Close();
         else
         {
@@ -121,43 +132,64 @@ public sealed class CodexNavigationPresenter : MonoBehaviour
         SyncPlayerLock();
     }
 
+    /// <summary>도감을 닫고 연결된 인벤토리로 전환합니다.</summary>
     public void OpenInventory()
     {
-        if (!TryBeginTransition() || _inventoryPresenter == null
-            || _inventoryRootCanvasGroup == null) return;
+        if (IsExternalNavigationBlocked || !TryBeginTransition()
+            || _inventoryPresenter == null || _inventoryRootCanvasGroup == null) return;
         _codexPresenter.Close();
         _inventoryPresenter.Open();
         SyncPlayerLock();
     }
 
-    private void TryInitializeFromGameRoot()
+    //=============================================================================
+    // TryInitialize / BindPlayer / UnbindPlayer
+    // Description: 초기화와 씬 플레이어 참조는 소유자가 제공하며 전역 탐색을 하지 않습니다.
+    // Parameters: 도감 서비스 또는 플레이어 입력 Controller 쌍
+    // Return: bool / void
+    //=============================================================================
+    /// <summary>GameRoot의 저장·도메인 초기화 완료 후 직렬화된 UI 연결을 초기화합니다.</summary>
+    public bool TryInitialize(ICodexDataRepository data, ICodexService codex,
+        IInventoryService inventory, ILocalizationService localization)
     {
-        GameRoot root = GameRoot.Instance;
-        if (root == null || root.GameData?.CodexData == null || root.Codex == null
-            || root.Inventory == null || root.Localization == null || _codexPresenter == null) return;
-        ResolveInventoryBridge();
-        if (!_codexPresenter.Init(root.GameData.CodexData, root.Codex,
-            root.Inventory, root.Localization)) return;
-        _inventoryPresenter?.Init(root.Inventory);
-        Init(_inventoryPresenter, _inventoryRootCanvasGroup, _inventoryCodexButton);
+        OnDisable();
+        UnregisterListeners();
+        if (_hudOpenButton != null) _hudOpenButton.interactable = false;
+        _isInitialized = false;
+        if (_inventoryBridge == null || _inventoryBridge.Presenter == null || _codexPresenter == null)
+            return false;
+        if (_inventoryBridge.RootCanvasGroup == null || _inventoryBridge.CodexButton == null) return false;
+        if (!_codexPresenter.Init(data, codex, inventory, localization)) return false;
+        return Init(_inventoryBridge.Presenter, _inventoryBridge.RootCanvasGroup, _inventoryBridge.CodexButton);
     }
 
-    private void ResolveInventoryBridge()
+    /// <summary>플레이어 교체 시 이전 창과 잠금을 정리하고 새 참조를 연결합니다.</summary>
+    public void BindPlayer(PlayerInteractionController interaction, PlayerMoveController movement)
     {
-        _inventoryBridge ??= Object.FindFirstObjectByType<InventoryNavigationBridge>(
-            FindObjectsInactive.Include);
-        if (_inventoryBridge == null) return;
-        _inventoryPresenter ??= _inventoryBridge.Presenter;
-        _inventoryRootCanvasGroup ??= _inventoryBridge.RootCanvasGroup;
-        _inventoryCodexButton ??= _inventoryBridge.CodexButton;
+        if (_playerInteractionController == interaction && _playerMoveController == movement) return;
+        _codexPresenter?.Close();
+        _inventoryPresenter?.Close();
+        ReleasePlayerLock();
+        _playerInteractionController = interaction;
+        _playerMoveController = movement;
+    }
+
+    /// <summary>현재 플레이어가 비활성화될 때만 연결과 잠금을 해제합니다.</summary>
+    public void UnbindPlayer(PlayerInteractionController interaction, PlayerMoveController movement)
+    {
+        if (_playerInteractionController == interaction && _playerMoveController == movement)
+            BindPlayer(null, null);
     }
 
     private bool TryBeginTransition()
     {
-        if (!_isInitialized || _transitionFrame == Time.frameCount) return false;
+        if (!_isInitialized || !isActiveAndEnabled || _transitionFrame == Time.frameCount) return false;
         _transitionFrame = Time.frameCount;
         return true;
     }
+
+    private bool IsExternalNavigationBlocked =>
+        _inventoryPresenter != null && _inventoryPresenter.IsExternalInputBlocked;
 
     private bool IsInventoryOpen() => _inventoryRootCanvasGroup != null
         && _inventoryRootCanvasGroup.gameObject.activeInHierarchy
@@ -179,7 +211,6 @@ public sealed class CodexNavigationPresenter : MonoBehaviour
     private void AcquirePlayerLock()
     {
         if (_ownsPlayerLock) return;
-        ResolvePlayerControllers();
         if (_playerInteractionController == null && _playerMoveController == null) return;
         _previousCanInteract = _playerInteractionController == null
             || _playerInteractionController.CanInteract;
@@ -189,23 +220,12 @@ public sealed class CodexNavigationPresenter : MonoBehaviour
         _ownsPlayerLock = true;
     }
 
-    private void ResolvePlayerControllers()
-    {
-        if (_attemptedPlayerResolution) return;
-        _attemptedPlayerResolution = true;
-        _playerInteractionController ??= Object.FindFirstObjectByType<PlayerInteractionController>();
-        _playerMoveController ??= Object.FindFirstObjectByType<PlayerMoveController>();
-    }
-
     private void ReleasePlayerLock()
     {
-        if (_ownsPlayerLock)
-        {
-            _playerInteractionController?.SetCanInteract(_previousCanInteract);
-            _playerMoveController?.SetCanMove(_previousCanMove);
-            _ownsPlayerLock = false;
-        }
-        _attemptedPlayerResolution = false;
+        if (!_ownsPlayerLock) return;
+        _playerInteractionController?.SetCanInteract(_previousCanInteract);
+        _playerMoveController?.SetCanMove(_previousCanMove);
+        _ownsPlayerLock = false;
     }
 
     private void RegisterListeners()

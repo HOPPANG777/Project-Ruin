@@ -23,6 +23,9 @@ public sealed class MuseumMural : MonoBehaviour
 
     private IMuseumService _museum;
 
+    /// <summary>CSV 정의와 최종 보상 방 배치 검증에 사용하는 벽화 ID입니다.</summary>
+    public string MuralId => _muralId;
+
     private void Reset()
     {
         BoxCollider2D trigger = GetComponent<BoxCollider2D>();

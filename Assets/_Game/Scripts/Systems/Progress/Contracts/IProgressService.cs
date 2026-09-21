@@ -8,6 +8,13 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
+/// <summary>두 시스템의 메모리 저장 상태를 하나의 변경으로 적용하는 선택적 계약입니다.</summary>
+public interface IProgressStateTransactionService
+{
+    /// <summary>실패하면 두 상태와 Dirty를 모두 보존하며 디스크 I/O는 수행하지 않습니다.</summary>
+    bool TrySetSystemStates(string firstId, string firstJson, string secondId, string secondJson);
+}
+
 /// <summary>
 /// 게임 진행 상태를 보관·조회하는 서비스의 공개 계약입니다.
 /// </summary>

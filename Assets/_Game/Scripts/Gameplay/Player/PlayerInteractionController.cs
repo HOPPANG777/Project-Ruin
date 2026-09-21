@@ -32,6 +32,8 @@ public sealed class PlayerInteractionController : MonoBehaviour
     [SerializeField] private InputActionReference _interactAction;
     [Tooltip("대화나 UI 중 상호작용 탐지와 입력을 허용할지 결정합니다.")]
     [SerializeField] private bool _canInteract = true;
+    [Tooltip("상호작용 대상에 입력 잠금 컨텍스트로 전달할 같은 플레이어의 이동 컨트롤러입니다.")]
+    [SerializeField] private PlayerMoveController _playerMoveController;
     /// <summary>현재 월드 상호작용 입력 허용 상태입니다.</summary>
     public bool CanInteract => _canInteract;
     private readonly Collider2D[] _detectResults = new Collider2D[DETECTION_BUFFER_SIZE];
@@ -43,6 +45,10 @@ public sealed class PlayerInteractionController : MonoBehaviour
     private IHoldInteractable _activeHoldTarget;
     private void Awake()
     {
+        if (_playerMoveController == null)
+        {
+            TryGetComponent(out _playerMoveController);
+        }
         _contactFilter.useLayerMask = true;
         _contactFilter.layerMask = _interactionLayers;
         _contactFilter.useTriggers = true;
@@ -196,6 +202,10 @@ public sealed class PlayerInteractionController : MonoBehaviour
         InputAction action = _interactAction.action;
         if (action.WasPressedThisFrame())
         {
+            if (_currentTarget is IInteractionContextReceiver contextReceiver)
+            {
+                contextReceiver.SetInteractionContext(this, _playerMoveController);
+            }
             _currentTarget?.Interact();
         }
         if (action.WasReleasedThisFrame())

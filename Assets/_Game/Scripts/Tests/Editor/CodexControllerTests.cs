@@ -87,6 +87,23 @@ public sealed class CodexControllerTests
         Assert.That(_controller.IsEntryUnlocked("UNKNOWN"), Is.False);
     }
 
+    [Test]
+    public void InitNotificationCanReadLaterSavedItem()
+    {
+        const string laterId = "ITEM_LATER";
+        var data = new FakeCodexData(new[]
+        {
+            new CodexEntryDefinition("FIRST", CodexCategory.CODEX_CATEGORY_RELIC, 0, RELIC_ID, 1),
+            new CodexEntryDefinition("LATER", CodexCategory.CODEX_CATEGORY_RELIC, 1, laterId, 1)
+        });
+        _inventory.SetCount(RELIC_ID, 1);
+        _progress.SetFlag(ICodexService.ITEM_DISCOVERY_FLAG_PREFIX + laterId, true);
+        bool observed = false;
+        _controller.DiscoveryChanged += _ => observed = _controller.IsItemDiscovered(laterId);
+        Assert.That(_controller.Init(data, _inventory, _progress, _restoration), Is.True);
+        Assert.That(observed, Is.True, "첫 알림에서도 전체 조회 키가 준비돼야 합니다.");
+    }
+
     private static ICodexDataRepository CreateData()
     {
         return new FakeCodexData(new[]

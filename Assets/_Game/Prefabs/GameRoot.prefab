@@ -531,6 +531,8 @@ GameObject:
   - component: {fileID: 4132607794765692391}
   - component: {fileID: 833039383459303240}
   - component: {fileID: 2360621031874003977}
+  - component: {fileID: 5501379966055181083}
+  - component: {fileID: 936299984882936459}
   m_Layer: 0
   m_Name: GameRoot
   m_TagString: Untagged
@@ -567,6 +569,7 @@ Transform:
   - {fileID: 4025202935242525629}
   - {fileID: 2157851383054692413}
   - {fileID: 8415296842391513968}
+  - {fileID: 7393028554756445182}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4132607794765692391
@@ -588,12 +591,16 @@ MonoBehaviour:
   _codexController: {fileID: 7788990011223344556}
   _museumController: {fileID: 833039383459303240}
   _museumBottleController: {fileID: 2360621031874003977}
+  _museumRelicDisplayController: {fileID: 5501379966055181083}
+  _museumRewardRoomController: {fileID: 936299984882936459}
   _skillController: {fileID: 3838426207590922893}
   _altarPresenter: {fileID: 0}
   _museumBottlePresenter: {fileID: 5013487694180552863}
+  _museumRelicPresenter: {fileID: 1851702964227336695}
   _questController: {fileID: 4612708442974497604}
   _inventoryController: {fileID: 9012345678901234567}
   _inventoryPresenter: {fileID: 5266415508649538833}
+  _codexNavigationPresenter: {fileID: 2258372966527634154}
   _currencyHudPresenter: {fileID: 0}
   _shopController: {fileID: 9123456789012345603}
   _shopPresenter: {fileID: 0}
@@ -628,6 +635,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MuseumBottleController
   _museumBottlesCsv: {fileID: 4900000, guid: ec31dd072ac347759ae46b2b834c3b6f, type: 3}
   _museumBottleItemsCsv: {fileID: 4900000, guid: 181fcab7843a45a1863f00846407b1e9, type: 3}
+--- !u!114 &5501379966055181083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1008359294462020877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0695e3545a3e6e14ea48ccd3f76c1207, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MuseumRelicDisplayController
+  _museumRelicMilestonesCsv: {fileID: 4900000, guid: cd52a398490e1e6478f9eaf6b65bc17e, type: 3}
+--- !u!114 &936299984882936459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1008359294462020877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22011c246d058c644b2532955019c3c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MuseumRewardRoomController
 --- !u!1 &1026423296325697472
 GameObject:
   m_ObjectHideFlags: 0
@@ -2416,6 +2448,119 @@ MonoBehaviour:
   _lockPlayerControl: 1
   _playerInteractionController: {fileID: 0}
   _playerMoveController: {fileID: 0}
+--- !u!1001 &1019706382766773704
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2305819821877646456}
+    m_Modifications:
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8183172484305744429, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+      propertyPath: m_Name
+      value: MuseumRelicUi
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+--- !u!114 &1851702964227336695 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1699030807312464959, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+  m_PrefabInstance: {fileID: 1019706382766773704}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63683646af047bd48a34b6239b1be53a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MuseumRelicPresenter
+--- !u!224 &7393028554756445182 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 7548008517858281014, guid: 54266ee52cfbe1b48a4c21b04a12ee3c, type: 3}
+  m_PrefabInstance: {fileID: 1019706382766773704}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2172826233545688263
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3040,6 +3185,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5a47cf257a776dd40b199e6ee6819b43, type: 3}
+--- !u!114 &2258372966527634154 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6011286236071782480, guid: 5a47cf257a776dd40b199e6ee6819b43, type: 3}
+  m_PrefabInstance: {fileID: 5493048787762504378}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c1f9950b8124096b9ec30d00e631f5a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CodexNavigationPresenter
 --- !u!224 &7084171487972394903 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3344822861175121197, guid: 5a47cf257a776dd40b199e6ee6819b43, type: 3}

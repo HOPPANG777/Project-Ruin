@@ -108,6 +108,9 @@ public class InventoryPresenter : MonoBehaviour
     // 현재 인벤토리 팝업이 열려 있는지 여부입니다.
     private bool _isOpen;
 
+    // 전용 선택 UI가 일반 인벤토리 열기 입력을 차단하고 있는지 여부입니다.
+    private bool _isExternalInputBlocked;
+
     // 팝업을 연 프레임의 외부 클릭 닫기를 방지하기 위한 프레임 값입니다.
     private int _ignoreOutsideClickFrame = INVENTORY_NO_IGNORE_FRAME;
 
@@ -136,6 +139,12 @@ public class InventoryPresenter : MonoBehaviour
     // 공개 API
     //==============================================================================
 
+    /// <summary>현재 인벤토리 팝업이 열려 있는지 여부입니다.</summary>
+    public bool IsOpen => _isOpen;
+
+    /// <summary>전용 선택 UI가 일반 인벤토리 열기 입력을 차단하는지 여부입니다.</summary>
+    public bool IsExternalInputBlocked => _isExternalInputBlocked;
+
     /// <summary>
     /// GameRoot에서 호출해 인벤토리 서비스와 UI 입력 콜백을 연결합니다.
     /// </summary>
@@ -146,6 +155,7 @@ public class InventoryPresenter : MonoBehaviour
         _currentCategory = _defaultCategory;
         _selectedSlotData = null;
         _isOpen = false;
+        _isExternalInputBlocked = false;
 
         RegisterButtonListeners();
 
@@ -162,6 +172,11 @@ public class InventoryPresenter : MonoBehaviour
     /// </summary>
     public void Open()
     {
+        if (_isExternalInputBlocked)
+        {
+            return;
+        }
+
         if (_inventoryView == null || _inventoryService == null)
         {
             Debug.LogWarning("[InventoryPresenter] InventoryView 또는 InventoryService가 연결되지 않았습니다.");
@@ -199,6 +214,11 @@ public class InventoryPresenter : MonoBehaviour
     /// </summary>
     public void Toggle()
     {
+        if (_isExternalInputBlocked)
+        {
+            return;
+        }
+
         if (_isOpen)
         {
             Close();
@@ -206,6 +226,17 @@ public class InventoryPresenter : MonoBehaviour
         }
 
         Open();
+    }
+
+    /// <summary>전용 선택 UI가 활성화된 동안 일반 인벤토리 열기 입력을 차단합니다.</summary>
+    /// <param name="blocked">일반 인벤토리 열기 입력을 차단하면 true입니다.</param>
+    public void SetExternalInputBlocked(bool blocked)
+    {
+        _isExternalInputBlocked = blocked;
+        if (blocked)
+        {
+            Close();
+        }
     }
 
     /// <summary>
@@ -309,6 +340,11 @@ public class InventoryPresenter : MonoBehaviour
     /// </summary>
     private void HandleKeyboardInput()
     {
+        if (_isExternalInputBlocked)
+        {
+            return;
+        }
+
         Keyboard keyboard = Keyboard.current;
 
         if (keyboard == null)

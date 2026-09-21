@@ -2,7 +2,7 @@
 
 [도감·박물관 가이드](README.md) · [도감 항목](codex_entries_csv.md) · [items.csv](../PHASE_01_LOCALIZATION_ITEMS/items_csv.md)
 
-> 상태: 계획 계약. 보상 Item ID와 수량은 아직 확정되지 않았으므로 실제 행을 만들 때까지 헤더 전용 파일을 사용할 수 있습니다.
+> 상태: **Phase 7 보완 검증 완료 / 콘텐츠 미확정**. 2026-08-31 최종 방 테스트 38/38, 기존 관련 회귀 54/54 통과. 실제 입력 경로와 별도 ES3 파일 재로드도 검증했습니다. 보상 Item ID와 수량은 아직 확정되지 않았으므로 실제 CSV는 헤더만 유지합니다. 실제 방 배치는 콘텐츠 확정 후 수행합니다.
 
 ## 1. 이 CSV의 목적
 
@@ -33,19 +33,22 @@ milestone_id,required_exhibit_count,reward_mode,reward_item_id,reward_amount
 | `reward_mode` | 의미 | 사용 예 |
 | --- | --- | --- |
 | `GRANT_IMMEDIATELY` | 조건을 처음 충족하면 즉시 지급을 시도 | 유물 10종 전시 보상 |
-| `ENABLE_ROOM_PICKUP` | 조건 충족 시 방 안의 보상 상호작용만 활성화 | 모든 유물 전시 후 왕의 보검 |
+| `ENABLE_ROOM_PICKUP` | 열린 방 내부에서 상호작용 시 전시 조건을 재검증하고 한 번 지급 | 모든 유물 전시 후 왕의 보검 |
 
 - `required_exhibit_count`는 배치된 전시대 수나 중복 복사본 수가 아니라 **서로 다른 실제 전시 유물 종류 수**입니다.
 - 최대값은 `codex_entries.csv`의 `RELIC` 항목 수에서 계산합니다. 20을 코드에 별도로 하드코딩하지 않습니다.
 - 최종 방 문 개방은 모든 유물 **발견** 조건이며 이 CSV의 전시 마일스톤과 다릅니다.
 - 모든 열이 필수입니다. 보상이 미확정이면 행 전체를 만들지 않습니다.
+- 현재 검증 정책은 **헤더만 있거나 보상 2행**입니다. 첫 행은 10종·즉시 지급, 둘째 행은 전체 유물 수·방 안 수령이어야 합니다. 한 행만 작성하거나 임의의 중간 보상 행을 추가하면 검증에 실패합니다.
 
 ## 6. 다른 CSV와의 연결
 
 - 참조함: `reward_item_id` → `items.csv`
 - 계산 원본: 유물 전체 수 → `codex_entries`의 `RELIC` 행, 현재 전시 종류 수 → 전시대 저장 상태
-- 저장: `milestone_id`별 보상 수령 완료 Flag
-- 씬: `ENABLE_ROOM_PICKUP` 행은 최종 보상 상호작용의 Milestone ID와 연결합니다.
+- 저장: `museum.relic_displays.v1` System State의 `milestone_id`별 수령 완료 목록
+- 씬: `ENABLE_ROOM_PICKUP` 행 ID를 `MuseumRewardRoom`의 Reward Milestone Id에 연결합니다. [Inspector 연결 순서](README.md#8-최종-보상-방-연결--unity-담당자)를 따릅니다.
+- 문 개방은 별도 `museum.reward_room.open.v1` Flag입니다. 이 CSV에 개방 여부 열을 추가하지 않습니다.
+- 개인 테스트용 벽화 관련 퀘스트는 문 개방이나 보상 수령의 필수 조건이 아니므로 Quest ID를 연결하지 않습니다.
 
 ## 7. 작성 순서
 
@@ -81,11 +84,17 @@ MILESTONE_EXAMPLE_RELIC_ALL,20,ENABLE_ROOM_PICKUP,ITEM_EXAMPLE_KING_SWORD,1
 
 ## 10. 자동 또는 Unity 검증 항목
 
-Phase 6 구현 시 헤더, 모든 필수값, ID·요구 개수 중복, 요구 개수 범위, 모드 2종, Item 존재, 수량 1 이상, 오름차순을 검사합니다. `ENABLE_ROOM_PICKUP` 씬 상호작용 연결은 Unity Editor에서 확인합니다. 지급은 Item 추가 성공 전에 수령 완료 Flag를 세우지 않아야 합니다. 현재 자동 검증은 없습니다.
+`MuseumRelicMilestoneRepository`는 헤더, 모든 필수값, ID·요구 개수 중복, 유물 총수 범위, 모드 2종, Item 존재, 수량 1 이상, 오름차순을 검사합니다. `MuseumPhase6EditorValidator`는 GameRoot·Bazzi UI·전시대 개수와 고유 ID를 빌드 전에 검사합니다. 지급 성공 전에는 수령 완료 상태를 저장하지 않으며 즉시 보상 실패는 재시도됩니다.
+
+검증 메뉴는 CSV·프리팹·씬만 검사하며 보상 지급이나 플레이어 세이브 저장을 수행하지 않습니다. 유물·보상·전시대가 아직 없으면 `기반 검증 통과 / 콘텐츠 미완성`으로 표시합니다. 인벤토리와 수령 상태는 함께 적용되며, 디스크 저장 실패는 Dirty를 유지하는 별도 재저장 대상입니다.
+
+실행 메뉴: `Tools > Project Ruin > Museum > Validate Phase 6 Data`
+
+최종 방 메뉴: `Tools > Project Ruin > Museum > Validate Phase 7 Data`. 이 메뉴는 CSV·GameRoot·방 배치 참조를 검사합니다. 문 개방, 방 밖 수령 차단, 전체 전시 재확인, 중복·재진입·저장 복원은 별도 Phase 7 자동 테스트에서 검증했습니다. 보검 Item을 소비해도 수령 완료 목록은 유지하며, 이미 받은 보상을 다시 지급하지 않습니다.
 
 ## 11. 수정과 삭제 시 주의사항
 
-`milestone_id`를 바꾸면 이미 받은 보상을 다시 받을 수 있으므로 저장 마이그레이션이 필수입니다. 요구 개수를 낮추거나 새 중간 행을 추가하면 기존 저장에 소급 지급할지 결정해야 합니다. 보상 Item을 바꿔도 이미 수령한 Flag는 유지하는 것이 기본입니다.
+`milestone_id`를 바꾸면 이미 받은 보상을 다시 받을 수 있으므로 저장 마이그레이션이 필수입니다. 요구 개수를 낮추거나 새 중간 행을 추가하려면 먼저 10종/전체 2행 검증 정책과 소급 지급 정책을 함께 변경해야 합니다. 보상 Item을 바꿔도 이미 수령한 Flag는 유지하는 것이 기본입니다.
 
 ## 12. 빠른 체크리스트
 
@@ -103,4 +112,3 @@ Phase 6 구현 시 헤더, 모든 필수값, ID·요구 개수 중복, 요구 �
 - [items.csv](../PHASE_01_LOCALIZATION_ITEMS/items_csv.md)
 - [ID 변경 영향](../PHASE_07_REFERENCE/ID_CHANGE_IMPACT_MAP.md)
 - [Progress 저장 가이드](../../ES3_PROGRESS_SAVE_GUIDE.md)
-
