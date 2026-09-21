@@ -663,7 +663,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UiPuzzlePopup
   _popupContainer: {fileID: 1199023424}
   _closeButton: {fileID: 1328793497}
-  _uiPuzzleManager: {fileID: 2103437518}
+  _uiPuzzleManager: {fileID: 0}
   _closeDelaySeconds: 3
   _disablePuzzleManagerWhenClosed: 1
   _closeAutomaticallyOnClear: 1
@@ -823,7 +823,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UiPuzzlePopup
   _popupContainer: {fileID: 615956754}
   _closeButton: {fileID: 479305682}
-  _uiPuzzleManager: {fileID: 710984204}
+  _uiPuzzleManager: {fileID: 0}
   _closeDelaySeconds: 3
   _disablePuzzleManagerWhenClosed: 1
   _closeAutomaticallyOnClear: 1
@@ -2372,7 +2372,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UiPuzzlePopup
   _popupContainer: {fileID: 931537132}
   _closeButton: {fileID: 1641253399}
-  _uiPuzzleManager: {fileID: 298709150}
+  _uiPuzzleManager: {fileID: 0}
   _closeDelaySeconds: 3
   _disablePuzzleManagerWhenClosed: 1
   _closeAutomaticallyOnClear: 1
@@ -2438,3 +2438,4 @@ SceneRoots:
   - {fileID: 2103437519}
   - {fileID: 298709151}
   - {fileID: 710984205}
+  - {fileID: 1792839610}
