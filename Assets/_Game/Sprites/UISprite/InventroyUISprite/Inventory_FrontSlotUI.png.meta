@@ -1,0 +1,1040 @@
+fileFormatVersion: 2
+guid: 2eb3ebf24734f24479950038a2aa3959
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -1575708383222953304
+    second: Inventory_FrontSlotUI_0
+  - first:
+      213: -3172793196735580420
+    second: Inventory_FrontSlotUI_1
+  - first:
+      213: -6666799936117796979
+    second: Inventory_FrontSlotUI_2
+  - first:
+      213: -3294219982948989316
+    second: Inventory_FrontSlotUI_3
+  - first:
+      213: -1761985416456063929
+    second: Inventory_FrontSlotUI_4
+  - first:
+      213: -2644300899149376067
+    second: Inventory_FrontSlotUI_5
+  - first:
+      213: 3366772416802086503
+    second: Inventory_FrontSlotUI_6
+  - first:
+      213: -3091781715539225605
+    second: Inventory_FrontSlotUI_7
+  - first:
+      213: -1212777894348408026
+    second: Inventory_FrontSlotUI_8
+  - first:
+      213: -4199884025538838496
+    second: Inventory_FrontSlotUI_9
+  - first:
+      213: -5940802673776318912
+    second: Inventory_FrontSlotUI_10
+  - first:
+      213: -6865171313509332861
+    second: Inventory_FrontSlotUI_11
+  - first:
+      213: 1989235485430278697
+    second: Inventory_FrontSlotUI_12
+  - first:
+      213: -4986719955665892989
+    second: Inventory_FrontSlotUI_13
+  - first:
+      213: -9024721315904352523
+    second: Inventory_FrontSlotUI_14
+  - first:
+      213: -8583758028830345594
+    second: Inventory_FrontSlotUI_15
+  - first:
+      213: 5056710991558496976
+    second: Inventory_FrontSlotUI_16
+  - first:
+      213: -529408262640540119
+    second: Inventory_FrontSlotUI_17
+  - first:
+      213: 5309791169148486962
+    second: Inventory_FrontSlotUI_18
+  - first:
+      213: -3954909013975486281
+    second: Inventory_FrontSlotUI_19
+  - first:
+      213: 4907151559688369235
+    second: Inventory_FrontSlotUI_20
+  - first:
+      213: -4861728210886067305
+    second: Inventory_FrontSlotUI_21
+  - first:
+      213: -9079039128124767433
+    second: Inventory_FrontSlotUI_22
+  - first:
+      213: 4049308150462430397
+    second: Inventory_FrontSlotUI_23
+  - first:
+      213: 260491966075832363
+    second: Inventory_FrontSlotUI_24
+  - first:
+      213: 3025335626148279153
+    second: Inventory_FrontSlotUI_25
+  - first:
+      213: -3243203760784754934
+    second: Inventory_FrontSlotUI_26
+  - first:
+      213: -7048623861672320712
+    second: Inventory_FrontSlotUI_27
+  - first:
+      213: -7811162013095618438
+    second: Inventory_FrontSlotUI_28
+  - first:
+      213: 1353388165062802106
+    second: Inventory_FrontSlotUI_29
+  - first:
+      213: -7645795794204950747
+    second: Inventory_FrontSlotUI_30
+  - first:
+      213: -3825672151906450330
+    second: Inventory_FrontSlotUI_31
+  - first:
+      213: -2537917203290482840
+    second: Inventory_FrontSlotUI_32
+  - first:
+      213: -1450835973175229695
+    second: Inventory_FrontSlotUI_33
+  - first:
+      213: 4547706205809071219
+    second: Inventory_FrontSlotUI_34
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_0
+      rect:
+        serializedVersion: 2
+        x: 34
+        y: 1176
+        width: 197
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8aa046ce295f12ae0800000000000000
+      internalID: -1575708383222953304
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_1
+      rect:
+        serializedVersion: 2
+        x: 247
+        y: 1175
+        width: 197
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cf6bcc2d569f7f3d0800000000000000
+      internalID: -3172793196735580420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_2
+      rect:
+        serializedVersion: 2
+        x: 460
+        y: 1174
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d8f0a13c7c4ca73a0800000000000000
+      internalID: -6666799936117796979
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_3
+      rect:
+        serializedVersion: 2
+        x: 673
+        y: 1173
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c76055801649842d0800000000000000
+      internalID: -3294219982948989316
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_4
+      rect:
+        serializedVersion: 2
+        x: 895
+        y: 1172
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 744b7b0699b2c87e0800000000000000
+      internalID: -1761985416456063929
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_5
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 985
+        width: 196
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: db594f2a75e8d4bd0800000000000000
+      internalID: -2644300899149376067
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_6
+      rect:
+        serializedVersion: 2
+        x: 245
+        y: 984
+        width: 196
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 76e5217dcad29be20800000000000000
+      internalID: 3366772416802086503
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_7
+      rect:
+        serializedVersion: 2
+        x: 457
+        y: 984
+        width: 198
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf39c3229e8c715d0800000000000000
+      internalID: -3091781715539225605
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_8
+      rect:
+        serializedVersion: 2
+        x: 670
+        y: 983
+        width: 197
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 62bbaef3ee85b2fe0800000000000000
+      internalID: -1212777894348408026
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_9
+      rect:
+        serializedVersion: 2
+        x: 892
+        y: 981
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0208bef0bb307b5c0800000000000000
+      internalID: -4199884025538838496
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_10
+      rect:
+        serializedVersion: 2
+        x: 34
+        y: 796
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0462fd4a1770e8da0800000000000000
+      internalID: -5940802673776318912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_11
+      rect:
+        serializedVersion: 2
+        x: 247
+        y: 795
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 388031840130ab0a0800000000000000
+      internalID: -6865171313509332861
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_12
+      rect:
+        serializedVersion: 2
+        x: 460
+        y: 794
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 92a6ca3722f2b9b10800000000000000
+      internalID: 1989235485430278697
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_13
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 794
+        width: 197
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 389ce200f9c9bcab0800000000000000
+      internalID: -4986719955665892989
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_14
+      rect:
+        serializedVersion: 2
+        x: 894
+        y: 793
+        width: 197
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5fe00a837cfb1c280800000000000000
+      internalID: -9024721315904352523
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_15
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 606
+        width: 197
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 686f8ad2d8d50e880800000000000000
+      internalID: -8583758028830345594
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_16
+      rect:
+        serializedVersion: 2
+        x: 244
+        y: 605
+        width: 197
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0d258afeadb0d2640800000000000000
+      internalID: 5056710991558496976
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_17
+      rect:
+        serializedVersion: 2
+        x: 457
+        y: 604
+        width: 197
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 92667247df927a8f0800000000000000
+      internalID: -529408262640540119
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_18
+      rect:
+        serializedVersion: 2
+        x: 669
+        y: 604
+        width: 197
+        height: 180
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2350a949fea20b940800000000000000
+      internalID: 5309791169148486962
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_19
+      rect:
+        serializedVersion: 2
+        x: 891
+        y: 602
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b0300fa4375d19c0800000000000000
+      internalID: -3954909013975486281
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_20
+      rect:
+        serializedVersion: 2
+        x: 28
+        y: 417
+        width: 197
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 354ba362854b91440800000000000000
+      internalID: 4907151559688369235
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_21
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 416
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79bf3a363fba78cb0800000000000000
+      internalID: -4861728210886067305
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_22
+      rect:
+        serializedVersion: 2
+        x: 454
+        y: 415
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 733404a0406c00280800000000000000
+      internalID: -9079039128124767433
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_23
+      rect:
+        serializedVersion: 2
+        x: 667
+        y: 414
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dbc38660f48023830800000000000000
+      internalID: 4049308150462430397
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_24
+      rect:
+        serializedVersion: 2
+        x: 889
+        y: 413
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b280bc020147d9300800000000000000
+      internalID: 260491966075832363
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_25
+      rect:
+        serializedVersion: 2
+        x: 26
+        y: 226
+        width: 196
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 173f6ea19b62cf920800000000000000
+      internalID: 3025335626148279153
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_26
+      rect:
+        serializedVersion: 2
+        x: 239
+        y: 225
+        width: 196
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a07b630ec53ddf2d0800000000000000
+      internalID: -3243203760784754934
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_27
+      rect:
+        serializedVersion: 2
+        x: 451
+        y: 224
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 831eda961f14e2e90800000000000000
+      internalID: -7048623861672320712
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_28
+      rect:
+        serializedVersion: 2
+        x: 664
+        y: 223
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a78196ec88d299390800000000000000
+      internalID: -7811162013095618438
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_29
+      rect:
+        serializedVersion: 2
+        x: 886
+        y: 222
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aba39c59d5338c210800000000000000
+      internalID: 1353388165062802106
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_30
+      rect:
+        serializedVersion: 2
+        x: 27
+        y: 37
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 52ffc3dfb3da4e590800000000000000
+      internalID: -7645795794204950747
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_31
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 36
+        width: 196
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6640386727b78eac0800000000000000
+      internalID: -3825672151906450330
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_32
+      rect:
+        serializedVersion: 2
+        x: 453
+        y: 35
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 867948400c187ccd0800000000000000
+      internalID: -2537917203290482840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_33
+      rect:
+        serializedVersion: 2
+        x: 666
+        y: 34
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 10348878e589ddbe0800000000000000
+      internalID: -1450835973175229695
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Inventory_FrontSlotUI_34
+      rect:
+        serializedVersion: 2
+        x: 888
+        y: 33
+        width: 197
+        height: 182
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 374d61c03b2bc1f30800000000000000
+      internalID: 4547706205809071219
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Inventory_FrontSlotUI_0: -1575708383222953304
+      Inventory_FrontSlotUI_1: -3172793196735580420
+      Inventory_FrontSlotUI_10: -5940802673776318912
+      Inventory_FrontSlotUI_11: -6865171313509332861
+      Inventory_FrontSlotUI_12: 1989235485430278697
+      Inventory_FrontSlotUI_13: -4986719955665892989
+      Inventory_FrontSlotUI_14: -9024721315904352523
+      Inventory_FrontSlotUI_15: -8583758028830345594
+      Inventory_FrontSlotUI_16: 5056710991558496976
+      Inventory_FrontSlotUI_17: -529408262640540119
+      Inventory_FrontSlotUI_18: 5309791169148486962
+      Inventory_FrontSlotUI_19: -3954909013975486281
+      Inventory_FrontSlotUI_2: -6666799936117796979
+      Inventory_FrontSlotUI_20: 4907151559688369235
+      Inventory_FrontSlotUI_21: -4861728210886067305
+      Inventory_FrontSlotUI_22: -9079039128124767433
+      Inventory_FrontSlotUI_23: 4049308150462430397
+      Inventory_FrontSlotUI_24: 260491966075832363
+      Inventory_FrontSlotUI_25: 3025335626148279153
+      Inventory_FrontSlotUI_26: -3243203760784754934
+      Inventory_FrontSlotUI_27: -7048623861672320712
+      Inventory_FrontSlotUI_28: -7811162013095618438
+      Inventory_FrontSlotUI_29: 1353388165062802106
+      Inventory_FrontSlotUI_3: -3294219982948989316
+      Inventory_FrontSlotUI_30: -7645795794204950747
+      Inventory_FrontSlotUI_31: -3825672151906450330
+      Inventory_FrontSlotUI_32: -2537917203290482840
+      Inventory_FrontSlotUI_33: -1450835973175229695
+      Inventory_FrontSlotUI_34: 4547706205809071219
+      Inventory_FrontSlotUI_4: -1761985416456063929
+      Inventory_FrontSlotUI_5: -2644300899149376067
+      Inventory_FrontSlotUI_6: 3366772416802086503
+      Inventory_FrontSlotUI_7: -3091781715539225605
+      Inventory_FrontSlotUI_8: -1212777894348408026
+      Inventory_FrontSlotUI_9: -4199884025538838496
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
