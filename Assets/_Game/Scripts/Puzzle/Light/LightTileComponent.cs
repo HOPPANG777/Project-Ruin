@@ -4,10 +4,18 @@ using UnityEngine.EventSystems;
 
 public class UiLightTileComponent : MonoBehaviour, IPointerClickHandler
 {
+    [Header("Visual")]
+    [Tooltip("타일 상태를 표시할 Image입니다. 비어 있으면 같은 오브젝트에서 찾습니다.")]
+    [SerializeField] private Image _tileImage;
+    [Tooltip("꺼진 상태에 사용할 PNG Sprite입니다.")]
+    [SerializeField] private Sprite _offSprite;
+    [Tooltip("켜진 상태에 사용할 PNG Sprite입니다.")]
+    [SerializeField] private Sprite _onSprite;
+
     public int Id { get; private set; }
     public bool IsOn { get; private set; }
 
-    private Image tileImage;
+    private Sprite _fallbackSprite;
     private UiLightPuzzleManager ownerManager;
 
     public void Init(int tileId, bool initialState, UiLightPuzzleManager manager)
@@ -15,7 +23,12 @@ public class UiLightTileComponent : MonoBehaviour, IPointerClickHandler
         Id = tileId;
         IsOn = initialState;
         ownerManager = manager;
-        tileImage = GetComponent<Image>();
+        if (_tileImage == null)
+        {
+            _tileImage = GetComponent<Image>();
+        }
+
+        _fallbackSprite = _tileImage != null ? _tileImage.sprite : null;
         UpdateVisual();
     }
 
@@ -37,10 +50,22 @@ public class UiLightTileComponent : MonoBehaviour, IPointerClickHandler
 
     private void UpdateVisual()
     {
-        if (tileImage != null)
+        if (_tileImage == null)
         {
-            // 불이 켜지면 노란색, 꺼지면 어두운 회색
-            tileImage.color = IsOn ? Color.yellow : new Color(0.2f, 0.2f, 0.2f);
+            return;
         }
+
+        Sprite stateSprite = IsOn ? _onSprite : _offSprite;
+
+        if (stateSprite != null)
+        {
+            _tileImage.sprite = stateSprite;
+            _tileImage.color = Color.white;
+            _tileImage.preserveAspect = true;
+            return;
+        }
+
+        _tileImage.sprite = _fallbackSprite;
+        _tileImage.color = IsOn ? Color.yellow : new Color(0.2f, 0.2f, 0.2f);
     }
 }

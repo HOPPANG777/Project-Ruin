@@ -25,6 +25,16 @@ public sealed class UiCirclePuzzleManager : BasePuzzleManager
     [SerializeField]
     private List<GameObject> _ringPrefabs = new List<GameObject>();
 
+    [Header("Ring Sprite Catalog")]
+    [Tooltip("안쪽부터 ring_order 순서로 사용할 링 PNG 목록입니다.")]
+    [SerializeField]
+    private List<Sprite> _ringSprites = new List<Sprite>();
+
+    [Tooltip("원본 PNG 크기를 Canvas 크기로 변환할 배율입니다.")]
+    [SerializeField]
+    [Min(0.01f)]
+    private float _ringSpriteScale = 0.8f;
+
     [Header("Scale")]
     [Tooltip("가장 안쪽 링에 적용할 시작 스케일입니다.")]
     [SerializeField]
@@ -67,11 +77,23 @@ public sealed class UiCirclePuzzleManager : BasePuzzleManager
             ringObject.name = $"UI_CircleRing_{ringDefinition.RingOrder}";
 
             RectTransform ringRect = ringObject.GetComponent<RectTransform>();
+            Sprite ringSprite = ringDefinition.RingOrder >= 0
+                && ringDefinition.RingOrder < _ringSprites.Count
+                ? _ringSprites[ringDefinition.RingOrder]
+                : null;
 
             if (ringRect != null)
             {
-                float scale = _startScale + ringDefinition.RingOrder * _scaleStep;
-                ringRect.localScale = new Vector3(scale, scale, 1f);
+                if (ringSprite != null)
+                {
+                    ringRect.sizeDelta = ringSprite.rect.size * _ringSpriteScale;
+                    ringRect.localScale = Vector3.one;
+                }
+                else
+                {
+                    float scale = _startScale + ringDefinition.RingOrder * _scaleStep;
+                    ringRect.localScale = new Vector3(scale, scale, 1f);
+                }
             }
 
             UiCircleComponent ringComponent = ringObject.GetComponent<UiCircleComponent>();
@@ -85,6 +107,7 @@ public sealed class UiCirclePuzzleManager : BasePuzzleManager
             }
 
             GameObject patternPrefab = _ringPrefabs[ringDefinition.PatternIndex];
+            ringComponent.SetRingSprite(ringSprite);
             ringComponent.InitRingState(
                 ringDefinition.Segments,
                 ringDefinition.InitialOffset,

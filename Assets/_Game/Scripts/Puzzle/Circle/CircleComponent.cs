@@ -36,6 +36,10 @@ public sealed class UiCircleComponent : MaskableGraphic,
     [Min(0f)]
     private float _raycastPadding = 6f;
 
+    [Tooltip("PNG 링을 표시할 자식 Image입니다. Sprite가 없으면 절차적 링을 유지합니다.")]
+    [SerializeField]
+    private Image _ringImage;
+
     [Header("Ring State")]
     [Tooltip("한 바퀴를 나누는 회전 단계 개수입니다.")]
     [SerializeField]
@@ -55,6 +59,19 @@ public sealed class UiCircleComponent : MaskableGraphic,
 
     /// <summary>한 회전 단계가 차지하는 각도를 반환한다.</summary>
     public float AnglePerSegment => 360f / _segments;
+
+    /// <summary>PNG 링 Sprite를 적용하며, 누락되면 절차적 링 표시를 유지합니다.</summary>
+    public void SetRingSprite(Sprite ringSprite)
+    {
+        if (_ringImage != null)
+        {
+            _ringImage.sprite = ringSprite;
+            _ringImage.enabled = ringSprite != null;
+            _ringImage.preserveAspect = true;
+        }
+
+        SetVerticesDirty();
+    }
 
     protected override void OnEnable()
     {
@@ -86,7 +103,14 @@ public sealed class UiCircleComponent : MaskableGraphic,
 
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
-            Destroy(transform.GetChild(i).gameObject);
+            Transform child = transform.GetChild(i);
+
+            if (_ringImage != null && child == _ringImage.transform)
+            {
+                continue;
+            }
+
+            Destroy(child.gameObject);
         }
 
         if (patternPrefab != null)
@@ -225,6 +249,11 @@ public sealed class UiCircleComponent : MaskableGraphic,
     protected override void OnPopulateMesh(VertexHelper vertexHelper)
     {
         vertexHelper.Clear();
+
+        if (_ringImage != null && _ringImage.enabled && _ringImage.sprite != null)
+        {
+            return;
+        }
 
         Rect ringRect = rectTransform.rect;
         float outerRadius = Mathf.Min(ringRect.width, ringRect.height) * 0.5f;

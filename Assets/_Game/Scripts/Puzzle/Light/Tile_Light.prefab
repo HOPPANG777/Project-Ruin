@@ -59,7 +59,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -68,7 +68,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 0}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -88,3 +88,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff962a3785c25d042a3057a87a350517, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::UiLightTileComponent
+  _tileImage: {fileID: 3310922567559964005}
+  _offSprite: {fileID: 1425027653977188307, guid: 76027f0f9aaefa740a17a8961058cedc, type: 3}
+  _onSprite: {fileID: -9035538430566735489, guid: 30b41da21c7bd594185441c08d32cb3e, type: 3}

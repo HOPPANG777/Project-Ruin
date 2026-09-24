@@ -139,7 +139,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.50980395}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1831,7 +1831,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.50980395}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2044,5 +2044,11 @@ MonoBehaviour:
   _singleRingPrefab: {fileID: 3353086076178331877, guid: 783bef2c18e54494c9b0bf4b62f4e092, type: 3}
   _ringPrefabs:
   - {fileID: 7382138787708069627, guid: 1ac2207cf70485e4db74a3cbd73e5c1a, type: 3}
+  _ringSprites:
+  - {fileID: -7350425694763549375, guid: 601e31c5061891740b34eede12b827a7, type: 3}
+  - {fileID: -4559932443770039424, guid: 2a085db50a616e14f90af1751910425f, type: 3}
+  - {fileID: 5341311611022179657, guid: 5418c109fe345fc44ab066b7ff76c221, type: 3}
+  - {fileID: -7302434963917060446, guid: 8881e6012181e92469cd3a6ec63ff218, type: 3}
+  _ringSpriteScale: 0.8
   _startScale: 1
   _scaleStep: 0.4
