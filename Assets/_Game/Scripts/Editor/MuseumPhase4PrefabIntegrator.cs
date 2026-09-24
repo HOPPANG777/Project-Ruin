@@ -2,6 +2,7 @@
 // File:        MuseumPhase4PrefabIntegrator.cs
 // Description: MuseumController와 Phase 4 CSV를 GameRoot 프리팹에 연결한다.
 // History:     08/24/2026 + Created -- Codex
+//              09/23/2026 + Museum Nested Prefab과 Module 경로 반영 -- Codex
 //=============================================================================
 using UnityEditor;
 using UnityEngine;
@@ -31,9 +32,11 @@ internal static class MuseumPhase4PrefabIntegrator
         try
         {
             GameRoot gameRoot = contents.GetComponent<GameRoot>();
-            MuseumController museum = contents.GetComponent<MuseumController>();
-            if (museum == null) museum = contents.AddComponent<MuseumController>();
-            CodexUiElementFactory.SetReference(gameRoot, "_museumController", museum);
+            MuseumController museum =
+                MuseumBootstrapPrefabUtility.GetOrCreateComponent<MuseumController>(contents);
+            if (museum == null) return;
+            CodexUiElementFactory.SetReference(
+                gameRoot, "_museumModule._museumController", museum);
             CodexUiElementFactory.SetReference(museum, "_museumMuralsCsv", murals);
             CodexUiElementFactory.SetReference(museum, "_altarDestinationsCsv", altars);
             PrefabUtility.SaveAsPrefabAsset(contents, GAME_ROOT_PATH);

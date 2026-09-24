@@ -1,3 +1,8 @@
+//=============================================================================
+// File:        GameDataEditorValidator.cs
+// Description: GameRoot에 연결된 CSV와 Unity 에셋 참조를 통합 검증한다.
+// History:     09/23/2026 + Bootstrap Module 직렬화 경로 반영 -- Codex
+//=============================================================================
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -15,13 +20,13 @@ internal static class GameDataEditorValidator
     private const string LOG_PREFIX = "[GameDataEditorValidator]";
 
     // GameRoot의 게임 데이터 컨트롤러 직렬화 필드 이름입니다.
-    private const string PROPERTY_GAME_DATA_CONTROLLER = "_gameDataController";
+    private const string PROPERTY_GAME_DATA_CONTROLLER = "_coreModule._gameDataController";
 
     // GameRoot의 대화 컨트롤러 직렬화 필드 이름입니다.
-    private const string PROPERTY_DIALOGUE_CONTROLLER = "_dialogueController";
+    private const string PROPERTY_DIALOGUE_CONTROLLER = "_gameplayModule._dialogueController";
 
     // GameRoot의 인벤토리 컨트롤러 직렬화 필드 이름입니다.
-    private const string PROPERTY_INVENTORY_CONTROLLER = "_inventoryController";
+    private const string PROPERTY_INVENTORY_CONTROLLER = "_gameplayModule._inventoryController";
 
     // DialogueController의 비주얼 카탈로그 직렬화 필드 이름입니다.
     private const string PROPERTY_VISUAL_CATALOG = "_visualCatalog";

@@ -3,6 +3,7 @@
 // Description: 생성된 인벤토리와 도감 UI를 공용 GameRoot 프리팹에 한 번만 연결한다.
 // History:     08/23/2026 + Created -- Codex
 //              09/01/2026 + GameRoot 도감 참조 연결 및 변경 없는 프리팹 저장 생략 -- Codex
+//              09/23/2026 + UI Bootstrap Module 직렬화 경로 반영 -- Codex
 //=============================================================================
 
 using UnityEditor;
@@ -39,8 +40,10 @@ internal static class GameUiPrefabIntegrator
             InventoryNavigationBridge bridge = inventory.GetComponent<InventoryNavigationBridge>();
             CodexNavigationPresenter navigation = codex.GetComponent<CodexNavigationPresenter>();
             GameRoot gameRoot = contents.GetComponent<GameRoot>();
-            CodexUiElementFactory.SetReference(gameRoot, "_inventoryPresenter", inventoryPresenter);
-            CodexUiElementFactory.SetReference(gameRoot, "_codexNavigationPresenter", navigation);
+            CodexUiElementFactory.SetReference(
+                gameRoot, "_uiModule._inventoryPresenter", inventoryPresenter);
+            CodexUiElementFactory.SetReference(
+                gameRoot, "_uiModule._codexNavigationPresenter", navigation);
             CodexUiElementFactory.SetReference(navigation, "_inventoryPresenter", inventoryPresenter);
             CodexUiElementFactory.SetReference(navigation, "_inventoryBridge", bridge);
             CodexUiElementFactory.SetReference(navigation, "_inventoryRootCanvasGroup",
@@ -64,8 +67,8 @@ internal static class GameUiPrefabIntegrator
         var inventory = prefab.GetComponentInChildren<InventoryNavigationBridge>(true);
         var navigation = prefab.GetComponentInChildren<CodexNavigationPresenter>(true);
         if (root == null || inventory == null || navigation == null) return false;
-        return Matches(root, "_inventoryPresenter", inventory.Presenter)
-            && Matches(root, "_codexNavigationPresenter", navigation)
+        return Matches(root, "_uiModule._inventoryPresenter", inventory.Presenter)
+            && Matches(root, "_uiModule._codexNavigationPresenter", navigation)
             && Matches(navigation, "_inventoryPresenter", inventory.Presenter)
             && Matches(navigation, "_inventoryBridge", inventory)
             && Matches(navigation, "_inventoryRootCanvasGroup", inventory.RootCanvasGroup)

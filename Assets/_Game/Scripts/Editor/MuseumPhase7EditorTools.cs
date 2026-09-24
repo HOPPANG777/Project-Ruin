@@ -2,6 +2,7 @@
 // File:        MuseumPhase7EditorTools.cs
 // Description: 최종 보상 방의 GameRoot 연결과 읽기 전용 CSV·씬·빌드 검증
 // History:     08/31/2026 + Created -- Codex
+//              09/23/2026 + Museum Nested Prefab과 Module 경로 반영 -- Codex
 //=============================================================================
 using System.Collections.Generic;
 using UnityEditor;
@@ -26,7 +27,7 @@ internal static class MuseumPhase7EditorTools
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ROOT_PATH);
         if (prefab == null || prefab.GetComponent<GameRoot>() == null)
             throw new BuildFailedException("[MuseumPhase7] GameRoot 프리팹이 없습니다.");
-        var existing = prefab.GetComponent<MuseumRewardRoomController>();
+        var existing = prefab.GetComponentInChildren<MuseumRewardRoomController>(true);
         if (existing != null && ReferenceEquals(prefab.GetComponent<GameRoot>().MuseumRewardRoom, existing))
         {
             Debug.Log("[MuseumPhase7] GameRoot 연결 유지: 변경 없음.");
@@ -35,10 +36,11 @@ internal static class MuseumPhase7EditorTools
         GameObject contents = PrefabUtility.LoadPrefabContents(ROOT_PATH);
         try
         {
-            var controller = contents.GetComponent<MuseumRewardRoomController>();
-            if (controller == null) controller = contents.AddComponent<MuseumRewardRoomController>();
+            var controller = MuseumBootstrapPrefabUtility
+                .GetOrCreateComponent<MuseumRewardRoomController>(contents);
+            if (controller == null) return;
             CodexUiElementFactory.SetReference(contents.GetComponent<GameRoot>(),
-                "_museumRewardRoomController", controller);
+                "_museumModule._museumRewardRoomController", controller);
             PrefabUtility.SaveAsPrefabAsset(contents, ROOT_PATH);
         }
         finally { PrefabUtility.UnloadPrefabContents(contents); }
@@ -64,7 +66,8 @@ internal static class MuseumPhase7EditorTools
         GameRoot root = prefab != null ? prefab.GetComponent<GameRoot>() : null;
         if (root == null || root.MuseumRewardRoom == null || root.Codex == null
             || root.Progress == null || root.MuseumRelicDisplays == null || root.Museum == null
-            || !ReferenceEquals(root.MuseumRewardRoom, prefab.GetComponent<MuseumRewardRoomController>()))
+            || !ReferenceEquals(root.MuseumRewardRoom,
+                prefab.GetComponentInChildren<MuseumRewardRoomController>(true)))
             return Fail("GameRoot의 도감·Progress·전시·벽화·최종 방 연결이 누락됐습니다.", out message);
         GameDataController data = prefab.GetComponentInChildren<GameDataController>(true);
         if (data == null) return Fail("GameDataController가 없습니다.", out message);

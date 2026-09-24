@@ -2,6 +2,7 @@
 // File:        CodexMuseumPhase8Tests.cs
 // Description: 실제 GameRoot 초기화·독립 ES3 저장과 반복 조회 할당·원본 참조 회귀 검사
 // History:     08/31/2026 + Created -- Codex
+//              09/23/2026 + Bootstrap Module 직렬화와 Nested Prefab 검증 반영 -- Codex
 //=============================================================================
 using System;
 using System.Collections;
@@ -41,7 +42,12 @@ public sealed class CodexMuseumPhase8Tests
     public void RootValidationRejectsMissingAndDuplicateControllers(int fault)
     {
         var root = CreateRoot();
-        if (fault == 1) Set(root, "_codexController", null);
+        if (fault == 1)
+        {
+            var serializedRoot = new SerializedObject(root);
+            serializedRoot.FindProperty("_gameplayModule._codexController").objectReferenceValue = null;
+            serializedRoot.ApplyModifiedPropertiesWithoutUndo();
+        }
         if (fault == 3) root.gameObject.SetActive(false);
         if (fault == 4) Set(root.GetComponentInChildren<CodexNavigationPresenter>(true), "_inventoryBridge", null);
         if (fault == 2)
@@ -121,7 +127,8 @@ public sealed class CodexMuseumPhase8Tests
         var root = CreateRoot();
         var progress = root.GetComponentInChildren<ProgressController>(true);
         Set(progress, "_isIoRunning", true);
-        LogAssert.Expect(LogType.Error, "[GameRoot] 진행 상태 불러오기에 실패하여 초기화를 중단합니다.");
+        LogAssert.Expect(LogType.Error,
+            "[GameBootstrapper] 진행 상태 불러오기에 실패하여 초기화를 중단합니다.");
         var initialize = (UniTask)typeof(GameRoot).GetMethod("InitializeAsync", PRIVATE)
             .Invoke(root, new object[] { CancellationToken.None });
         yield return initialize.ToCoroutine();

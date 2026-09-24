@@ -2,6 +2,7 @@
 // File:        MuseumPhase8EditorValidator.cs
 // Description: 기존 CSV·박물관 검사와 원본 에셋 무결성을 묶는 읽기 전용 최종 검증
 // History:     08/31/2026 + Created -- Codex
+//              09/23/2026 + Bootstrap Module 직렬화 및 Nested Prefab 검증 반영 -- Codex
 //=============================================================================
 using System.Collections.Generic;
 using System.IO;
@@ -56,11 +57,22 @@ internal static class MuseumPhase8EditorValidator
         var roots = prefab.GetComponentsInChildren<GameRoot>(true);
         if (roots.Length != 1 || roots[0].gameObject != prefab
             || !roots[0].enabled || !prefab.activeSelf) return false;
-        string[] fields = { "_gameDataController", "_progressController", "_inventoryController",
-            "_relicRestorationController", "_codexController", "_museumController",
-            "_museumBottleController", "_museumRelicDisplayController", "_museumRewardRoomController",
-            "_museumBottlePresenter", "_museumRelicPresenter", "_inventoryPresenter", "_stageFlowController",
-            "_codexNavigationPresenter" };
+        string[] fields = {
+            "_coreModule._gameDataController",
+            "_coreModule._progressController",
+            "_gameplayModule._inventoryController",
+            "_gameplayModule._relicRestorationController",
+            "_gameplayModule._codexController",
+            "_museumModule._museumController",
+            "_museumModule._museumBottleController",
+            "_museumModule._museumRelicDisplayController",
+            "_museumModule._museumRewardRoomController",
+            "_uiModule._museumBottlePresenter",
+            "_uiModule._museumRelicPresenter",
+            "_uiModule._inventoryPresenter",
+            "_sceneFlowModule._stageFlowController",
+            "_uiModule._codexNavigationPresenter"
+        };
         var serialized = new SerializedObject(roots[0]);
         for (int i = 0; i < fields.Length; i++)
         {
@@ -80,10 +92,50 @@ internal static class MuseumPhase8EditorValidator
                 return false;
             }
         }
+        message = "Museum Controller가 기능별 Nested Prefab 경계를 벗어났습니다.";
+        Transform museumModule = prefab.transform.Find("MuseumModule");
+        if (museumModule == null
+            || prefab.GetComponents<MuseumController>().Length != 0
+            || prefab.GetComponents<MuseumBottleController>().Length != 0
+            || prefab.GetComponents<MuseumRelicDisplayController>().Length != 0
+            || prefab.GetComponents<MuseumRewardRoomController>().Length != 0)
+        {
+            return false;
+        }
+        if (!IsMuseumModulePrefabBoundary(museumModule)) return false;
         message = "GameRoot의 도감·인벤토리 UI 교차 참조가 누락되거나 다른 대상을 가리킵니다.";
         if (!GameUiPrefabIntegrator.IsConnected(prefab)) return false;
         message = "GameRoot 단일 소유와 필수 직렬화 연결 확인";
         return true;
+    }
+
+    //=============================================================================
+    // IsMuseumModulePrefabBoundary
+    // Description: 에셋과 일반 Instantiate 복제본 모두에서 원본 GameRoot의 중첩 경계를 확인합니다.
+    // Parameters: Transform museumModule
+    // Return: bool
+    //=============================================================================
+    private static bool IsMuseumModulePrefabBoundary(Transform museumModule)
+    {
+        GameObject museumSource =
+            PrefabUtility.GetCorrespondingObjectFromOriginalSource(museumModule.gameObject);
+        if (museumSource != null
+            && AssetDatabase.GetAssetPath(museumSource)
+                == MuseumBootstrapPrefabUtility.PREFAB_PATH)
+        {
+            return true;
+        }
+
+        // Object.Instantiate로 만든 검증 복제본은 Prefab 연결 정보를 유지하지 않습니다.
+        // 이때는 변경 가능한 복제본의 구성 검증과 별개로 원본 GameRoot 에셋의 경계를 확인합니다.
+        GameObject rootAsset = AssetDatabase.LoadAssetAtPath<GameObject>(ROOT_PATH);
+        Transform assetModule = rootAsset != null ? rootAsset.transform.Find("MuseumModule") : null;
+        GameObject assetSource = assetModule != null
+            ? PrefabUtility.GetCorrespondingObjectFromOriginalSource(assetModule.gameObject)
+            : null;
+        return assetSource != null
+            && AssetDatabase.GetAssetPath(assetSource)
+                == MuseumBootstrapPrefabUtility.PREFAB_PATH;
     }
 
     //=============================================================================

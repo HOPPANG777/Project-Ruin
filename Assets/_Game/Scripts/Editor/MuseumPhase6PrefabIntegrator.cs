@@ -2,6 +2,7 @@
 // File:        MuseumPhase6PrefabIntegrator.cs
 // Description: Phase 6 유물 전시 컨트롤러와 전용 UI를 GameRoot에 연결한다.
 // History:     08/30/2026 + Created -- Codex
+//              09/23/2026 + Museum Nested Prefab과 Module 경로 반영 -- Codex
 //=============================================================================
 using TMPro;
 using UnityEditor;
@@ -33,7 +34,8 @@ internal static class MuseumPhase6PrefabIntegrator
         // 도메인 리로드마다 이미 연결된 사용자 프리팹을 불필요하게 재저장하지 않습니다.
         GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(GAME_ROOT_PATH);
         GameRoot existingRoot = existing.GetComponent<GameRoot>();
-        MuseumRelicDisplayController existingController = existing.GetComponent<MuseumRelicDisplayController>();
+        MuseumRelicDisplayController existingController =
+            existing.GetComponentInChildren<MuseumRelicDisplayController>(true);
         MuseumRelicPresenter existingPresenter = existing.GetComponentInChildren<MuseumRelicPresenter>(true);
         if (existingRoot != null && existingController != null && existingPresenter != null
             && ReferenceEquals(existingRoot.MuseumRelicDisplays, existingController)
@@ -45,8 +47,8 @@ internal static class MuseumPhase6PrefabIntegrator
         {
             GameRoot root = contents.GetComponent<GameRoot>();
             MuseumRelicDisplayController controller =
-                contents.GetComponent<MuseumRelicDisplayController>();
-            if (controller == null) controller = contents.AddComponent<MuseumRelicDisplayController>();
+                MuseumBootstrapPrefabUtility.GetOrCreateComponent<MuseumRelicDisplayController>(contents);
+            if (controller == null) return;
             MuseumRelicPresenter presenter = contents.GetComponentInChildren<MuseumRelicPresenter>(true);
             if (presenter == null)
             {
@@ -56,8 +58,10 @@ internal static class MuseumPhase6PrefabIntegrator
                 presenter = instance.GetComponent<MuseumRelicPresenter>();
             }
             CodexUiElementFactory.SetReference(controller, "_museumRelicMilestonesCsv", csv);
-            CodexUiElementFactory.SetReference(root, "_museumRelicDisplayController", controller);
-            CodexUiElementFactory.SetReference(root, "_museumRelicPresenter", presenter);
+            CodexUiElementFactory.SetReference(
+                root, "_museumModule._museumRelicDisplayController", controller);
+            CodexUiElementFactory.SetReference(
+                root, "_uiModule._museumRelicPresenter", presenter);
             PrefabUtility.SaveAsPrefabAsset(contents, GAME_ROOT_PATH);
         }
         finally { PrefabUtility.UnloadPrefabContents(contents); }

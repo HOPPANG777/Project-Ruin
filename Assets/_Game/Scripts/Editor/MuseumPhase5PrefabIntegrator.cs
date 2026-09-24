@@ -2,6 +2,7 @@
 // File:        MuseumPhase5PrefabIntegrator.cs
 // Description: Phase 5 술병 CSV·컨트롤러·선택 UI를 GameRoot에 연결한다.
 // History:     08/24/2026 + Created -- Codex
+//              09/23/2026 + Museum Nested Prefab과 Module 경로 반영 -- Codex
 //=============================================================================
 using TMPro;
 using UnityEditor;
@@ -37,8 +38,9 @@ internal static class MuseumPhase5PrefabIntegrator
         try
         {
             GameRoot root = contents.GetComponent<GameRoot>();
-            MuseumBottleController controller = contents.GetComponent<MuseumBottleController>();
-            if (controller == null) controller = contents.AddComponent<MuseumBottleController>();
+            MuseumBottleController controller =
+                MuseumBootstrapPrefabUtility.GetOrCreateComponent<MuseumBottleController>(contents);
+            if (controller == null) return;
             MuseumBottlePresenter presenter = contents.GetComponentInChildren<MuseumBottlePresenter>(true);
             if (presenter == null)
             {
@@ -48,8 +50,10 @@ internal static class MuseumPhase5PrefabIntegrator
             }
             CodexUiElementFactory.SetReference(controller, "_museumBottlesCsv", bottles);
             CodexUiElementFactory.SetReference(controller, "_museumBottleItemsCsv", items);
-            CodexUiElementFactory.SetReference(root, "_museumBottleController", controller);
-            CodexUiElementFactory.SetReference(root, "_museumBottlePresenter", presenter);
+            CodexUiElementFactory.SetReference(
+                root, "_museumModule._museumBottleController", controller);
+            CodexUiElementFactory.SetReference(
+                root, "_uiModule._museumBottlePresenter", presenter);
             PrefabUtility.SaveAsPrefabAsset(contents, GAME_ROOT_PATH);
         }
         finally { PrefabUtility.UnloadPrefabContents(contents); }

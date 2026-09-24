@@ -2,6 +2,7 @@
 // File:        CodexNavigationPhase3Tests.cs
 // Description: 현재 프리팹을 변경하지 않고 도감·인벤토리 전환 및 입력 잠금을 검증
 // History:     08/31/2026 + 재생성 없는 읽기 전용 회귀 검사로 변경 -- Codex
+//              09/23/2026 + UI Bootstrap Module 직렬화 경로 반영 -- Codex
 //=============================================================================
 using System.Reflection;
 using System.Collections;
@@ -88,7 +89,8 @@ public sealed class CodexNavigationPhase3Tests
         Assert.That(gameRoot.transform.Find("CodexBook"), Is.Not.Null);
         Assert.That(gameRoot.transform.Find("InventoryBook"), Is.Not.Null);
         SerializedObject rootData = new SerializedObject(gameRoot.GetComponent<GameRoot>());
-        Assert.That(rootData.FindProperty("_inventoryPresenter").objectReferenceValue, Is.Not.Null);
+        Assert.That(rootData.FindProperty("_uiModule._inventoryPresenter").objectReferenceValue,
+            Is.Not.Null);
         Assert.That(_inventoryButton.interactable, Is.True);
         Assert.That(_mapButton.interactable, Is.False);
     }

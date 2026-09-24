@@ -2,6 +2,7 @@
 // File:        MuseumRewardRoomPhase7RewardTests.cs
 // Description: 최종 방의 보상 원자성·중복·실패·재로드 회귀 테스트
 // History:     08/31/2026 + Created -- Codex
+//              09/23/2026 + Museum Nested Prefab 조회 경로 반영 -- Codex
 //=============================================================================
 using NUnit.Framework;
 using UnityEngine;
@@ -13,8 +14,10 @@ public sealed partial class MuseumRewardRoomPhase7Tests
     {
         var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Prefabs/GameRoot.prefab");
         var root = prefab.GetComponent<GameRoot>();
-        Assert.That(prefab.GetComponents<MuseumRewardRoomController>().Length, Is.EqualTo(1));
-        Assert.That(root.MuseumRewardRoom, Is.SameAs(prefab.GetComponent<MuseumRewardRoomController>()));
+        Assert.That(prefab.GetComponentsInChildren<MuseumRewardRoomController>(true).Length,
+            Is.EqualTo(1));
+        Assert.That(root.MuseumRewardRoom,
+            Is.SameAs(prefab.GetComponentInChildren<MuseumRewardRoomController>(true)));
         Assert.That(root.Codex, Is.Not.Null);
         Assert.That(root.MuseumRelicDisplays, Is.Not.Null);
         Assert.That(root.Progress, Is.Not.Null);

@@ -2,6 +2,7 @@
 // File:        CodexBootstrapPhase8Tests.cs
 // Description: 실제 Start·씬 플레이어 교체·손상 ES3·취소 및 초기 UI 차단 검증
 // History:     08/31/2026 + Created -- Codex
+//              09/23/2026 + Bootstrapper 실패 로그 회귀 검증 반영 -- Codex
 //=============================================================================
 using System;
 using System.Collections;
@@ -104,7 +105,8 @@ public sealed class CodexBootstrapPhase8Tests
         ES3.SaveRaw("{invalid phase8 save", path);
         byte[] before = File.ReadAllBytes(path);
         LogAssert.Expect(LogType.Error, new Regex(@"\[ProgressController\] 불러오기에 실패했습니다\."));
-        LogAssert.Expect(LogType.Error, "[GameRoot] 진행 상태 불러오기에 실패하여 초기화를 중단합니다.");
+        LogAssert.Expect(LogType.Error,
+            "[GameBootstrapper] 진행 상태 불러오기에 실패하여 초기화를 중단합니다.");
         root.gameObject.SetActive(true);
         var progress = root.GetComponentInChildren<ProgressController>(true);
         // 실패 로그가 처리될 때까지 최소 한 프레임 및 진행 중 I/O를 기다립니다.
