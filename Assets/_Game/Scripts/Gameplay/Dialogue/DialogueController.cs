@@ -30,6 +30,10 @@ public sealed class DialogueController : MonoBehaviour, IDialogueService
     [SerializeField]
     private InputActionReference _advanceAction;
 
+    [Tooltip("dialogue_actors.csv에서 플레이어를 구분하는 화자 ID입니다.")]
+    [SerializeField]
+    private string _playerActorId = "ACTOR_PLAYER";
+
     [Header("Player Lock")]
     [Tooltip("대화 중 플레이어 조작을 잠글지 여부입니다.")]
     [SerializeField]
@@ -391,7 +395,8 @@ public sealed class DialogueController : MonoBehaviour, IDialogueService
             leftPortrait,
             rightPortrait,
             isLeftActorSpeaking,
-            ResolveBackgroundSprite());
+            ResolveBackgroundSprite(),
+            string.Equals(actorId, _playerActorId, StringComparison.Ordinal));
     }
 
     /// <summary>

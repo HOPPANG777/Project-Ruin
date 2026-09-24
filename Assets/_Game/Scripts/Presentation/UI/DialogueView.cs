@@ -24,6 +24,14 @@ public sealed class DialogueView : MonoBehaviour
     [SerializeField]
     private Image _dialogueBackgroundImage;
 
+    [Tooltip("플레이어 이외 화자가 말할 때 사용할 대화 프레임입니다.")]
+    [SerializeField]
+    private Sprite _characterConversationBackground;
+
+    [Tooltip("플레이어 화자가 말할 때 사용할 대화 프레임입니다.")]
+    [SerializeField]
+    private Sprite _playerConversationBackground;
+
     [Header("Actor")]
     [Tooltip("왼쪽 초상화 필드가 비어 있을 때 대신 사용할 기존 단일 Image입니다.")]
     [SerializeField]
@@ -138,13 +146,35 @@ public sealed class DialogueView : MonoBehaviour
         bool isLeftActorSpeaking,
         Sprite dialogueBackground)
     {
+        ShowNode(
+            speakerNameKey,
+            node,
+            onChoiceSelected,
+            leftPortrait,
+            rightPortrait,
+            isLeftActorSpeaking,
+            dialogueBackground,
+            false);
+    }
+
+    /// <summary>현재 노드와 화자 역할에 맞는 대화 프레임을 선택해 출력합니다.</summary>
+    public void ShowNode(
+        string speakerNameKey,
+        DialogueNodeDefinition node,
+        Action<int> onChoiceSelected,
+        Sprite leftPortrait,
+        Sprite rightPortrait,
+        bool isLeftActorSpeaking,
+        Sprite dialogueBackground,
+        bool isPlayerSpeaking)
+    {
         if (node == null)
         {
             return;
         }
 
         SetVisible(true);
-        ApplyDialogueBackground(dialogueBackground);
+        ApplyDialogueBackground(dialogueBackground, isPlayerSpeaking);
         ApplyActor(speakerNameKey, leftPortrait, rightPortrait, isLeftActorSpeaking);
 
         if (_bodyText != null)
@@ -190,7 +220,7 @@ public sealed class DialogueView : MonoBehaviour
     /// 대화창 배경 Sprite 또는 UI 기본 Sprite를 출력합니다.
     /// </summary>
     /// <param name="dialogueBackground">출력할 선택적 배경 Sprite입니다.</param>
-    private void ApplyDialogueBackground(Sprite dialogueBackground)
+    private void ApplyDialogueBackground(Sprite dialogueBackground, bool isPlayerSpeaking)
     {
         if (_dialogueBackgroundImage == null)
         {
@@ -198,9 +228,14 @@ public sealed class DialogueView : MonoBehaviour
         }
 
         CacheDefaultDialogueBackground();
-        _dialogueBackgroundImage.sprite = dialogueBackground != null
-            ? dialogueBackground
-            : _defaultDialogueBackgroundSprite;
+        Sprite conversationBackground = isPlayerSpeaking
+            ? _playerConversationBackground
+            : _characterConversationBackground;
+        _dialogueBackgroundImage.sprite = conversationBackground != null
+            ? conversationBackground
+            : dialogueBackground != null
+                ? dialogueBackground
+                : _defaultDialogueBackgroundSprite;
         _dialogueBackgroundImage.enabled = _dialogueBackgroundImage.sprite != null
             || _dialogueBackgroundImage.color.a > 0.0f;
     }
