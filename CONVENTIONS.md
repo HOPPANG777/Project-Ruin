@@ -32,7 +32,7 @@
 - **의존성 주입(DI) 권장**: 클래스 내부에서 직접 `new`로 협력 객체를 생성하거나 `GameObject.Find` 계열을 사용하지 않는다.
 - **낮은 결합도**: 각 클래스는 자신의 역할에만 집중하며, 협력 대상의 세부 구현이 아닌 **인터페이스에 의존**한다.
 - **주입 방식**
-  - `MonoBehaviour` 컨트롤러: `GameRoot`가 `Start()`에서 호출하는 `Init(의존성...)` 메서드로 주입받는다.
+  - `MonoBehaviour` 컨트롤러: `GameRoot.Start()`에서 시작한 Bootstrapper/Module이 호출하는 `Init(의존성...)` 메서드로 주입받는다.
   - 순수 C# 객체(POCO): 생성자 또는 `Construct(의존성...)` 메서드로 주입받는다.
 
 ```csharp
@@ -52,18 +52,22 @@ public void Init(IProgressService progressService)
 ### 1.3 매니저 & 컨트롤러 구조 (Manager & Controller)
 
 - **싱글턴은 오직 1개**: 전역 싱글턴은 `GameRoot` **하나만** 둔다. (`Singleton<T>` 상속은 `GameRoot` 전용)
-- **컨트롤러는 `GameRoot`의 멤버**: 전역 관리 클래스는 싱글턴으로 만들지 않고, `GameRoot` 내부 멤버(`[SerializeField]`)인 **Controller**로 작성한다.
+- **컨트롤러는 `GameRoot` 소유 모듈의 멤버**: 전역 관리 클래스는 싱글턴으로 만들지 않고, `GameRoot`가 직렬화해 소유하는 기능별 Module 내부 멤버(`[SerializeField]`)인 **Controller**로 작성한다. 작은 시스템은 직접 멤버로 둘 수 있다.
 - **접근 경로 단일화**: 컨트롤러 접근은 반드시 `GameRoot.Instance`를 경유한다.
   - 예: `GameRoot.Instance.Quest`, `GameRoot.Instance.Progress`
-- **외부에는 인터페이스(계약)만 노출**: `GameRoot`는 구현체 필드를 직렬화하되, 외부 공개 프로퍼티는 인터페이스 타입으로 노출한다.
+- **외부에는 인터페이스(계약)만 노출**: 기능별 Module은 구현체 필드를 직렬화하고, `GameRoot`의 외부 공개 프로퍼티는 해당 인터페이스 타입을 위임해 노출한다.
 
 ```csharp
-[Header("Controller")]
+[Header("Bootstrap Modules")]
+[SerializeField] private GameplayBootstrapModule _gameplayModule;
+
+// GameplayBootstrapModule 내부
 [Tooltip("퀘스트 상태 전환, 목표 갱신, 보상 지급을 관리하는 컨트롤러입니다.")]
 [SerializeField] private QuestController _questController;
-
-// 외부에는 구현체가 아닌 인터페이스(IQuestService) 계약만 노출한다.
 public IQuestService Quest => _questController;
+
+// GameRoot는 외부 호환 진입점을 Module 계약에 위임한다.
+public IQuestService Quest => _gameplayModule.Quest;
 ```
 
 ---
