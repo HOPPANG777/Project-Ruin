@@ -27,12 +27,14 @@ public sealed class CodexEntryDisplayData
     public string Description { get; }
     public string SecondaryText { get; }
     public IReadOnlyList<CodexEntryDisplayData> Ingredients { get; }
+    public CodexCategory Category { get; }
     public bool IsAlwaysUnlocked { get; }
     public bool IsUnlocked { get; set; }
 
     public CodexEntryDisplayData(string entryId, Sprite icon, string displayName,
         string description, string secondaryText,
-        IReadOnlyList<CodexEntryDisplayData> ingredients = null, bool isAlwaysUnlocked = false)
+        IReadOnlyList<CodexEntryDisplayData> ingredients = null, bool isAlwaysUnlocked = false,
+        CodexCategory category = CodexCategory.CODEX_CATEGORY_RELIC)
     {
         EntryId = entryId ?? string.Empty;
         Icon = icon;
@@ -40,6 +42,7 @@ public sealed class CodexEntryDisplayData
         Description = description ?? string.Empty;
         SecondaryText = secondaryText ?? string.Empty;
         Ingredients = ingredients ?? Array.Empty<CodexEntryDisplayData>();
+        Category = category;
         IsAlwaysUnlocked = isAlwaysUnlocked;
         IsUnlocked = isAlwaysUnlocked;
     }

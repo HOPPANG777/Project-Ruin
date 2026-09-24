@@ -98,7 +98,8 @@ public sealed class CodexPresenter : MonoBehaviour
             display = new CodexEntryDisplayData(entry.EntryId, icon,
                 _localization.GetText(technology.DisplayNameKey),
                 _localization.GetText(technology.DescriptionTextKey),
-                _localization.GetText(technology.OperationTextKey));
+                _localization.GetText(technology.OperationTextKey),
+                category: entry.Category);
             return true;
         }
 
@@ -106,7 +107,8 @@ public sealed class CodexPresenter : MonoBehaviour
         IReadOnlyList<CodexEntryDisplayData> ingredients = entry.Category
             == CodexCategory.CODEX_CATEGORY_ALCOHOL ? CreateIngredients(entry.EntryId) : null;
         display = new CodexEntryDisplayData(entry.EntryId, item.Icon,
-            item.DisplayName, item.Description, string.Empty, ingredients);
+            item.DisplayName, item.Description, string.Empty, ingredients,
+            category: entry.Category);
         return true;
     }
 

@@ -48,6 +48,12 @@ public sealed class CodexView : MonoBehaviour
     [SerializeField] private TMP_Text _tooltipDescriptionText;
     [Tooltip("조작법 또는 재료 위치 텍스트입니다.")]
     [SerializeField] private TMP_Text _tooltipSecondaryText;
+    [Tooltip("카테고리별 정보 카드 Sprite를 표시할 Tooltip 배경입니다.")]
+    [SerializeField] private Image _tooltipBackgroundImage;
+    [Tooltip("술 항목에 사용할 정보 카드 Sprite입니다.")]
+    [SerializeField] private Sprite _drinkTooltipSprite;
+    [Tooltip("기술 항목에 사용할 정보 카드 Sprite입니다.")]
+    [SerializeField] private Sprite _skillTooltipSprite;
 
     private readonly List<CodexEntryView> _relicViews = new List<CodexEntryView>();
     private readonly List<CodexEntryView> _alcoholViews = new List<CodexEntryView>();
@@ -127,6 +133,7 @@ public sealed class CodexView : MonoBehaviour
         if (_tooltipRoot == null || data == null) return;
         bool unlocked = data.IsUnlocked;
         _tooltipRoot.gameObject.SetActive(true);
+        ApplyTooltipBackground(data.Category);
         SetImage(_tooltipIconImage, data.Icon, unlocked);
         SetText(_tooltipNameText, unlocked ? data.DisplayName : "???");
         SetText(_tooltipDescriptionText, unlocked ? data.Description : "?");
@@ -204,5 +211,22 @@ public sealed class CodexView : MonoBehaviour
         target.sprite = sprite;
         target.enabled = sprite != null;
         target.color = unlocked ? Color.white : Color.black;
+    }
+
+    private void ApplyTooltipBackground(CodexCategory category)
+    {
+        if (_tooltipBackgroundImage == null) return;
+
+        Sprite card = category == CodexCategory.CODEX_CATEGORY_ALCOHOL
+            ? _drinkTooltipSprite
+            : category == CodexCategory.CODEX_CATEGORY_TECHNOLOGY
+                ? _skillTooltipSprite
+                : null;
+
+        _tooltipBackgroundImage.sprite = card;
+        _tooltipBackgroundImage.color = card != null
+            ? Color.white
+            : new Color32(42, 31, 23, 248);
+        _tooltipBackgroundImage.preserveAspect = card != null;
     }
 }
