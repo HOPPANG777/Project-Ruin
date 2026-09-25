@@ -691,3 +691,7 @@ $RECYCLE.BIN/
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/csharp,unity,windows,visualstudio,visualstudiocode,obsidian
+
+# Keep Unity plugins and their metadata in version control.
+!/[Aa]ssets/[Pp]lugins/
+!/[Aa]ssets/[Pp]lugins/**
