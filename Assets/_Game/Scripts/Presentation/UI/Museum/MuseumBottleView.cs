@@ -34,6 +34,9 @@ public sealed class MuseumBottleView : MonoBehaviour
 
     public bool IsOpen => _panelRoot != null && _panelRoot.activeSelf;
 
+    // 프리팹 편집 시에는 보이게 저장하고, 실행 시 첫 프레임 전에 닫습니다.
+    private void Awake() => Hide();
+
     private void OnDestroy() => _closeButton?.onClick.RemoveListener(HandleClose);
 
     /// <summary>고정 술 버튼과 닫기 입력을 Presenter에 연결합니다.</summary>

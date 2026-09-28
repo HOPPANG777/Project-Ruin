@@ -66,6 +66,7 @@ internal static class MuseumPhase5PrefabIntegrator
     {
         GameObject root = CodexUiElementFactory.Create("MuseumBottleUi", null,
             typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        root.transform.localScale = Vector3.one;
         Canvas canvas = root.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 25;
@@ -116,7 +117,6 @@ internal static class MuseumPhase5PrefabIntegrator
         BindView(view, panel, empty, completed, title.GetComponent<TMP_Text>(),
             progress.GetComponent<TMP_Text>(), fillImage, itemButtons, close);
         CodexUiElementFactory.SetReference(presenter, "_view", view);
-        panel.SetActive(false);
         GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, UI_PREFAB_PATH);
         Object.DestroyImmediate(root);
         AssetDatabase.SaveAssets();
