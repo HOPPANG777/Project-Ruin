@@ -91,9 +91,9 @@ public sealed class PipeManager : BasePuzzleManager
     private int _chapterIndex;
 
     /// <summary>챕터 배경 오브젝트 인덱스를 바꾸고, 이미 열려 있으면 배경만 다시 적용합니다.</summary>
-    public void SetChapterIndex(int chapterIndex)
+    public override void SetChapterIndex(int chapterIndex)
     {
-        _chapterIndex = chapterIndex < 0 ? 0 : chapterIndex;
+        _chapterIndex = Mathf.Clamp(chapterIndex, 0, 3);
         ApplyChapterBackground();
     }
 

@@ -99,6 +99,8 @@ public sealed class PuzzleUiRoot : MonoBehaviour
             return false;
         }
 
+        popup.PuzzleManager.SetChapterIndex(requester.ChapterIndex);
+
         _activePopup = popup;
         _activeRequester = requester;
         _clearProcessed = false;

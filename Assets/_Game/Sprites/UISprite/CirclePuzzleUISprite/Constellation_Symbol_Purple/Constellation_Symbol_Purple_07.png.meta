@@ -131,10 +131,10 @@ TextureImporter:
       name: Constellation_Symbol_Purple_07_0
       rect:
         serializedVersion: 2
-        x: 13
-        y: 118
-        width: 49
-        height: 57
+        x: 11
+        y: 18
+        width: 178
+        height: 159
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

@@ -133,6 +133,56 @@ public sealed class GameDataCsvRegressionTests
     }
 
     [Test]
+    public void InventoryTabsFilterOwnedItemsByType()
+    {
+        GameDataCsvSource source = CreateRuntimeSource();
+        GameDataCsvFile items = new GameDataCsvFile("items.csv", source.Items.Text.TrimEnd()
+            + "\nITEM_TEST_ALCOHOL,item.coin.name,item.coin.description,,0,false,ITEM_ALCOHOL_COLLECTIBLE,1"
+            + "\nITEM_TEST_ALCOHOL_TOOL,item.coin.name,item.coin.description,,0,false,ITEM_ALCOHOL_TOOL,1"
+            + "\nITEM_TEST_RELIC,item.coin.name,item.coin.description,,0,false,ITEM_RELIC_COLLECTIBLE,1"
+            + "\nITEM_TEST_RELIC_TOOL,item.coin.name,item.coin.description,,0,false,ITEM_RELIC_TOOL,1"
+            + "\nITEM_TEST_MISC,item.coin.name,item.coin.description,,0,false,ITEM_MISC,1");
+        source = CopySourceWithItems(source, items);
+        Assert.That(GameDataCsvLoader.TryLoad(source, out GameDataRepository repository,
+            out GameDataCsvLoadError loadError), Is.True, loadError?.ToString());
+
+        GameObject root = new GameObject(nameof(InventoryTabsFilterOwnedItemsByType));
+        try
+        {
+            InventoryController inventory = root.AddComponent<InventoryController>();
+            inventory.Init(repository, null, null);
+            string[] ownedIds =
+            {
+                "ITEM_COIN", "ITEM_TEST_ALCOHOL", "ITEM_TEST_ALCOHOL_TOOL",
+                "ITEM_TEST_RELIC", "ITEM_TEST_RELIC_TOOL", "ITEM_TEST_MISC"
+            };
+            foreach (string id in ownedIds)
+                Assert.That(inventory.TryAddItem(id, 1), Is.True, id);
+
+            string[] Ids(InventoryCategory category)
+            {
+                var slots = inventory.GetSlots(category);
+                string[] result = new string[slots.Count];
+                for (int i = 0; i < slots.Count; i++) result[i] = slots[i].ItemId;
+                return result;
+            }
+
+            Assert.That(Ids(InventoryCategory.INVENTORY_CATEGORY_ALL), Is.EquivalentTo(ownedIds));
+            Assert.That(Ids(InventoryCategory.INVENTORY_CATEGORY_QUEST), Is.EquivalentTo(new[] { "ITEM_COIN" }));
+            Assert.That(Ids(InventoryCategory.INVENTORY_CATEGORY_ALCOHOL),
+                Is.EquivalentTo(new[] { "ITEM_TEST_ALCOHOL", "ITEM_TEST_ALCOHOL_TOOL" }));
+            Assert.That(Ids(InventoryCategory.INVENTORY_CATEGORY_RELIC),
+                Is.EquivalentTo(new[] { "ITEM_TEST_RELIC", "ITEM_TEST_RELIC_TOOL" }));
+            Assert.That(Ids(InventoryCategory.INVENTORY_CATEGORY_MISC),
+                Is.EquivalentTo(new[] { "ITEM_TEST_MISC" }));
+        }
+        finally
+        {
+            Object.DestroyImmediate(root);
+        }
+    }
+
+    [Test]
     public void InvalidTechnologyRestoreTotalIsRejected()
     {
         GameDataCsvSource source = CreateCodexTestSource();

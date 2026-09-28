@@ -51,6 +51,9 @@ public abstract class BasePuzzleManager : MonoBehaviour
     /// <summary>퍼즐 초기화에 CSV 게임 데이터가 필요한지 여부입니다.</summary>
     public virtual bool RequiresGameData => true;
 
+    /// <summary>맵 오브젝트가 선택한 챕터의 UI 스프라이트를 표시합니다.</summary>
+    public virtual void SetChapterIndex(int chapterIndex) { }
+
     /// <summary>CSV 게임 데이터 저장소 의존성을 주입합니다.</summary>
     public void Init(IGameDataRepository gameDataRepository)
     {

@@ -8,6 +8,8 @@ public class PuzzleTestSelector : MonoBehaviour
     {
         public string puzzleName;
         public UiPuzzlePopup puzzlePopup;
+        public string puzzleId;
+        [Range(0, 3)] public int chapterIndex;
     }
 
     [Header("테스트할 UI 팝업 퍼즐 리스트")]
@@ -20,11 +22,24 @@ public class PuzzleTestSelector : MonoBehaviour
     [SerializeField] private bool hideOnClear = false;
 
     private int currentIndex = -1;
+    private int pendingIndex = -1;
     private bool isCurrentPuzzleClearedProcessed = false;
     private BasePuzzleManager currentActiveManager;
+    private PuzzleUiRoot puzzleUiRoot;
+
+    private void Awake()
+    {
+        puzzleUiRoot = GetComponent<PuzzleUiRoot>();
+    }
 
     private void Start()
     {
+        if (!Application.isEditor)
+        {
+            enabled = false;
+            return;
+        }
+
         for (int i = 0; i < puzzles.Length; i++)
         {
             if (puzzles[i].puzzlePopup != null)
@@ -42,6 +57,25 @@ public class PuzzleTestSelector : MonoBehaviour
     private void Update()
     {
         if (Keyboard.current == null) return;
+
+        if (currentIndex >= 0
+            && (puzzles[currentIndex].puzzlePopup == null
+                || !puzzles[currentIndex].puzzlePopup.IsOpen))
+        {
+            currentIndex = -1;
+            currentActiveManager = null;
+        }
+
+        if (puzzleUiRoot != null && puzzleUiRoot.IsPuzzleOpen) return;
+
+        if (pendingIndex >= 0
+            && GameRoot.TryGetInstance(out GameRoot root)
+            && root.GameData != null)
+        {
+            int index = pendingIndex;
+            pendingIndex = -1;
+            SelectPuzzle(index);
+        }
 
         // 1번 키: 파이프 퍼즐 (배열의 0번째 항목)
         if (Keyboard.current.digit1Key.wasPressedThisFrame || Keyboard.current.numpad1Key.wasPressedThisFrame) SelectPuzzle(0);
@@ -71,10 +105,15 @@ public class PuzzleTestSelector : MonoBehaviour
         if (index < 0 || index >= puzzles.Length) return;
 
         var targetPopup = puzzles[index].puzzlePopup;
-        if (targetPopup == null) return;
+        if (targetPopup == null || targetPopup.PuzzleManager == null)
+        {
+            Debug.LogError($"[PuzzleTestSelector] {index + 1}번 퍼즐 팝업 또는 매니저가 연결되지 않았습니다.", this);
+            return;
+        }
 
         if (currentIndex == index)
         {
+            pendingIndex = -1;
             targetPopup.ClosePopup();
             currentIndex = -1;
             currentActiveManager = null;
@@ -86,17 +125,31 @@ public class PuzzleTestSelector : MonoBehaviour
             puzzles[currentIndex].puzzlePopup.ClosePopup();
         }
 
+        currentIndex = -1;
+        currentActiveManager = null;
+        BasePuzzleManager manager = targetPopup.PuzzleManager;
+        if (manager.RequiresGameData
+            && (!GameRoot.TryGetInstance(out GameRoot root) || root.GameData == null))
+        {
+            pendingIndex = index;
+            Debug.Log("[PuzzleTestSelector] 게임 데이터 준비 후 퍼즐 테스트를 엽니다.", this);
+            return;
+        }
+
+        pendingIndex = -1;
+        if (!string.IsNullOrWhiteSpace(puzzles[index].puzzleId)
+            && !manager.TrySetPuzzleId(puzzles[index].puzzleId))
+        {
+            return;
+        }
+
+        manager.SetChapterIndex(puzzles[index].chapterIndex);
+        targetPopup.OpenPuzzlePopup();
+        if (!targetPopup.IsOpen) return;
+
         currentIndex = index;
         isCurrentPuzzleClearedProcessed = false;
-
-        targetPopup.OpenPuzzlePopup();
-
-        // 퍼즐 매니저는 팝업의 자식이 아닐 수 있으므로 팝업에 직렬화된 실제 참조를 사용합니다.
-        currentActiveManager = targetPopup.PuzzleManager;
-        if (currentActiveManager != null)
-        {
-            currentActiveManager.enabled = true;
-        }
+        currentActiveManager = manager;
     }
 
     private void ResetCurrentPuzzle()
@@ -105,11 +158,6 @@ public class PuzzleTestSelector : MonoBehaviour
         {
             isCurrentPuzzleClearedProcessed = false;
             puzzles[currentIndex].puzzlePopup.OpenPuzzlePopup();
-
-            if (currentActiveManager != null)
-            {
-                currentActiveManager.enabled = true;
-            }
         }
     }
 

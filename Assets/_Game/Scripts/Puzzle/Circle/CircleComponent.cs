@@ -46,14 +46,14 @@ public sealed class UiCircleComponent : MaskableGraphic,
     [Min(1)]
     private int _segments = 8;
 
-    [Tooltip("정답 위치 0을 기준으로 현재 떨어진 회전 단계입니다.")]
+    [Tooltip("프리팹의 기본 배치를 기준으로 현재 회전한 단계입니다.")]
     [SerializeField]
     private int _currentSegmentOffset;
 
     private UiCirclePuzzleManager _ownerManager;
     private float _previousMouseAngle;
     private float _dragRingAngle;
-    private float _initialAngle;
+    public CirclePattern Pattern { get; private set; }
     private bool _isInitialized;
     private bool _isDragging;
 
@@ -79,7 +79,7 @@ public sealed class UiCircleComponent : MaskableGraphic,
 
         if (_isInitialized)
         {
-            ApplyInitialRotation();
+            SetVisualRotation(_currentSegmentOffset * AnglePerSegment);
         }
     }
 
@@ -113,18 +113,14 @@ public sealed class UiCircleComponent : MaskableGraphic,
             Destroy(child.gameObject);
         }
 
+        Pattern = null;
         if (patternPrefab != null)
         {
             CreatePattern(patternPrefab);
         }
 
-        _initialAngle = _currentSegmentOffset * AnglePerSegment;
         _isInitialized = true;
-
-        if (gameObject.activeInHierarchy)
-        {
-            ApplyInitialRotation();
-        }
+        SetVisualRotation(_currentSegmentOffset * AnglePerSegment);
     }
 
     /// <summary>링의 화면 회전 각도를 변경한다.</summary>
@@ -214,12 +210,6 @@ public sealed class UiCircleComponent : MaskableGraphic,
         SetVisualRotation(closestSegment * AnglePerSegment);
     }
 
-    /// <summary>링이 정답 오프셋 0에 정렬됐는지 반환한다.</summary>
-    public bool IsAligned()
-    {
-        return _currentSegmentOffset == 0;
-    }
-
     /// <summary>보이는 링과 같은 원형 띠 범위에서만 포인터 입력을 허용한다.</summary>
     public override bool Raycast(Vector2 screenPoint, Camera eventCamera)
     {
@@ -294,6 +284,7 @@ public sealed class UiCircleComponent : MaskableGraphic,
     private void CreatePattern(GameObject patternPrefab)
     {
         GameObject patternObject = Instantiate(patternPrefab, transform);
+        Pattern = patternObject.GetComponent<CirclePattern>();
         RectTransform patternRect = patternObject.GetComponent<RectTransform>();
 
         if (patternRect == null)
@@ -325,11 +316,6 @@ public sealed class UiCircleComponent : MaskableGraphic,
 
         mouseAngle = Mathf.Atan2(mouseDirection.y, mouseDirection.x) * Mathf.Rad2Deg;
         return true;
-    }
-
-    private void ApplyInitialRotation()
-    {
-        SetVisualRotation(_initialAngle);
     }
 
 #if UNITY_EDITOR

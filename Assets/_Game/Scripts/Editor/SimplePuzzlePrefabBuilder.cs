@@ -62,7 +62,10 @@ public static class SimplePuzzlePrefabBuilder
     {
         EnsureFolder("Assets/_Game/Prefabs", "Puzzle");
 
-        BuildPuzzleUiRootPrefab();
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(UI_ROOT_PREFAB_PATH) == null)
+        {
+            BuildPuzzleUiRootPrefab();
+        }
         BuildInteractablePrefab(
             "PipePuzzleInteractable",
             PuzzleType.PUZZLE_TYPE_PIPE,

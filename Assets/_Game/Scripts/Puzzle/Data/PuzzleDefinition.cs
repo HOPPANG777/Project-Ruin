@@ -152,7 +152,7 @@ public sealed class PuzzleCircleRingDefinition
     /// <summary>한 바퀴를 나눌 회전 단계 개수입니다.</summary>
     public int Segments => _segments;
 
-    /// <summary>정답 위치 0에서 떨어진 시작 회전 단계입니다.</summary>
+    /// <summary>문양 프리팹의 기본 배치에서 회전시킬 시작 단계입니다.</summary>
     public int InitialOffset => _initialOffset;
 
     /// <summary>검증된 원형 퍼즐 링 정의를 생성합니다.</summary>

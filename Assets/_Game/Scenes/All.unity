@@ -153,12 +153,15 @@ MonoBehaviour:
   _gridParent: {fileID: 317396540}
   _singleRingPrefab: {fileID: 3353086076178331877, guid: 783bef2c18e54494c9b0bf4b62f4e092, type: 3}
   _ringPrefabs:
-  - {fileID: 7382138787708069627, guid: 1ac2207cf70485e4db74a3cbd73e5c1a, type: 3}
+  - {fileID: 7000000000000000001, guid: dadb667b2fb3469ebc8b71585f249bff, type: 3}
+  - {fileID: 7000000000000000001, guid: 72ebb3ab69db4507bc2daa4ab17a2714, type: 3}
+  - {fileID: 7000000000000000001, guid: 6803cc41faa44f7e9bcd09530aa1e773, type: 3}
+  - {fileID: 7000000000000000001, guid: 290b5c720a1b427aad232ad21488274e, type: 3}
   _ringSprites:
-  - {fileID: -7350425694763549375, guid: 601e31c5061891740b34eede12b827a7, type: 3}
   - {fileID: -4559932443770039424, guid: 2a085db50a616e14f90af1751910425f, type: 3}
   - {fileID: 5341311611022179657, guid: 5418c109fe345fc44ab066b7ff76c221, type: 3}
   - {fileID: -7302434963917060446, guid: 8881e6012181e92469cd3a6ec63ff218, type: 3}
+  - {fileID: -6366667710581225686, guid: 365240bda86a881498c9158f74d58075, type: 3}
   _ringSpriteScale: 0.8
   _startScale: 1
   _scaleStep: 0.4
@@ -2161,7 +2164,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1842356795}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e049d8c2dd5045e459038c886f5d2a6b, type: 3}
   m_Name: 

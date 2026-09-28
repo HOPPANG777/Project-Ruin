@@ -18,6 +18,9 @@ public sealed class UiPuzzleInteractable : MonoBehaviour, IInteractable, IHighli
     [Tooltip("puzzles.csv의 puzzle_id와 정확히 일치해야 합니다.")]
     [SerializeField] private string _puzzleId = "PIPE_STAGE_01";
 
+    [Tooltip("퍼즐 UI에 표시할 챕터 배경과 조각 종류입니다. 0~3 중 선택합니다.")]
+    [SerializeField, Range(0, 3)] private int _chapterIndex = 1;
+
     [Header("Clear")]
     [Tooltip("퍼즐을 해결한 뒤 이 오브젝트와 다시 상호작용할 수 없게 합니다.")]
     [SerializeField] private bool _disableInteractionAfterClear = true;
@@ -36,6 +39,8 @@ public sealed class UiPuzzleInteractable : MonoBehaviour, IInteractable, IHighli
 
     /// <summary>이 오브젝트가 실행하는 CSV 퍼즐 ID입니다.</summary>
     public string PuzzleId => _puzzleId;
+
+    public int ChapterIndex => _chapterIndex;
 
     /// <summary>현재 플레이 세션에서 퍼즐을 해결했는지 여부입니다.</summary>
     public bool IsSolved { get; private set; }

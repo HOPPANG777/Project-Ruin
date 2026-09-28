@@ -125,10 +125,10 @@ TextureImporter:
       name: Constellation_Symbol_Blue_12_0
       rect:
         serializedVersion: 2
-        x: 66
-        y: 126
-        width: 40
-        height: 58
+        x: 12
+        y: 9
+        width: 162
+        height: 175
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

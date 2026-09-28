@@ -93,6 +93,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UiPuzzleInteractable
   _puzzleType: 2
   _puzzleId: LIGHT_STAGE_01
+  _chapterIndex: 1
   _disableInteractionAfterClear: 1
   _onPuzzleCleared:
     m_PersistentCalls:

@@ -131,10 +131,10 @@ TextureImporter:
       name: Constellation_Symbol_Green_03_0
       rect:
         serializedVersion: 2
-        x: 24
-        y: 106
-        width: 60
-        height: 72
+        x: 16
+        y: 10
+        width: 167
+        height: 168
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

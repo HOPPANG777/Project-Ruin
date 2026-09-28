@@ -67,8 +67,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _visualResolution: 128
-  _ringThickness: 14
-  _raycastPadding: 6
+  _ringThickness: 32
+  _raycastPadding: 8
   _ringImage: {fileID: 910000000000000004}
   _segments: 8
   _currentSegmentOffset: 0

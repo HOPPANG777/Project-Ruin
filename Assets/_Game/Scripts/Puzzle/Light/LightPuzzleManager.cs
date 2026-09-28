@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 //=============================================================================
 // File:        LightPuzzleManager.cs
@@ -20,10 +21,30 @@ public sealed class UiLightPuzzleManager : BasePuzzleManager
     [SerializeField]
     private GameObject _tilePrefab;
 
+    [Header("Chapter Art")]
+    [Tooltip("0~3장 배경 Image입니다. 스프라이트는 프리팹에 설정합니다.")]
+    [SerializeField] private Image[] _chapterBackgrounds;
+    [Tooltip("0~3장 라이트 타일 프리팹입니다.")]
+    [SerializeField] private GameObject[] _chapterTilePrefabs;
+
+    private int _chapterIndex = 1;
+
     private readonly Dictionary<int, UiLightTileComponent> _spawnedTiles =
         new Dictionary<int, UiLightTileComponent>();
 
     private PuzzleDefinition _currentDefinition;
+
+    public override void SetChapterIndex(int chapterIndex)
+    {
+        _chapterIndex = Mathf.Clamp(chapterIndex, 0, 3);
+        for (int i = 0; _chapterBackgrounds != null && i < _chapterBackgrounds.Length; i++)
+        {
+            if (_chapterBackgrounds[i] != null)
+            {
+                _chapterBackgrounds[i].enabled = i == _chapterIndex;
+            }
+        }
+    }
 
     /// <summary>CSV에서 현재 라이트 퍼즐을 조회하고 UI 타일을 다시 생성합니다.</summary>
     public override void InitializePuzzle()
@@ -32,7 +53,12 @@ public sealed class UiLightPuzzleManager : BasePuzzleManager
         IsClear = false;
         _currentDefinition = null;
 
-        if (_gridParent == null || _tilePrefab == null)
+        GameObject tilePrefab = _chapterTilePrefabs != null
+            && _chapterIndex < _chapterTilePrefabs.Length
+            && _chapterTilePrefabs[_chapterIndex] != null
+            ? _chapterTilePrefabs[_chapterIndex] : _tilePrefab;
+
+        if (_gridParent == null || tilePrefab == null)
         {
             Debug.LogError("[UiLightPuzzleManager] Grid Parent 또는 Tile Prefab이 연결되지 않았습니다.");
             return;
@@ -54,7 +80,7 @@ public sealed class UiLightPuzzleManager : BasePuzzleManager
         for (int i = 0; i < puzzleDefinition.LightTiles.Count; i++)
         {
             PuzzleLightTileDefinition tileDefinition = puzzleDefinition.LightTiles[i];
-            GameObject tileObject = Instantiate(_tilePrefab, _gridParent);
+            GameObject tileObject = Instantiate(tilePrefab, _gridParent);
             tileObject.name = $"UI_LightTile_{tileDefinition.TileId}";
 
             RectTransform tileRect = tileObject.GetComponent<RectTransform>();

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 //=============================================================================
 // File:        CirclePuzzleManager.cs
@@ -15,6 +16,26 @@ public sealed class UiCirclePuzzleManager : BasePuzzleManager
     [Tooltip("생성한 원형 링이 배치될 UI 부모입니다.")]
     [SerializeField]
     private RectTransform _gridParent;
+
+    [Tooltip("정답 방향을 가리키는 세모입니다. 미지정 시 링 부모의 위쪽을 사용합니다.")]
+    [SerializeField] private RectTransform _targetPointer;
+
+    [Tooltip("0~3장 배경 Image입니다. 스프라이트는 프리팹에 설정합니다.")]
+    [SerializeField] private Image[] _chapterBackgrounds;
+
+    private int _chapterIndex = 1;
+
+    public override void SetChapterIndex(int chapterIndex)
+    {
+        _chapterIndex = Mathf.Clamp(chapterIndex, 0, 3);
+        for (int i = 0; _chapterBackgrounds != null && i < _chapterBackgrounds.Length; i++)
+        {
+            if (_chapterBackgrounds[i] != null)
+            {
+                _chapterBackgrounds[i].enabled = i == _chapterIndex;
+            }
+        }
+    }
 
     [Tooltip("UiCircleComponent가 포함된 공용 원형 링 프리팹입니다.")]
     [SerializeField]
@@ -121,24 +142,40 @@ public sealed class UiCirclePuzzleManager : BasePuzzleManager
             $"[UiCirclePuzzleManager] CSV 퍼즐 배치 완료. id={PuzzleId}, rings={_spawnedRings.Count}");
     }
 
-    /// <summary>생성된 모든 링이 정답 각도에 정렬됐는지 검사합니다.</summary>
+    /// <summary>세모 아래에 모든 링의 같은 색 문양이 일렬로 있는지 검사합니다.</summary>
     public override void CheckClearCondition()
     {
-        if (_spawnedRings.Count == 0)
+        if (IsClear || _spawnedRings.Count == 0)
         {
             return;
         }
 
-        for (int i = 0; i < _spawnedRings.Count; i++)
-        {
-            if (!_spawnedRings[i].IsAligned())
-            {
-                return;
-            }
-        }
+        CirclePattern reference = _spawnedRings[0].Pattern;
+        if (reference == null) return;
 
-        IsClear = true;
-        OnPuzzleClear();
+        Transform center = _gridParent != null ? _gridParent : _spawnedRings[0].transform.parent;
+        Vector3 direction = _targetPointer != null
+            ? _targetPointer.position - center.position
+            : center.up;
+
+        foreach (CirclePattern.Symbol symbol in reference.Symbols)
+        {
+            bool aligned = true;
+            for (int i = 0; i < _spawnedRings.Count; i++)
+            {
+                CirclePattern pattern = _spawnedRings[i].Pattern;
+                if (pattern == null || !pattern.HasAlignedSymbol(symbol.color, direction))
+                {
+                    aligned = false;
+                    break;
+                }
+            }
+
+            if (!aligned) continue;
+            IsClear = true;
+            OnPuzzleClear();
+            return;
+        }
     }
 
     /// <summary>원형 퍼즐 클리어 이벤트를 외부에 전달합니다.</summary>
@@ -156,13 +193,15 @@ public sealed class UiCirclePuzzleManager : BasePuzzleManager
 
             if (patternIndex >= 0
                 && patternIndex < _ringPrefabs.Count
-                && _ringPrefabs[patternIndex] != null)
+                && _ringPrefabs[patternIndex] != null
+                && _ringPrefabs[patternIndex].TryGetComponent(out CirclePattern pattern)
+                && pattern.Symbols.Count > 0)
             {
                 continue;
             }
 
             Debug.LogError(
-                $"[UiCirclePuzzleManager] CSV pattern_index에 대응하는 문양 프리팹이 없습니다. "
+                $"[UiCirclePuzzleManager] 문양 프리팹 또는 CirclePattern의 문양 연결이 없습니다. "
                 + $"id={PuzzleId}, pattern_index={patternIndex}");
             return false;
         }
