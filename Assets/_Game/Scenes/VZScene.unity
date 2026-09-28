@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 6161026}
   - component: {fileID: 6161028}
   - component: {fileID: 6161027}
+  - component: {fileID: 6161029}
   m_Layer: 0
   m_Name: Triangle
   m_TagString: Untagged
@@ -190,7 +191,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 3da0a419fdee1864b85f38c48560a58d, type: 3}
+  m_Sprite: {fileID: 21300000, guid: b5f72fad55baf214f877301ddbcfa1f4, type: 3}
   m_Color: {r: 0.7735849, g: 0.7735849, b: 0.7735849, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -229,6 +230,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMoveController
   _moveDirection: {x: 0, y: 0, z: 0}
   _moveSpeed: 3
+  _runSpeedMultiplier: 1.5
   _player: {fileID: 6161021}
   _moveAction: {fileID: -1680190386980627800, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   _canMove: 1
@@ -4044,6 +4046,20 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &6161029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6161021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91db9b52d2b542dda7700e934e8b9ec0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimationController
+  _spriteRenderer: {fileID: 6161022}
+  _library: {fileID: 11400000, guid: 5457994090e04bd396d549283a376c74, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -5,6 +5,7 @@
 //
 // History:     08/08/2026 + 시간값 기반 피격 무적 처리 추가 -- Codex
 //              08/31/2026 + 활성 플레이어의 메뉴 입력 참조 등록 및 안전한 해제 -- Codex
+//              09/28/2026 + 공격 컨트롤러의 이동 참조 주입 누락 수정 -- Codex
 //
 //=============================================================================
 
@@ -30,7 +31,12 @@ public sealed class UnitPlayer : UnitBase, ICameraTarget
 
     // 최초 씬에서는 모든 Awake 이후 Start에서 다시 연결하고, 이후 씬은 OnEnable로 연결합니다.
     private void OnEnable() => BindMenuInput();
-    private void Start() => BindMenuInput();
+    private void Start()
+    {
+        BindMenuInput();
+        BindAnimation();
+        BindAttack();
+    }
     private void OnDisable()
     {
         if (_menuRoot != null) _menuRoot.UnbindMenuPlayer(_menuInteraction, _menuMovement);
@@ -45,6 +51,25 @@ public sealed class UnitPlayer : UnitBase, ICameraTarget
         if (_menuInteraction == null && _menuMovement == null) return;
         _menuRoot = GameRoot.Instance;
         _menuRoot.BindMenuPlayer(_menuInteraction, _menuMovement);
+    }
+
+    // 플레이어가 소유한 컴포넌트가 인터페이스로 이동 상태를 전달합니다.
+    private void BindAnimation()
+    {
+        PlayerAnimationController animation = GetComponent<PlayerAnimationController>();
+        if (animation == null) return;
+
+        PlayerMoveController movement = GetComponent<PlayerMoveController>();
+        animation.TryInit(movement);
+    }
+
+    // 프리팹 인스턴스가 자신의 이동 참조를 사용하도록 연결합니다.
+    private void BindAttack()
+    {
+        if (!TryGetComponent(out PlayerAttackController attack)) return;
+        if (!TryGetComponent(out PlayerMoveController movement)) return;
+
+        attack.Construct(movement);
     }
 
     /// <summary>카메라가 추적할 플레이어 대상입니다.</summary>
