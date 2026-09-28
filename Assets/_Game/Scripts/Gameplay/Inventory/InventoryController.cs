@@ -758,8 +758,7 @@ public class InventoryController : MonoBehaviour, IInventoryService, IInventoryS
 
     /// <summary>
     /// 아이템 타입이 지정한 인벤토리 카테고리 필터에 포함되는지 확인합니다.
-    /// 문서 기준 전체: 1~6, 술: 2~3, 유물: 4~5, 기타: 6입니다.
-    /// 퀘스트 아이템은 문서 기준 1번이며 전체 카테고리에만 포함합니다.
+    /// 문서 기준 전체: 1~6, 퀘스트: 1, 술: 2~3, 유물: 4~5, 기타: 6입니다.
     /// </summary>
     /// <param name="itemType">확인할 아이템 타입입니다.</param>
     /// <param name="category">조회할 인벤토리 카테고리입니다.</param>
@@ -770,6 +769,9 @@ public class InventoryController : MonoBehaviour, IInventoryService, IInventoryS
         {
             case InventoryCategory.INVENTORY_CATEGORY_ALL:
                 return IsKnownItemType(itemType);
+
+            case InventoryCategory.INVENTORY_CATEGORY_QUEST:
+                return itemType == ItemType.ITEM_QUEST;
 
             case InventoryCategory.INVENTORY_CATEGORY_ALCOHOL:
                 return itemType == ItemType.ITEM_ALCOHOL_COLLECTIBLE || itemType == ItemType.ITEM_ALCOHOL_TOOL;

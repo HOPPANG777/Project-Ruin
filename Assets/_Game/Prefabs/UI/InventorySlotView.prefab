@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 4, y: 70}
+  m_AnchoredPosition: {x: 4, y: 66}
   m_SizeDelta: {x: 48, y: 22}
   m_Pivot: {x: 0, y: 0}
 --- !u!222 &8576871710172114935
@@ -179,7 +179,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 96, y: 96}
+  m_SizeDelta: {x: 100, y: 90}
   m_Pivot: {x: 0, y: 0}
 --- !u!222 &3986377900308067155
 CanvasRenderer:
@@ -202,14 +202,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.84313726, g: 0.78039217, b: 0.61960787, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -1575708383222953304, guid: 2eb3ebf24734f24479950038a2aa3959, type: 3}
+  m_Sprite: {fileID: -1575708383222953304, guid: 3c43be9c0c4e44240bdeb132c3715ee5, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -289,6 +289,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventorySlotView
   _button: {fileID: 2897210284835456473}
   _canvasGroup: {fileID: 7054052958111797210}
+  _backgroundImage: {fileID: 5033320058981375915}
   _iconImage: {fileID: 2423431041616196162}
   _quantityText: {fileID: 8552754000316452590}
   _newMarkerRoot: {fileID: 2835519126312340842}
@@ -327,8 +328,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 8, y: 20}
-  m_SizeDelta: {x: 72, y: 72}
+  m_AnchoredPosition: {x: 15, y: 10}
+  m_SizeDelta: {x: 70, y: 70}
   m_Pivot: {x: 0, y: 0}
 --- !u!222 &7830267444957950185
 CanvasRenderer:

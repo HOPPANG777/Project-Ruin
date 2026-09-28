@@ -15,13 +15,13 @@ public class InventoryView : MonoBehaviour
     // 상수
     //==============================================================================
 
-    // 문서 기준 한 행에 표시하는 슬롯 수입니다.
-    private const int INVENTORY_VIEW_COLUMN_COUNT = 6;
+    // 왼쪽 페이지 슬롯 아트의 열 수입니다.
+    private const int INVENTORY_VIEW_COLUMN_COUNT = 5;
 
-    // 문서 기준 기본 표시 행 수입니다.
-    private const int INVENTORY_VIEW_BASE_ROW_COUNT = 5;
+    // 왼쪽 페이지 슬롯 아트의 행 수입니다.
+    private const int INVENTORY_VIEW_BASE_ROW_COUNT = 7;
 
-    // 문서 기준 1페이지 기본 슬롯 수입니다.
+    // 왼쪽 페이지에 항상 표시할 슬롯 수입니다.
     private const int INVENTORY_VIEW_BASE_SLOT_COUNT = INVENTORY_VIEW_COLUMN_COUNT * INVENTORY_VIEW_BASE_ROW_COUNT;
 
     // 드래그 중 ScrollRect 가장자리에서 자동 스크롤을 시작하는 거리입니다.
@@ -50,7 +50,7 @@ public class InventoryView : MonoBehaviour
     private CanvasGroup _detailPageCanvasGroup;
 
     [Header("Slots")]
-    [Tooltip("30개 초과 슬롯을 스크롤할 ScrollRect입니다.")]
+    [Tooltip("기본 35칸을 넘는 슬롯을 스크롤할 ScrollRect입니다.")]
     [SerializeField]
     private ScrollRect _slotScrollRect;
 
@@ -60,7 +60,7 @@ public class InventoryView : MonoBehaviour
     private RectTransform _slotContentRoot;
 
     [Header("Slots")]
-    [Tooltip("슬롯 6열 배치를 담당할 GridLayoutGroup입니다.")]
+    [Tooltip("슬롯 5열 배치를 담당할 GridLayoutGroup입니다.")]
     [SerializeField]
     private GridLayoutGroup _slotGridLayout;
 
@@ -68,6 +68,11 @@ public class InventoryView : MonoBehaviour
     [Tooltip("인벤토리 슬롯 한 칸을 출력할 슬롯 뷰 프리팹입니다.")]
     [SerializeField]
     private InventorySlotView _slotViewPrefab;
+
+    [Header("Slots")]
+    [Tooltip("Inventory_FrontSlotUI 1.png에서 분리한 슬롯 배경입니다. 추가 행에서는 순서대로 반복합니다.")]
+    [SerializeField]
+    private Sprite[] _slotBackgroundSprites;
 
     [Header("Slots")]
     [Tooltip("슬롯 행 수가 늘어날 때 콘텐츠 높이를 자동 보정할지 여부입니다.")]
@@ -139,6 +144,9 @@ public class InventoryView : MonoBehaviour
     // 유니티 생명주기
     //==============================================================================
 
+    // 프리팹 편집 시에는 보이게 저장하고, 실행 시 첫 프레임 전에 닫습니다.
+    private void Awake() => Hide();
+
     /// <summary>
     /// 드래그 중 ScrollRect 가장자리 자동 스크롤을 갱신합니다.
     /// </summary>
@@ -163,7 +171,7 @@ public class InventoryView : MonoBehaviour
     }
 
     /// <summary>
-    /// 인벤토리 UI를 열고 슬롯 페이지를 표시합니다.
+    /// 인벤토리 UI를 열고 양쪽 페이지를 표시합니다.
     /// </summary>
     public void Show()
     {
@@ -205,20 +213,34 @@ public class InventoryView : MonoBehaviour
     }
 
     /// <summary>
-    /// 1페이지 슬롯 목록을 표시합니다.
+    /// 다른 분류 탭을 열 때 슬롯 목록을 첫 행으로 되돌립니다.
+    /// </summary>
+    public void ResetSlotScroll()
+    {
+        if (_slotScrollRect == null)
+        {
+            return;
+        }
+
+        _slotScrollRect.StopMovement();
+        _slotScrollRect.verticalNormalizedPosition = 1.0f;
+    }
+
+    /// <summary>
+    /// 슬롯 목록과 빈 상세 페이지를 함께 표시합니다.
     /// </summary>
     public void ShowSlotPage()
     {
         SetCanvasGroupVisible(_slotPageCanvasGroup, true);
-        SetCanvasGroupVisible(_detailPageCanvasGroup, false);
+        SetCanvasGroupVisible(_detailPageCanvasGroup, true);
     }
 
     /// <summary>
-    /// 2페이지 선택 아이템 상세 정보를 표시합니다.
+    /// 슬롯 목록 옆에 선택 아이템 상세 정보를 표시합니다.
     /// </summary>
     public void ShowSelectedItemPage()
     {
-        SetCanvasGroupVisible(_slotPageCanvasGroup, false);
+        SetCanvasGroupVisible(_slotPageCanvasGroup, true);
         SetCanvasGroupVisible(_detailPageCanvasGroup, true);
     }
 
@@ -295,10 +317,12 @@ public class InventoryView : MonoBehaviour
     {
         if (_rootCanvasGroup != null)
         {
-            _rootCanvasGroup.gameObject.SetActive(true);
+            if (isVisible) _rootCanvasGroup.gameObject.SetActive(true);
             _rootCanvasGroup.alpha = isVisible ? 1.0f : 0.0f;
             _rootCanvasGroup.interactable = isVisible;
             _rootCanvasGroup.blocksRaycasts = isVisible;
+            // 정렬을 재정의한 하위 Canvas의 Raycaster도 함께 비활성화합니다.
+            if (!isVisible) _rootCanvasGroup.gameObject.SetActive(false);
             return;
         }
 
@@ -351,6 +375,11 @@ public class InventoryView : MonoBehaviour
             InventoryItemDisplayData itemData = i < _currentItems.Count ? _currentItems[i] : null;
             bool isSelected = slotData != null && slotData == _selectedSlotData;
 
+            if (_slotBackgroundSprites != null && _slotBackgroundSprites.Length > 0)
+            {
+                slotView.SetBackground(_slotBackgroundSprites[i % _slotBackgroundSprites.Length]);
+            }
+
             slotView.Bind(
                 i,
                 slotData,
@@ -366,7 +395,7 @@ public class InventoryView : MonoBehaviour
     }
 
     /// <summary>
-    /// 필요한 슬롯 뷰 수를 6열 행 단위로 계산합니다.
+    /// 필요한 슬롯 뷰 수를 5열 행 단위로 계산합니다.
     /// </summary>
     /// <param name="slotCount">현재 실제 슬롯 수입니다.</param>
     /// <returns>표시해야 하는 슬롯 뷰 수입니다.</returns>
@@ -400,7 +429,7 @@ public class InventoryView : MonoBehaviour
     }
 
     /// <summary>
-    /// 슬롯 6열 배치와 행 증가에 따른 콘텐츠 높이를 갱신합니다.
+    /// 슬롯 5열 배치와 행 증가에 따른 콘텐츠 높이를 갱신합니다.
     /// </summary>
     /// <param name="visibleSlotViewCount">현재 표시할 슬롯 뷰 수입니다.</param>
     private void ApplyGridSettings(int visibleSlotViewCount)

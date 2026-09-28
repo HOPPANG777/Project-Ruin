@@ -18,5 +18,8 @@ public enum InventoryCategory
     INVENTORY_CATEGORY_RELIC = 2,
 
     // 문서 기준 6번인 기타 아이템만 표시하는 카테고리입니다.
-    INVENTORY_CATEGORY_MISC = 3
+    INVENTORY_CATEGORY_MISC = 3,
+
+    // 문서 기준 1번인 퀘스트 아이템만 표시하는 카테고리입니다.
+    INVENTORY_CATEGORY_QUEST = 4
 }

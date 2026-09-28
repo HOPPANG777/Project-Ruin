@@ -32,6 +32,11 @@ public class InventorySlotView : MonoBehaviour, IPointerClickHandler, IBeginDrag
     private CanvasGroup _canvasGroup;
 
     [Header("Display")]
+    [Tooltip("스크롤 콘텐츠 안에서 슬롯 한 칸의 배경을 출력할 Image입니다.")]
+    [SerializeField]
+    private Image _backgroundImage;
+
+    [Header("Display")]
     [Tooltip("아이템 아이콘을 출력할 Image입니다.")]
     [SerializeField]
     private Image _iconImage;
@@ -110,11 +115,36 @@ public class InventorySlotView : MonoBehaviour, IPointerClickHandler, IBeginDrag
         {
             _canvasGroup = GetComponent<CanvasGroup>();
         }
+
+        if (_backgroundImage == null)
+        {
+            _backgroundImage = GetComponent<Image>();
+        }
     }
 
     //==============================================================================
     // 공개 API
     //==============================================================================
+
+    /// <summary>
+    /// 스크롤되는 슬롯 한 칸의 배경을 설정합니다.
+    /// </summary>
+    public void SetBackground(Sprite sprite)
+    {
+        if (_backgroundImage == null)
+        {
+            _backgroundImage = GetComponent<Image>();
+        }
+
+        if (_backgroundImage == null)
+        {
+            return;
+        }
+
+        _backgroundImage.sprite = sprite;
+        _backgroundImage.color = Color.white;
+        _backgroundImage.enabled = sprite != null;
+    }
 
     /// <summary>
     /// 슬롯 표시 데이터와 입력 콜백을 갱신합니다.

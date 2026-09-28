@@ -17,6 +17,10 @@ public class InventoryPresenter : MonoBehaviour
     // 외부 클릭 닫기를 무시할 프레임이 없음을 나타냅니다.
     private const int INVENTORY_NO_IGNORE_FRAME = -1;
 
+    // All 탭의 기본 위치를 선택 상태로 사용합니다.
+    private const float INVENTORY_CATEGORY_SELECTED_X = -90.0f;
+    private const float INVENTORY_CATEGORY_INSET_X = -60.0f;
+
     //==============================================================================
     // 직렬화 필드
     //==============================================================================
@@ -70,6 +74,11 @@ public class InventoryPresenter : MonoBehaviour
     [Tooltip("전체 카테고리 버튼입니다.")]
     [SerializeField]
     private Button _allCategoryButton;
+
+    [Header("Category")]
+    [Tooltip("퀘스트 아이템 카테고리 버튼입니다.")]
+    [SerializeField]
+    private Button _questCategoryButton;
 
     [Header("Category")]
     [Tooltip("술 카테고리 버튼입니다.")]
@@ -158,6 +167,7 @@ public class InventoryPresenter : MonoBehaviour
         _isExternalInputBlocked = false;
 
         RegisterButtonListeners();
+        UpdateCategoryButtonStates();
 
         if (_inventoryView != null)
         {
@@ -187,10 +197,12 @@ public class InventoryPresenter : MonoBehaviour
         _ignoreOutsideClickFrame = Time.frameCount;
         _currentCategory = _defaultCategory;
         _selectedSlotData = null;
+        UpdateCategoryButtonStates();
 
         _inventoryView.Show();
         _inventoryView.ClearSelectedItem();
         RefreshSlots();
+        _inventoryView.ResetSlotScroll();
     }
 
     /// <summary>
@@ -247,6 +259,7 @@ public class InventoryPresenter : MonoBehaviour
     {
         _currentCategory = category;
         _selectedSlotData = null;
+        UpdateCategoryButtonStates();
 
         if (_inventoryView != null)
         {
@@ -255,11 +268,52 @@ public class InventoryPresenter : MonoBehaviour
         }
 
         RefreshSlots();
+        _inventoryView?.ResetSlotScroll();
     }
 
     //==============================================================================
     // 내부 로직
     //==============================================================================
+
+    /// <summary>
+    /// 선택한 탭만 페이지 바깥으로 내밀고 나머지는 안쪽에 둡니다.
+    /// </summary>
+    private void UpdateCategoryButtonStates()
+    {
+        SetCategoryButtonState(_allCategoryButton,
+            _currentCategory == InventoryCategory.INVENTORY_CATEGORY_ALL);
+        SetCategoryButtonState(_questCategoryButton,
+            _currentCategory == InventoryCategory.INVENTORY_CATEGORY_QUEST);
+        SetCategoryButtonState(_alcoholCategoryButton,
+            _currentCategory == InventoryCategory.INVENTORY_CATEGORY_ALCOHOL);
+        SetCategoryButtonState(_relicCategoryButton,
+            _currentCategory == InventoryCategory.INVENTORY_CATEGORY_RELIC);
+        SetCategoryButtonState(_miscCategoryButton,
+            _currentCategory == InventoryCategory.INVENTORY_CATEGORY_MISC);
+    }
+
+    private static void SetCategoryButtonState(Button button, bool isSelected)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        RectTransform rect = button.GetComponent<RectTransform>();
+        if (rect != null)
+        {
+            Vector2 position = rect.anchoredPosition;
+            position.x = isSelected ? INVENTORY_CATEGORY_SELECTED_X : INVENTORY_CATEGORY_INSET_X;
+            rect.anchoredPosition = position;
+        }
+
+        button.transition = Selectable.Transition.None;
+        button.interactable = true;
+        if (button.targetGraphic != null)
+        {
+            button.targetGraphic.color = Color.white;
+        }
+    }
 
     /// <summary>
     /// 버튼 클릭 입력을 Presenter 메서드에 연결합니다.
@@ -281,6 +335,11 @@ public class InventoryPresenter : MonoBehaviour
         if (_allCategoryButton != null)
         {
             _allCategoryButton.onClick.AddListener(ShowAllCategory);
+        }
+
+        if (_questCategoryButton != null)
+        {
+            _questCategoryButton.onClick.AddListener(ShowQuestCategory);
         }
 
         if (_alcoholCategoryButton != null)
@@ -317,6 +376,11 @@ public class InventoryPresenter : MonoBehaviour
         if (_allCategoryButton != null)
         {
             _allCategoryButton.onClick.RemoveListener(ShowAllCategory);
+        }
+
+        if (_questCategoryButton != null)
+        {
+            _questCategoryButton.onClick.RemoveListener(ShowQuestCategory);
         }
 
         if (_alcoholCategoryButton != null)
@@ -534,6 +598,12 @@ public class InventoryPresenter : MonoBehaviour
     private void ShowAllCategory()
     {
         SetCategory(InventoryCategory.INVENTORY_CATEGORY_ALL);
+    }
+
+    /// <summary>퀘스트 아이템 카테고리를 표시합니다.</summary>
+    private void ShowQuestCategory()
+    {
+        SetCategory(InventoryCategory.INVENTORY_CATEGORY_QUEST);
     }
 
     /// <summary>
