@@ -1,10 +1,13 @@
 fileFormatVersion: 2
-guid: f61e9751ee4f73f45b1d1365af02250d
+guid: 8189b8ffda71d5444b7c81e16fe4a753
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6497869048476322978
-    second: Codex_FrontDrinkSlot_0
+      213: -2287830681981196502
+    second: Codex_BackgroundItem_0
+  - first:
+      213: 5791938804350792477
+    second: Codex_BackgroundItem_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -46,9 +49,9 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
@@ -113,13 +116,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Codex_FrontDrinkSlot_0
+      name: Codex_BackgroundItem_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1039
-        height: 1076
+        width: 770
+        height: 484
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +131,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e533090178ee2d5a0800000000000000
-      internalID: -6497869048476322978
+      spriteID: a27654ebd1eff30e0800000000000000
+      internalID: -2287830681981196502
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Codex_BackgroundItem_1
+      rect:
+        serializedVersion: 2
+        x: 739
+        y: 212
+        width: 208
+        height: 272
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d133122d7a9116050800000000000000
+      internalID: 5791938804350792477
       vertices: []
       indices: 
       edges: []
@@ -138,7 +163,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +173,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Codex_FrontDrinkSlot_0: -6497869048476322978
+      Codex_BackgroundItem_0: -2287830681981196502
+      Codex_BackgroundItem_1: 5791938804350792477
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

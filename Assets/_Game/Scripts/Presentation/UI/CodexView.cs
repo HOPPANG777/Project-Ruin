@@ -14,6 +14,10 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class CodexView : MonoBehaviour
 {
+    private const int RelicColumnCount = 5;
+    private const int RelicBaseRowCount = 6;
+    private const int AlcoholBaseRowCount = 4;
+
     [Tooltip("펼친 책 UI 전체의 표시와 입력을 제어할 CanvasGroup입니다.")]
     [SerializeField] private CanvasGroup _rootCanvasGroup;
     [Tooltip("유물 1P 목록으로 전환할 버튼입니다.")]
@@ -32,6 +36,8 @@ public sealed class CodexView : MonoBehaviour
     [SerializeField] private ScrollRect _technologyScrollRect;
     [Tooltip("모든 도감 항목에 재사용할 View 프리팹입니다.")]
     [SerializeField] private CodexEntryView _entryViewPrefab;
+    [Tooltip("Codex_FrontSlot.png에서 분리한 유물 슬롯 배경입니다. 추가 행에서는 순서대로 반복합니다.")]
+    [SerializeField] private Sprite[] _relicSlotBackgroundSprites;
     [Tooltip("잠긴 기술 이미지에 사용할 공유 흑백 Material입니다.")]
     [SerializeField] private Material _lockedTechnologyMaterial;
 
@@ -64,6 +70,9 @@ public sealed class CodexView : MonoBehaviour
     public bool IsConfigured => _rootCanvasGroup != null && _entryViewPrefab != null
         && HasContent(_relicScrollRect) && HasContent(_alcoholScrollRect)
         && HasContent(_technologyScrollRect);
+
+    // 프리팹 편집 시에는 보이게 저장하고, 실행 시 첫 프레임 전에 닫습니다.
+    private void Awake() => Hide();
 
     private void OnDestroy() => RemoveListeners();
 
@@ -102,8 +111,11 @@ public sealed class CodexView : MonoBehaviour
         Action<CodexEntryView, PointerEventData> entered, Action<CodexEntryView> exited)
     {
         bool showRelics = category == CodexCategory.CODEX_CATEGORY_RELIC;
-        _relicTabSelectedRoot?.SetActive(showRelics);
-        _alcoholTabSelectedRoot?.SetActive(!showRelics);
+        // 탭 이미지는 프리팹에 배치해 두고, 선택된 탭만 책 바깥으로 내밉니다.
+        _relicTabSelectedRoot?.SetActive(false);
+        _alcoholTabSelectedRoot?.SetActive(false);
+        SetTabPosition(_relicTabButton, showRelics);
+        SetTabPosition(_alcoholTabButton, !showRelics);
         SetScrollVisible(_relicScrollRect, showRelics);
         SetScrollVisible(_alcoholScrollRect, !showRelics);
         if (showRelics)
@@ -123,9 +135,12 @@ public sealed class CodexView : MonoBehaviour
     /// <summary>오른쪽 2P 기술 목록을 카테고리와 독립적으로 갱신합니다.</summary>
     public void BindTechnologyPage(IReadOnlyList<CodexEntryDisplayData> entries,
         Action<CodexEntryView> clicked, Action<CodexEntryView, PointerEventData> entered,
-        Action<CodexEntryView> exited) => BindPool(entries, _technologyViews,
-            _technologyScrollRect, CodexEntryLayout.CODEX_ENTRY_TECHNOLOGY,
-            clicked, entered, exited);
+        Action<CodexEntryView> exited)
+    {
+        BindPool(entries, _technologyViews, _technologyScrollRect,
+            CodexEntryLayout.CODEX_ENTRY_TECHNOLOGY, clicked, entered, exited);
+        PositionTechnologyEntries(entries != null ? entries.Count : 0);
+    }
 
     /// <summary>단일 Tooltip에 항목 내용을 표시하고 화면 안으로 위치를 보정합니다.</summary>
     public void ShowTooltip(CodexEntryDisplayData data, PointerEventData eventData)
@@ -149,12 +164,51 @@ public sealed class CodexView : MonoBehaviour
         Action<CodexEntryView> clicked, Action<CodexEntryView, PointerEventData> entered,
         Action<CodexEntryView> exited)
     {
-        int count = entries != null ? entries.Count : 0;
+        int entryCount = entries != null ? entries.Count : 0;
+        int count = entryCount;
+        if (layout == CodexEntryLayout.CODEX_ENTRY_ALCOHOL)
+            count = Mathf.Max(AlcoholBaseRowCount, entryCount);
+        else if (layout == CodexEntryLayout.CODEX_ENTRY_RELIC)
+            count = Mathf.Max(RelicBaseRowCount, Mathf.CeilToInt(entryCount / (float)RelicColumnCount))
+                * RelicColumnCount;
         Ensure(views, scrollRect, count);
         int bindCount = Mathf.Min(count, views.Count);
         for (int i = 0; i < bindCount; i++)
-            views[i].Bind(entries[i], layout, _lockedTechnologyMaterial, clicked, entered, exited);
+        {
+            if (layout == CodexEntryLayout.CODEX_ENTRY_RELIC
+                && _relicSlotBackgroundSprites != null && _relicSlotBackgroundSprites.Length > 0)
+                views[i].SetRelicBackground(_relicSlotBackgroundSprites[i % _relicSlotBackgroundSprites.Length]);
+            views[i].Bind(i < entryCount ? entries[i] : null, layout,
+                _lockedTechnologyMaterial, clicked, entered, exited);
+        }
         Complete(views, bindCount);
+    }
+
+    private void PositionTechnologyEntries(int count)
+    {
+        if (!HasContent(_technologyScrollRect)) return;
+        RectTransform content = _technologyScrollRect.content;
+        content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
+            580.0f * Mathf.Max(1, Mathf.CeilToInt(count / 3.0f)));
+        for (int i = 0; i < count && i < _technologyViews.Count; i++)
+        {
+            RectTransform rect = _technologyViews[i].GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(190, 190);
+            int slot = i % 3;
+            rect.anchoredPosition = new Vector2(slot == 0 ? 290 : slot == 1 ? 145 : 435,
+                -580 * (i / 3) - (slot == 0 ? 125 : 390));
+        }
+    }
+
+    private static void SetTabPosition(Button tab, bool selected)
+    {
+        if (tab == null) return;
+        RectTransform rect = tab.GetComponent<RectTransform>();
+        Vector2 position = rect.anchoredPosition;
+        position.x = selected ? -18 : 12;
+        rect.anchoredPosition = position;
     }
 
     private void Ensure(List<CodexEntryView> views, ScrollRect scrollRect, int requiredCount)

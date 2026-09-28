@@ -23,7 +23,7 @@ public sealed class CodexPresenter : MonoBehaviour
     private ICodexService _codex;
     private IInventoryService _inventory;
     private ILocalizationService _localization;
-    private CodexCategory _category = CodexCategory.CODEX_CATEGORY_RELIC;
+    private CodexCategory _category = CodexCategory.CODEX_CATEGORY_ALCOHOL;
     private CodexEntryView _selectedView;
     private CodexEntryView _hoveredView;
     private bool _isOpen;

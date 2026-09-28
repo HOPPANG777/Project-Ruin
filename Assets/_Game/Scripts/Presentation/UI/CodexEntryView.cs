@@ -54,6 +54,8 @@ public sealed class CodexEntryView : MonoBehaviour,
 {
     [Tooltip("항목 크기를 목록 종류에 맞게 조절할 LayoutElement입니다.")]
     [SerializeField] private LayoutElement _layoutElement;
+    [SerializeField] private Image _relicBackgroundImage;
+    [SerializeField] private GameObject _drinkBackgroundRoot;
     [Tooltip("항목 아이콘을 표시할 Image입니다.")]
     [SerializeField] private Image _iconImage;
     [Tooltip("항목 이름을 표시할 TMP 텍스트입니다.")]
@@ -66,6 +68,7 @@ public sealed class CodexEntryView : MonoBehaviour,
     [SerializeField] private RectTransform _ingredientContentRoot;
     [Tooltip("재료에도 재사용할 동일한 도감 항목 View 프리팹입니다.")]
     [SerializeField] private CodexEntryView _ingredientViewPrefab;
+    [SerializeField] private bool _showIngredientsInRows;
     [Tooltip("해제 상태에서 사용할 공유 Material입니다. 비어 있으면 UI 기본 Material을 사용합니다.")]
     [SerializeField] private Material _unlockedMaterial;
 
@@ -79,6 +82,11 @@ public sealed class CodexEntryView : MonoBehaviour,
 
     public CodexEntryDisplayData Data => _data;
 
+    public void SetRelicBackground(Sprite background)
+    {
+        if (_relicBackgroundImage != null) _relicBackgroundImage.sprite = background;
+    }
+
     /// <summary>표시 데이터와 항목 종류 및 입력 콜백을 연결합니다.</summary>
     public void Bind(CodexEntryDisplayData data, CodexEntryLayout layout,
         Material lockedTechnologyMaterial, Action<CodexEntryView> clicked,
@@ -90,9 +98,18 @@ public sealed class CodexEntryView : MonoBehaviour,
         _clicked = clicked;
         _entered = entered;
         _exited = exited;
-        gameObject.SetActive(data != null);
-        if (data == null) return;
         ApplyLayout(layout);
+        gameObject.SetActive(data != null || layout == CodexEntryLayout.CODEX_ENTRY_ALCOHOL
+            || layout == CodexEntryLayout.CODEX_ENTRY_RELIC);
+        if (data == null)
+        {
+            if (_iconImage != null) _iconImage.enabled = false;
+            SetText(_nameText, string.Empty);
+            SetSelected(false);
+            CompleteIngredients(0);
+            _ingredientsRoot?.SetActive(false);
+            return;
+        }
         ApplyIcon(data, layout);
         SetText(_nameText, data.IsUnlocked ? data.DisplayName : "???");
         SetSelected(false);
@@ -136,9 +153,27 @@ public sealed class CodexEntryView : MonoBehaviour,
         if (_layoutElement == null) return;
         bool isAlcohol = layout == CodexEntryLayout.CODEX_ENTRY_ALCOHOL;
         bool isIngredient = layout == CodexEntryLayout.CODEX_ENTRY_INGREDIENT;
-        _layoutElement.preferredWidth = isAlcohol ? -1.0f : isIngredient ? 64.0f : 112.0f;
-        _layoutElement.preferredHeight = isAlcohol ? 128.0f : isIngredient ? 64.0f : 112.0f;
+        bool isRelic = layout == CodexEntryLayout.CODEX_ENTRY_RELIC;
+        if (_relicBackgroundImage != null)
+            _relicBackgroundImage.enabled = layout == CodexEntryLayout.CODEX_ENTRY_RELIC || isIngredient;
+        _drinkBackgroundRoot?.SetActive(isAlcohol);
+        if (_nameText != null) _nameText.gameObject.SetActive(layout == CodexEntryLayout.CODEX_ENTRY_RELIC);
+        _layoutElement.preferredWidth = isAlcohol ? -1.0f : isIngredient ? 64.0f : isRelic ? 100.0f : 112.0f;
+        _layoutElement.preferredHeight = isAlcohol ? 145.0f : isIngredient ? 64.0f : isRelic ? 91.0f : 112.0f;
         _layoutElement.flexibleWidth = isAlcohol ? 1.0f : 0.0f;
+        if (_iconImage == null) return;
+        RectTransform icon = _iconImage.rectTransform;
+        if (isAlcohol) CodexEntryIconRect(icon, new Vector2(32, 28), new Vector2(90, 90));
+        else if (layout == CodexEntryLayout.CODEX_ENTRY_TECHNOLOGY)
+            CodexEntryIconRect(icon, new Vector2(20, 20), new Vector2(150, 150));
+        else if (isIngredient) CodexEntryIconRect(icon, new Vector2(4, 4), new Vector2(56, 56));
+        else CodexEntryIconRect(icon, new Vector2(16, 20), new Vector2(68, 68));
+    }
+
+    private static void CodexEntryIconRect(RectTransform rect, Vector2 position, Vector2 size)
+    {
+        rect.anchoredPosition = position;
+        rect.sizeDelta = size;
     }
 
     private void ApplyIcon(CodexEntryDisplayData data, CodexEntryLayout layout)
@@ -155,7 +190,8 @@ public sealed class CodexEntryView : MonoBehaviour,
 
     private void BindIngredients(CodexEntryDisplayData data, CodexEntryLayout layout)
     {
-        bool showIngredients = layout == CodexEntryLayout.CODEX_ENTRY_ALCOHOL
+        bool showIngredients = _showIngredientsInRows
+            && layout == CodexEntryLayout.CODEX_ENTRY_ALCOHOL
             && data.Ingredients.Count > 0;
         _ingredientsRoot?.SetActive(showIngredients);
         if (!showIngredients) { CompleteIngredients(0); return; }

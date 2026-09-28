@@ -24,27 +24,30 @@ public static class CodexUiPrefabBuilder
 
     static CodexUiPrefabBuilder() => EditorApplication.delayCall += BuildIfMissing;
 
-    [MenuItem("Tools/Project Ruin/Codex/Rebuild Codex UI Prefabs")]
+    [MenuItem("Tools/Project Ruin/Codex/Create Missing Codex UI Prefabs")]
     public static void Rebuild() => Build();
 
     private static void BuildIfMissing()
     {
         GameObject book = AssetDatabase.LoadAssetAtPath<GameObject>(BOOK_PATH);
-        if (book == null || book.GetComponent<CodexNavigationPresenter>() == null
-            || AssetDatabase.LoadAssetAtPath<GameObject>(ENTRY_PATH) == null) Build();
+        if (book == null || AssetDatabase.LoadAssetAtPath<GameObject>(ENTRY_PATH) == null)
+            Build();
     }
 
     private static void Build()
     {
         if (!Directory.Exists(UI_DIRECTORY)) Directory.CreateDirectory(UI_DIRECTORY);
-        InventoryUiPrefabBuilder.Build();
+        InventoryUiPrefabBuilder.BuildIfMissing();
         Material grayscale = GetOrCreateGrayscaleMaterial();
-        CodexEntryView entryPrefab = BuildEntryPrefab();
-        BuildBookPrefab(entryPrefab, grayscale);
+        GameObject entryAsset = AssetDatabase.LoadAssetAtPath<GameObject>(ENTRY_PATH);
+        CodexEntryView entryPrefab = entryAsset != null
+            ? entryAsset.GetComponent<CodexEntryView>() : BuildEntryPrefab();
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(BOOK_PATH) == null)
+            BuildBookPrefab(entryPrefab, grayscale);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         GameUiPrefabIntegrator.Integrate();
-        Debug.Log("[CodexUiPrefabBuilder] Phase 2~3 도감 UI 프리팹을 갱신했습니다.");
+        Debug.Log("[CodexUiPrefabBuilder] 누락된 도감 UI 프리팹을 생성했습니다.");
     }
 
     private static CodexEntryView BuildEntryPrefab()
@@ -136,6 +139,7 @@ public static class CodexUiPrefabBuilder
         GameObject root = CodexUiElementFactory.Create("CodexBook", null, typeof(Canvas),
             typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CodexView),
             typeof(CodexPresenter), typeof(CodexNavigationPresenter));
+        root.transform.localScale = Vector3.one;
         Canvas canvas = root.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 80;

@@ -13,7 +13,7 @@ internal static class CodexPhase3PrefabParts
     internal static void Bind(GameObject root, GameObject book, CodexPresenter codexPresenter)
     {
         CanvasGroup bookGroup = book.GetComponent<CanvasGroup>();
-        bookGroup.alpha = 0;
+        bookGroup.alpha = 1;
         bookGroup.interactable = false;
         bookGroup.blocksRaycasts = false;
         Button hud = CreateButton("CodexHudButton", root.transform, "도감",
