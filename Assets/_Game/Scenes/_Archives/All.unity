@@ -151,12 +151,17 @@ MonoBehaviour:
   _puzzleId: CIRCLE_STAGE_01
   _itemSpacing: 1.2
   _gridParent: {fileID: 317396540}
+  _targetPointer: {fileID: 0}
+  _chapterBackgrounds: []
   _singleRingPrefab: {fileID: 3353086076178331877, guid: 783bef2c18e54494c9b0bf4b62f4e092, type: 3}
   _ringPrefabs:
   - {fileID: 7000000000000000001, guid: dadb667b2fb3469ebc8b71585f249bff, type: 3}
   - {fileID: 7000000000000000001, guid: 72ebb3ab69db4507bc2daa4ab17a2714, type: 3}
   - {fileID: 7000000000000000001, guid: 6803cc41faa44f7e9bcd09530aa1e773, type: 3}
   - {fileID: 7000000000000000001, guid: 290b5c720a1b427aad232ad21488274e, type: 3}
+  - {fileID: 7000000000000000001, guid: d985f648a8575afa830963bbfc9af998, type: 3}
+  - {fileID: 7000000000000000001, guid: b4276fa546b252ca9e7aa0340195ac2d, type: 3}
+  - {fileID: 7000000000000000001, guid: dea8050f75f356b49081c047fa4b004a, type: 3}
   _ringSprites:
   - {fileID: -4559932443770039424, guid: 2a085db50a616e14f90af1751910425f, type: 3}
   - {fileID: 5341311611022179657, guid: 5418c109fe345fc44ab066b7ff76c221, type: 3}
@@ -585,7 +590,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b10a5140d84546f4f90b8ae9d2bc4889, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PipeManager
-  _puzzleId: PIPE_STAGE_01
+  _puzzleId: PIPE_STAGE_03
   _itemSpacing: 120
   _gridParent: {fileID: 1836198021}
   _board3x3: {fileID: 1781150850}
@@ -1031,7 +1036,23 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3521065677378905839, guid: 61232dd9abad2064b9b857c488c80a4e, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3521065677378905839, guid: 61232dd9abad2064b9b857c488c80a4e, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4549356917364186406, guid: 61232dd9abad2064b9b857c488c80a4e, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5280881151325635790, guid: 61232dd9abad2064b9b857c488c80a4e, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5280881151325635790, guid: 61232dd9abad2064b9b857c488c80a4e, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
@@ -1055,7 +1076,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &931537133
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1501,6 +1522,7 @@ RectTransform:
   - {fileID: 1781150861}
   - {fileID: 1836198021}
   - {fileID: 479305685}
+  m_Father: {fileID: 615956755}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -2172,10 +2194,16 @@ MonoBehaviour:
   puzzles:
   - puzzleName: tile
     puzzlePopup: {fileID: 831032759}
+    puzzleId: 
+    chapterIndex: 0
   - puzzleName: light
     puzzlePopup: {fileID: 738299303}
+    puzzleId: 
+    chapterIndex: 0
   - puzzleName: c
     puzzlePopup: {fileID: 2098639595}
+    puzzleId: 
+    chapterIndex: 0
   startIndex: -1
   hideOnClear: 0
 --- !u!4 &1842356797
@@ -2418,6 +2446,8 @@ MonoBehaviour:
   _itemSpacing: 120
   _gridParent: {fileID: 1810894263}
   _tilePrefab: {fileID: 6201490905904744828, guid: 8b21b9254606191419ede63058b77cd6, type: 3}
+  _chapterBackgrounds: []
+  _chapterTilePrefabs: []
 --- !u!4 &2103437519
 Transform:
   m_ObjectHideFlags: 0
@@ -2447,4 +2477,3 @@ SceneRoots:
   - {fileID: 2103437519}
   - {fileID: 298709151}
   - {fileID: 710984205}
-  - {fileID: 1792839610}

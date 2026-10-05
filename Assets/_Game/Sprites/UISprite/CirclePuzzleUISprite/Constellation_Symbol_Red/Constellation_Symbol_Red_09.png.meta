@@ -20,6 +20,9 @@ TextureImporter:
   - first:
       213: 6987308931236878737
     second: Constellation_Symbol_Red_09_5
+  - first:
+      213: 3581811998254766510
+    second: Constellation_Symbol_Red_09_Whole
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -259,6 +262,28 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: Constellation_Symbol_Red_09_Whole
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 21
+        width: 184
+        height: 161
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4c88847930225f25b1b52709003519ae
+      internalID: 3581811998254766510
+      vertices: []
+      indices:
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -279,6 +304,7 @@ TextureImporter:
       Constellation_Symbol_Red_09_3: 1634324592324021834
       Constellation_Symbol_Red_09_4: 4367819147759063159
       Constellation_Symbol_Red_09_5: 6987308931236878737
+      Constellation_Symbol_Red_09_Whole: 3581811998254766510
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
