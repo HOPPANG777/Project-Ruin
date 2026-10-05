@@ -159,6 +159,7 @@ public sealed class GameRoot : Singleton<GameRoot>
         {
             _bootstrapper = new GameBootstrapper(
                 _coreModule, _gameplayModule, _museumModule, _uiModule, _sceneFlowModule);
+            Application.targetFrameRate = 60;
         }
 
         await _bootstrapper.InitializeAsync(cancellationToken);
