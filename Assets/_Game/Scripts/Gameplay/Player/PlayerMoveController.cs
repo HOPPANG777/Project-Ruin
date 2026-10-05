@@ -32,6 +32,10 @@ public class PlayerMoveController : MonoBehaviour, IPlayerMotionSource
     /// <summary>현재 달리기 입력을 적용하며 이동 중인지 반환합니다.</summary>
     public bool IsRunning { get; private set; }
 
+    /// <summary>정지 여부와 달리기 배율을 반영한 현재 이동 속도입니다.</summary>
+    public float CurrentMoveSpeed => _canMove && _moveDirection.sqrMagnitude > 0f
+        ? _moveSpeed * (IsRunning ? Mathf.Max(1f, _runSpeedMultiplier) : 1f) : 0f;
+
     [Header("Move")]
     [Tooltip("플레이어")]
     [SerializeField] private GameObject _player;
@@ -46,6 +50,9 @@ public class PlayerMoveController : MonoBehaviour, IPlayerMotionSource
 
     private InputAction _sprintAction;
 
+    // 물리 이동에 사용할 플레이어의 Rigidbody2D를 활성화 시 캐시합니다.
+    private Rigidbody2D _rigidbody;
+
     /// <summary>현재 플레이어 이동 입력 허용 상태입니다.</summary>
     public bool CanMove => _canMove;
 
@@ -57,8 +64,22 @@ public class PlayerMoveController : MonoBehaviour, IPlayerMotionSource
         Move();
     }
 
+    // 입력 갱신과 분리하여 물리 시뮬레이션 주기에 이동 속도를 적용합니다.
+    private void FixedUpdate()
+    {
+        if (_rigidbody == null) return;
+
+        _rigidbody.linearVelocity = (Vector2)_moveDirection.normalized * CurrentMoveSpeed;
+    }
+
     private void OnEnable()
     {
+        _rigidbody = _player != null ? _player.GetComponent<Rigidbody2D>() : null;
+        if (_rigidbody == null)
+        {
+            Debug.LogError("[PlayerMoveController] 플레이어의 Rigidbody2D가 필요합니다.", this);
+        }
+
         InputAction moveAction = _moveAction != null ? _moveAction.action : null;
         if (moveAction == null) return;
 
@@ -72,8 +93,7 @@ public class PlayerMoveController : MonoBehaviour, IPlayerMotionSource
         _sprintAction?.Disable();
         _sprintAction = null;
         if (_moveAction != null && _moveAction.action != null) _moveAction.action.Disable();
-        _moveDirection = Vector3.zero;
-        IsRunning = false;
+        StopMovement();
     }
 
     /// <summary>
@@ -86,19 +106,24 @@ public class PlayerMoveController : MonoBehaviour, IPlayerMotionSource
 
         if (_canMove == false)
         {
-            _moveDirection = Vector3.zero;
-            IsRunning = false;
+            StopMovement();
         }
     }
 
-    // 이동 로직
+    //=============================================================================
+    // PlayerMoveController.Move
+    //=============================================================================
+    // Description: 이동 입력을 저장하고 실제 이동은 FixedUpdate에서 처리한다.
+    // Parameters:  None.
+    // Return:      void
+    //=============================================================================
+    /// <summary>물리 이동에 사용할 방향과 달리기 입력을 갱신합니다.</summary>
     public void Move()
     {
         if (_canMove == false || _moveAction == null || _moveAction.action == null
-            || _player == null)
+            || _player == null || _rigidbody == null)
         {
-            _moveDirection = Vector3.zero;
-            IsRunning = false;
+            StopMovement();
             return;
         }
 
@@ -109,12 +134,13 @@ public class PlayerMoveController : MonoBehaviour, IPlayerMotionSource
         IsRunning = _moveDirection.sqrMagnitude > 0.0001f && 
                     _sprintAction != null && 
                     _sprintAction.IsPressed();
+    }
 
-        // 방향 벡터
-        float speed = _moveSpeed * (IsRunning ? Mathf.Max(1f, _runSpeedMultiplier) : 1f);
-        Vector3 nextVector = _moveDirection.normalized * (speed * Time.deltaTime);
-
-        // 이동
-        _player.transform.position = _player.transform.position + nextVector;
+    // 입력 차단이나 비활성화 직후에도 이전 이동 속도가 남지 않도록 합니다.
+    private void StopMovement()
+    {
+        _moveDirection = Vector3.zero;
+        IsRunning = false;
+        if (_rigidbody != null) _rigidbody.linearVelocity = Vector2.zero;
     }
 }

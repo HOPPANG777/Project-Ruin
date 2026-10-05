@@ -4,6 +4,7 @@
 // Description: 이동 상태에 맞춰 플레이어 스프라이트 프레임을 재생한다.
 //
 // History:     09/28/2026 + Created -- Codex
+//              10/01/2026 + 이동 속도에 따른 재생 배율 추가 -- Codex
 //=============================================================================
 
 using UnityEngine;
@@ -18,6 +19,15 @@ public sealed class PlayerAnimationController : MonoBehaviour
 
     [Tooltip("24개 방향별 애니메이션의 프레임 데이터입니다.")]
     [SerializeField] private PlayerAnimationLibrarySO _library;
+
+    [Header("Playback")]
+    [Tooltip("걷기 애니메이션을 원래 FPS로 재생할 이동 속도로, 낮추면 발 움직임이 빨라집니다.")]
+    [Min(0.01f)]
+    [SerializeField] private float _walkReferenceSpeed = 7f;
+
+    [Tooltip("달리기 애니메이션을 원래 FPS로 재생할 이동 속도로, 낮추면 발 움직임이 빨라집니다.")]
+    [Min(0.01f)]
+    [SerializeField] private float _runReferenceSpeed = 10.5f;
 
     private IPlayerMotionSource _movement;
     private PlayerAnimationMotion _motion = PlayerAnimationMotion.PLAYER_ANIMATION_IDLE;
@@ -56,7 +66,8 @@ public sealed class PlayerAnimationController : MonoBehaviour
         if (_movement == null) return;
 
         Vector3 direction = _movement.MoveDirection;
-        bool moving = direction.sqrMagnitude > 0.0001f;
+        float speed = Mathf.Abs(_movement.CurrentMoveSpeed);
+        bool moving = direction.sqrMagnitude > 0.0001f && speed > 0f;
         PlayerAnimationMotion motion = PlayerAnimationMotion.PLAYER_ANIMATION_IDLE;
         if (moving)
         {
@@ -77,7 +88,11 @@ public sealed class PlayerAnimationController : MonoBehaviour
         }
 
         float duration = _library.FrameDuration(_motion);
-        _elapsed += Time.deltaTime;
+        // 대기는 원래 속도를 유지하고, 이동 동작만 이동 속도에 비례해 재생합니다.
+        float referenceSpeed = _motion == PlayerAnimationMotion.PLAYER_ANIMATION_RUN
+            ? _runReferenceSpeed : _walkReferenceSpeed;
+        float playbackSpeed = moving ? speed / Mathf.Max(0.01f, referenceSpeed) : 1f;
+        _elapsed += Time.deltaTime * playbackSpeed;
         if (_elapsed < duration) return;
 
         int advance = Mathf.FloorToInt(_elapsed / duration);
