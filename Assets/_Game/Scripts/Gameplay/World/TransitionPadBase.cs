@@ -41,6 +41,12 @@ public abstract class TransitionPadBase : MonoBehaviour
         }
     }
 
+    // Inspector에서 실수로 트리거를 해제해도 실행 시에는 이동 영역으로 동작합니다.
+    protected virtual void Awake()
+    {
+        GetComponent<BoxCollider2D>().isTrigger = true;
+    }
+
     /// <summary>플레이어 진입 시 파생 발판의 전환을 요청합니다.</summary>
     /// <param name="other">발판 트리거에 진입한 Collider2D입니다.</param>
     private void OnTriggerEnter2D(Collider2D other)

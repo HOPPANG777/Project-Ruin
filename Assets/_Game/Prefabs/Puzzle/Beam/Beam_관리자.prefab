@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2953202855479358110
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 282003701546261511}
+  - component: {fileID: 3394681076868944843}
+  m_Layer: 0
+  m_Name: "Beam_\uAD00\uB9AC\uC790"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &282003701546261511
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2953202855479358110}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3394681076868944843
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2953202855479358110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d0dee4aabe04ab439f08163d755dcc3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BeamPuzzleController
+  _puzzleId: 
+  _itemSpacing: 1.2
+  _objectId: SET_UNIQUE_BEAM_SAVE_ID
+  _pillars: []
+  _resetPads: []
+  _stones: []
+  _walls: []
+  _fixedObstacles: []
+  _exitObstacles: []
+  _beamCollisionMask:
+    serializedVersion: 2
+    m_Bits: 768
+  _maxBeamDistance: 20
+  _beamPrefab: {fileID: 1035469107304518904, guid: f9e6d4f6cf798ed458b39dea39582840, type: 3}
+  _beamParent: {fileID: 0}
+  _beamColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  _beamWidth: 0.07
+  _beamSortingLayer: Object
+  _beamSortingOrder: 5
+  _beamZ: 0
+  _onSolved:
+    m_PersistentCalls:
+      m_Calls: []

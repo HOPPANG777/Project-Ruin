@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 
 //==============================================================================
 // 기능: class::SceneStateBridge
@@ -21,6 +22,9 @@ public class SceneStateBridge : MonoBehaviour
 
     // 진행 상태 저장소 참조입니다.
     private IProgressService _progressService;
+    // 실제 Save/Load의 씬 스냅샷 지점을 연결합니다. 테스트 서비스는 기존 계약을 유지합니다.
+    private ProgressController _progressController;
+    private bool _isCapturing;
 
     //==============================================================================
     // 초기화
@@ -38,6 +42,7 @@ public class SceneStateBridge : MonoBehaviour
 
         _stageFlowController = stageFlowController;
         _progressService = progressService;
+        _progressController = progressService as ProgressController;
 
         // 필수 참조가 없으면 구독하지 않습니다.
         if (_stageFlowController == null || _progressService == null)
@@ -47,6 +52,11 @@ public class SceneStateBridge : MonoBehaviour
 
         _stageFlowController.OnStageCaptureRequested += HandleStageCapture;
         _stageFlowController.OnStageRestoreRequested += HandleStageRestore;
+        if (_progressController != null)
+        {
+            _progressController.BeforeSaveRequested += CaptureCurrentStage;
+            _progressController.StateLoaded += RestoreCurrentStage;
+        }
     }
 
     //==============================================================================
@@ -78,10 +88,12 @@ public class SceneStateBridge : MonoBehaviour
         }
 
         ISceneStateContributor[] contributors = FindSceneStateContributorsInActiveScene();
+        PrepareContributors(contributors);
 
         for (int i = 0; i < contributors.Length; i++)
         {
             ISceneStateContributor contributor = contributors[i];
+            if (contributor is ISceneStateOwnedContributor owned && owned.IsSceneStateOwned) continue;
 
             // ObjectId가 없으면 저장 키를 만들 수 없으므로 건너뜁니다.
             if (string.IsNullOrWhiteSpace(contributor.ObjectId))
@@ -137,6 +149,11 @@ public class SceneStateBridge : MonoBehaviour
     /// </summary>
     private void UnsubscribeEvents()
     {
+        if (_progressController != null)
+        {
+            _progressController.BeforeSaveRequested -= CaptureCurrentStage;
+            _progressController.StateLoaded -= RestoreCurrentStage;
+        }
         if (_stageFlowController == null)
         {
             return;
@@ -155,9 +172,8 @@ public class SceneStateBridge : MonoBehaviour
         Scene activeScene = SceneManager.GetActiveScene();
         GameObject[] rootObjects = activeScene.GetRootGameObjects();
 
-        // contributor 수를 미리 알 수 없으므로 임시 리스트 대신 고정 배열 + 카운트를 사용합니다.
-        ISceneStateContributor[] buffer = new ISceneStateContributor[64];
-        int count = 0;
+        // 맵에 여러 퍼즐을 배치해도 64개 이후 부품이 누락되지 않습니다.
+        var contributors = new List<ISceneStateContributor>();
 
         for (int rootIndex = 0; rootIndex < rootObjects.Length; rootIndex++)
         {
@@ -167,28 +183,12 @@ public class SceneStateBridge : MonoBehaviour
             {
                 if (behaviours[behaviourIndex] is ISceneStateContributor contributor)
                 {
-                    // 버퍼가 가득 차면 더 이상 추가하지 않습니다.
-                    if (count >= buffer.Length)
-                    {
-                        Debug.LogWarning("[SceneStateBridge] ISceneStateContributor가 64개를 초과했습니다.");
-                        break;
-                    }
-
-                    buffer[count] = contributor;
-                    count++;
+                    contributors.Add(contributor);
                 }
             }
         }
 
-        // 실제 사용 개수만큼 잘라 반환합니다.
-        ISceneStateContributor[] result = new ISceneStateContributor[count];
-
-        for (int i = 0; i < count; i++)
-        {
-            result[i] = buffer[i];
-        }
-
-        return result;
+        return contributors.ToArray();
     }
 
     /// <summary>
@@ -198,10 +198,13 @@ public class SceneStateBridge : MonoBehaviour
     private void ApplyObjectStates(int stageNumber)
     {
         ISceneStateContributor[] contributors = FindSceneStateContributorsInActiveScene();
+        // 모든 관리자가 벽 소유권을 먼저 확보하므로 Hierarchy/Awake 순서와 무관합니다.
+        PrepareContributors(contributors);
 
         for (int i = 0; i < contributors.Length; i++)
         {
             ISceneStateContributor contributor = contributors[i];
+            if (contributor is ISceneStateOwnedContributor owned && owned.IsSceneStateOwned) continue;
 
             if (string.IsNullOrWhiteSpace(contributor.ObjectId))
             {
@@ -215,6 +218,26 @@ public class SceneStateBridge : MonoBehaviour
 
             contributor.ApplyState(stateJson);
         }
+    }
+
+    private static void PrepareContributors(ISceneStateContributor[] contributors)
+    {
+        for (int i = 0; i < contributors.Length; i++)
+            if (contributors[i] is ISceneStatePreparation preparation) preparation.PrepareSceneState();
+    }
+
+    private void CaptureCurrentStage()
+    {
+        if (_isCapturing || _stageFlowController == null) return;
+        _isCapturing = true;
+        try { HandleStageCapture(_stageFlowController.CurrentStageNumber); }
+        finally { _isCapturing = false; }
+    }
+
+    private void RestoreCurrentStage()
+    {
+        if (_stageFlowController != null && _stageFlowController.CurrentStageNumber >= 0)
+            ApplyObjectStates(_stageFlowController.CurrentStageNumber);
     }
 
     /// <summary>

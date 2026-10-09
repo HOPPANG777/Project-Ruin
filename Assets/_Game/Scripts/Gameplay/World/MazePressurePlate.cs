@@ -1,10 +1,8 @@
 //=============================================================================
 // File:        MazePressurePlate.cs
-//
 // Description: 플레이어가 밟으면 연결된 미로 문을 한 번만 여는 압력 발판입니다.
-//
 // History:     08/04/2026 + Created -- Codex
-//
+//              10/07/2026 + 복원 준비 및 즉시 저장 이벤트 연결 -- Codex
 //=============================================================================
 
 //========================================
@@ -13,16 +11,9 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-//=============================================================================
-//
-// Synopsis:   MazePressurePlate;
-//                - UnitPlayer의 발판 진입만 허용
-//                - 발판과 문의 닫힘/열림 상태를 한 번만 전환
-//
-//=============================================================================
 [DisallowMultipleComponent]
 [RequireComponent(typeof(BoxCollider2D))]
-public sealed class MazePressurePlate : MonoBehaviour, ISceneStateContributor
+public sealed class MazePressurePlate : MonoBehaviour, ISceneStateContributor, ISceneStatePreparation
 {
     private const string OPENED_STATE_JSON = "true";
 
@@ -51,6 +42,10 @@ public sealed class MazePressurePlate : MonoBehaviour, ISceneStateContributor
     private BoxCollider2D _plateTrigger;
     private bool _isSetupValid;
     private bool _isActivated;
+    private bool _prepared;
+
+    /// <summary>최초 밟기에만 저장 연결에 알립니다. 복원에서는 실행하지 않습니다.</summary>
+    public event System.Action Activated;
 
     /// <summary>발판이 이미 작동하여 문이 열린 상태인지 여부입니다.</summary>
     public bool IsActivated => _isActivated;
@@ -65,10 +60,15 @@ public sealed class MazePressurePlate : MonoBehaviour, ISceneStateContributor
         }
     }
 
-    private void Awake()
+    private void Awake() => PrepareSceneState();
+
+    /// <summary>비활성 배치의 Awake 전 복원도 준비하며 최종 상태를 다시 초기화하지 않습니다.</summary>
+    public void PrepareSceneState()
     {
+        if (_prepared) return;
         TryGetComponent(out _plateTrigger);
         _isSetupValid = TryValidateSetup(true);
+        _prepared = _isSetupValid;
         if (_isSetupValid)
         {
             ApplyActivatedState(false);
@@ -95,6 +95,7 @@ public sealed class MazePressurePlate : MonoBehaviour, ISceneStateContributor
     /// <summary>저장된 문 개방 상태를 결과 이벤트 없이 복원합니다.</summary>
     public void ApplyState(string stateJson)
     {
+        PrepareSceneState();
         if (!_isSetupValid || string.IsNullOrWhiteSpace(stateJson))
         {
             return;
@@ -105,19 +106,20 @@ public sealed class MazePressurePlate : MonoBehaviour, ISceneStateContributor
                 $"[MazePressurePlate] 저장 상태를 읽을 수 없습니다. object={name}", this);
             return;
         }
-        if (!isOpened || _isActivated)
+        if (isOpened == _isActivated)
         {
             return;
         }
 
-        _isActivated = true;
-        ApplyActivatedState(true);
+        _isActivated = isOpened;
+        ApplyActivatedState(isOpened);
     }
 
     private void ActivateOnce()
     {
         _isActivated = true;
         ApplyActivatedState(true);
+        Activated?.Invoke();
         _onActivated?.Invoke();
     }
 

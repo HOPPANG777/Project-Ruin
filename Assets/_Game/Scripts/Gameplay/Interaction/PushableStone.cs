@@ -7,7 +7,8 @@ using UnityEngine;
 // 스킬·플레이어 위치·전방 공간을 확인하고 초기 위치 복구를 지원합니다.
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
-public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteractable
+public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteractable,
+    IInteractionContextReceiver
 {
     // 한 돌이 동시에 접촉할 수 있는 벽·돌 후보만 담는 소규모 고정 버퍼입니다.
     private const int OBSTACLE_BUFFER_SIZE = 8;
@@ -20,7 +21,7 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
     [Tooltip("돌을 밀기 위해 플레이어가 획득해야 하는 환경 스킬입니다.")]
     [SerializeField] private SkillDataSO _requiredSkill;
     [Header("Movement")]
-    [Tooltip("밀기 방향을 제공하는 플레이어 이동 컴포넌트입니다.")]
+    [Tooltip("직접 연결하지 않으면 상호작용한 플레이어의 이동 컴포넌트를 사용합니다.")]
     [SerializeField] private PlayerMoveController _playerMoveController;
     [Tooltip("홀드 중 돌이 초당 이동하는 거리입니다.")]
     [Min(0f), SerializeField] private float _pushSpeed = 2.0f;
@@ -44,10 +45,28 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
     private float _initialRotation;
     private bool _isHolding;
     private bool _isPuzzleCompleted;
+    // Beam 소유권과 초기 스냅샷은 Awake/저장 복원 순서와 무관하게 한 번만 설정합니다.
+    private bool _hasInitialState;
+    private BeamPuzzleController _beamOwner;
+    private RigidbodyType2D _initialBodyType;
+    /// <summary>퍼즐 상태를 배열 순서와 무관하게 대응시키는 돌 ID입니다.</summary>
+    public string ObjectId => _objectId;
+    /// <summary>Beam에 명시적으로 등록한 이동 차단 충돌체입니다.</summary>
+    public Collider2D BodyCollider => _stoneCollider != null ? _stoneCollider : GetComponent<Collider2D>();
+    /// <summary>돌을 명시적으로 등록한 Beam 관리자입니다.</summary>
+    public BeamPuzzleController BeamOwner => _beamOwner;
     /// <summary>외부 퍼즐 초기화에서 이 돌을 최초 위치로 복원할 수 있는지 나타냅니다.</summary>
     public bool CanResetToInitialPosition => _canReset;
     private void Awake()
     {
+        EnsureInitialState();
+        TryCacheSkillService();
+    }
+    /// <summary>저장 상태를 적용하기 전에 씬 원래 위치와 회전을 한 번 보관합니다.</summary>
+    public void EnsureInitialState()
+    {
+        if (_hasInitialState) return;
+        _hasInitialState = true;
         _rigidbody = GetComponent<Rigidbody2D>();
         _stoneCollider = GetComponent<Collider2D>();
         _playerMove = _playerMoveController;
@@ -57,13 +76,45 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
         }
         if (_rigidbody != null)
         {
+            // 일반 돌의 기존 물리 위치 기준 초기화 동작을 보존합니다.
             _initialPosition = _rigidbody.position;
             _initialRotation = _rigidbody.rotation;
+            _initialBodyType = _rigidbody.bodyType;
         }
         _obstacleFilter.useLayerMask = true;
         _obstacleFilter.layerMask = _obstacleLayer;
         _obstacleFilter.useTriggers = false;
-        TryCacheSkillService();
+    }
+    /// <summary>다른 Beam에 공유하지 않고 저장과 완료 잠금의 소유권을 연결합니다.</summary>
+    public bool TryBindBeamPuzzle(BeamPuzzleController owner)
+    {
+        if (_beamOwner != null && _beamOwner != owner) return false;
+        EnsureInitialState();
+        if (_beamOwner == null && owner != null)
+        {
+            // Beam 원래 배치는 Physics2D 동기화보다 먼저 복원 요청이 와도 보존합니다.
+            _initialPosition = transform.position;
+            _initialRotation = transform.eulerAngles.z;
+        }
+        _beamOwner = owner;
+        return true;
+    }
+    /// <summary>저장된 월드 위치와 Z 회전을 이동 잔여 속도 없이 적용합니다.</summary>
+    public void RestoreWorldPose(Vector2 position, float rotation)
+    {
+        EnsureInitialState();
+        OnHoldEnded();
+        _rigidbody.position = position;
+        _rigidbody.rotation = rotation;
+        _rigidbody.angularVelocity = 0f;
+        transform.SetPositionAndRotation(new Vector3(position.x, position.y, transform.position.z),
+            Quaternion.Euler(0f, 0f, rotation));
+    }
+    /// <summary>Beam 초기화는 CanReset 옵션과 무관하게 원래 씬 배치로 복원합니다.</summary>
+    public void ResetBeamState()
+    {
+        EnsureInitialState();
+        RestoreWorldPose(_initialPosition, _initialRotation);
     }
     private void OnDisable() => OnHoldEnded();
     private void FixedUpdate()
@@ -90,6 +141,17 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
     }
     /// <summary>짧게 누르는 상호작용에는 돌 밀기 행동을 실행하지 않습니다.</summary>
     public void Interact() { }
+    /// <inheritdoc/>
+    public void SetInteractionContext(
+        PlayerInteractionController interactionController,
+        PlayerMoveController moveController)
+    {
+        OnHoldEnded();
+        _playerMove = moveController;
+        _playerTransform = interactionController != null
+            ? interactionController.transform
+            : moveController != null ? moveController.transform : null;
+    }
     /// <summary>필요 스킬을 획득한 경우에만 홀드 밀기 상태를 시작합니다.</summary>
     public void OnHoldStarted()
     {
@@ -98,7 +160,7 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
         {
             return;
         }
-        if (_lockWhenPuzzleCompleted && _isPuzzleCompleted)
+        if ((_beamOwner != null || _lockWhenPuzzleCompleted) && _isPuzzleCompleted)
         {
             return;
         }
@@ -118,7 +180,7 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
     public bool TryResetToInitialPosition()
     {
         if (!_canReset || _rigidbody == null
-            || (_lockWhenPuzzleCompleted && _isPuzzleCompleted))
+            || ((_beamOwner != null || _lockWhenPuzzleCompleted) && _isPuzzleCompleted))
         {
             return false;
         }
@@ -131,7 +193,10 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
     public void SetPuzzleCompleted(bool isCompleted)
     {
         _isPuzzleCompleted = isCompleted;
-        if (isCompleted && _lockWhenPuzzleCompleted)
+        // Beam 완료 후 이동 입력 외의 물리 접촉으로도 돌이 밀리지 않게 고정합니다.
+        if (_beamOwner != null && _rigidbody != null)
+            _rigidbody.bodyType = isCompleted ? RigidbodyType2D.Static : _initialBodyType;
+        if (isCompleted && (_beamOwner != null || _lockWhenPuzzleCompleted))
         {
             OnHoldEnded();
         }
@@ -176,12 +241,6 @@ public sealed class PushableStone : MonoBehaviour, IInteractable, IHoldInteracta
             || _requiredSkill.SkillActionState != SkillActionState.SKILL_ACTION_HOLD_MOVE)
         {
             LogValidationIssue("필요 스킬은 ID가 있는 홀드 이동 스킬이어야 합니다.", true);
-        }
-        if (_playerMoveController == null
-            && !UnityEditor.PrefabUtility.IsPartOfPrefabAsset(gameObject)
-            && !UnityEditor.SceneManagement.EditorSceneManager.IsPreviewScene(gameObject.scene))
-        {
-            LogValidationIssue("PlayerMoveController가 연결되지 않았습니다.", true);
         }
         if (!TryGetComponent<Rigidbody2D>(out _)) LogValidationIssue("Rigidbody2D가 없습니다.", true);
         if (!TryGetComponent<Collider2D>(out _)) LogValidationIssue("Collider2D가 없습니다.", true);

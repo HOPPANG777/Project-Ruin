@@ -245,8 +245,6 @@ public sealed class MazePlatePuzzleTests
     {
         LogAssert.Expect(LogType.Error, "[PushableStone] Stone: objectId가 비어 있습니다.");
         LogAssert.Expect(LogType.Error, "[PushableStone] Stone: 필요 스킬이 연결되지 않았습니다.");
-        LogAssert.Expect(LogType.Error,
-            "[PushableStone] Stone: PlayerMoveController가 연결되지 않았습니다.");
         GameObject root = CreateObject("Stone", typeof(Rigidbody2D),
             typeof(BoxCollider2D), typeof(PushableStone));
         root.GetComponent<Rigidbody2D>().position = initialPosition;

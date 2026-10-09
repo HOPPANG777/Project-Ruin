@@ -317,6 +317,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2305819821877646456}
   - component: {fileID: 4132607794765692391}
+  - component: {fileID: 8607100000000000035}
   m_Layer: 0
   m_Name: GameRoot
   m_TagString: Untagged
@@ -398,6 +399,19 @@ MonoBehaviour:
     _cameraController: {fileID: 3506346225531343242}
     _stageFlowController: {fileID: 6413104067889454956}
     _sceneStateBridge: {fileID: 2285303300801334074}
+    _uiPuzzleStateController: {fileID: 8607100000000000035}
+--- !u!114 &8607100000000000035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1008359294462020877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83c36285a8d74d878f5723f816ceaeee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UiPuzzleStateController
 --- !u!1 &1159116859262817496
 GameObject:
   m_ObjectHideFlags: 0

@@ -21,3 +21,17 @@ public interface ISceneStateContributor
     /// <param name="stateJson">복원할 상태 JSON입니다.</param>
     void ApplyState(string stateJson);
 }
+
+/// <summary>복원 순서에 앞서 초기 상태와 부품 저장 소유권을 준비하는 선택적 계약입니다.</summary>
+public interface ISceneStatePreparation
+{
+    /// <summary>Capture/Apply 이전에 부품의 원래 상태와 저장 소유권을 확보합니다.</summary>
+    void PrepareSceneState();
+}
+
+/// <summary>상위 contributor가 저장하는 부품의 중복 Capture/Apply를 막는 선택적 계약입니다.</summary>
+public interface ISceneStateOwnedContributor
+{
+    /// <summary>다른 contributor가 이 부품 상태를 저장하는지 여부입니다.</summary>
+    bool IsSceneStateOwned { get; }
+}

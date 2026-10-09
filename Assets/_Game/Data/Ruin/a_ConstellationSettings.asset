@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f255936ce4e228946a02721d04397e1d, type: 3}
+  m_Name: a_ConstellationSettings
+  m_EditorClassIdentifier: Assembly-CSharp::CircleConstellationSettingsSO
+  _outerToInner:
+  - _patternPrefab: {fileID: 3724626003949311900, guid: 01968c9dfda00c04caba1c8d1f523075, type: 3}
+    _answerId: SCORPIO
+    _alignmentDegrees: 90
+    _initialRotationDegrees: -45
+    _rotationStepDegrees: 45
+  - _patternPrefab: {fileID: 6603425812889916940, guid: 19f90163f4c8ce14fb5475da10746ee5, type: 3}
+    _answerId: VIRGO
+    _alignmentDegrees: 90
+    _initialRotationDegrees: 135
+    _rotationStepDegrees: 45
+  - _patternPrefab: {fileID: 5354529427458841966, guid: cfc8190409dc8b045ac3b217d39e820a, type: 3}
+    _answerId: TAURUS
+    _alignmentDegrees: 90
+    _initialRotationDegrees: -90
+    _rotationStepDegrees: 45
+  - _patternPrefab: {fileID: 4904068229343008693, guid: f5d75824173cb6b4c8245a43b63978f5, type: 3}
+    _answerId: CANCER
+    _alignmentDegrees: 90
+    _initialRotationDegrees: 45
+    _rotationStepDegrees: 45

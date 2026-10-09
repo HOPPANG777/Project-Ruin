@@ -131,6 +131,11 @@ public sealed class ProgressController : MonoBehaviour, IProgressService, IProgr
     /// <summary>메모리 상태가 마지막 디스크 저장 이후 변경되었는지 여부입니다.</summary>
     public bool IsDirty => _isDirty;
 
+    /// <summary>실제 저장의 Dirty 검사 전에 현재 씬 상태를 메모리에 수집하는 이벤트입니다.</summary>
+    public event Action BeforeSaveRequested;
+    /// <summary>실제 불러오기를 마친 뒤 현재 씬 상태를 보상 없이 복원하는 이벤트입니다.</summary>
+    public event Action StateLoaded;
+
     //******************************************************************************
     //
     // Public Member Functions
@@ -162,6 +167,7 @@ public sealed class ProgressController : MonoBehaviour, IProgressService, IProgr
             ApplySaveData(saveData);
             _changeVersion = 0;
             _isDirty = false;
+            StateLoaded?.Invoke();
             return true;
         }
         catch (OperationCanceledException)
@@ -189,15 +195,13 @@ public sealed class ProgressController : MonoBehaviour, IProgressService, IProgr
             return false;
         }
 
-        if (!_isDirty)
-        {
-            return true;
-        }
-
         _isIoRunning = true;
 
         try
         {
+            // 수집 중 완료 보상에서 다시 Save를 호출해도 파일 작업이 중첩되지 않습니다.
+            BeforeSaveRequested?.Invoke();
+            if (!_isDirty) return true;
             ES3.Init();
             ES3Settings settings = CreateSaveSettings();
 

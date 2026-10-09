@@ -4,6 +4,7 @@
 // Description: StageFlow, SceneStateBridge, Camera 참조와 연결 순서를 소유한다.
 //
 // History:     09/23/2026 + GameRoot SceneFlow 책임 분리 -- Codex
+//              10/07/2026 + UI 퍼즐 배치 저장 연결 주입 -- Codex
 //
 //=============================================================================
 
@@ -22,6 +23,9 @@ internal sealed class SceneFlowBootstrapModule
 
     [Tooltip("씬 상태 Capture 및 Restore 이벤트를 진행 상태와 연결하는 브릿지입니다.")]
     [SerializeField] private SceneStateBridge _sceneStateBridge;
+
+    [Tooltip("UI 퍼즐의 씬 배치 복원과 클리어 직후 저장 요청을 연결합니다.")]
+    [SerializeField] private UiPuzzleStateController _uiPuzzleStateController;
 
     /// <summary>카메라 이동과 추적을 관리하는 컨트롤러입니다.</summary>
     internal CameraController CameraController => _cameraController;
@@ -42,6 +46,7 @@ internal sealed class SceneFlowBootstrapModule
         {
             _sceneStateBridge.Init(_stageFlowController, progress);
         }
+        _uiPuzzleStateController?.Init(progress);
 
         if (_cameraController == null)
         {

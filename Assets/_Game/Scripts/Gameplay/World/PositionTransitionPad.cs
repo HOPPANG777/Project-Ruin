@@ -45,6 +45,12 @@ public sealed class PositionTransitionPad : TransitionPadBase
             return UniTask.CompletedTask;
         }
 
+        if (_destination.gameObject.scene != gameObject.scene)
+        {
+            Debug.LogWarning("[PositionTransitionPad] 도착 위치는 발판과 같은 씬에 있어야 합니다.", this);
+            return UniTask.CompletedTask;
+        }
+
         return stageFlow.FadeThroughAsync(
             () =>
             {

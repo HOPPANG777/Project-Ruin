@@ -1,208 +1,172 @@
 //=============================================================================
-// File:        BeamPillarView.cs
-//
-// Description: 빛줄기 기둥의 직렬화 데이터, 회전 입력과 연결 표시를 담당한다.
-//
-// History:     08/04/2026 + Created -- Codex
-//
+// File: BeamPillarView.cs
+// Description: 월드 상호작용을 회전 요청으로 전달하고 몸체·방향 표시를 갱신한다.
+// History: 10/06/2026 + 맵 직접 조작으로 전환 -- Codex
 //=============================================================================
-
-//========================================
-// System Includes
-//========================================
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
-//=============================================================================
-//
-// Synopsis:   BeamPillarType;
-//                - 빛줄기 기둥의 역할과 출력 개수 규칙
-//=============================================================================
-public enum BeamPillarType
-{
-    BEAM_PILLAR_START = 0,
-    BEAM_PILLAR_TWO_WAY,
-    BEAM_PILLAR_FOUR_WAY,
-    BEAM_PILLAR_EIGHT_WAY,
-    BEAM_PILLAR_END
-}
-
-//=============================================================================
-//
-// Synopsis:   BeamPillarView;
-//                - 기둥별 로컬 출력 각도와 회전 단계 보관
-//                - 연결 상태 표시와 포인터 입력 전달
-//=============================================================================
+/// <summary>이동 충돌과 광선 수신을 유지하면서 기존 누르기 입력을 받는 기둥입니다.</summary>
 [DisallowMultipleComponent]
-[RequireComponent(typeof(Collider2D))]
-public sealed class BeamPillarView : MonoBehaviour, IPointerClickHandler
+public sealed class BeamPillarView : MonoBehaviour, IInteractable
 {
-    [Header("Identity")]
-    [Tooltip("퍼즐 안에서 이 기둥을 구분하는 고유 ID입니다.")]
-    [SerializeField] private string _pillarId;
-    [Tooltip("시작, 중간 분기 또는 끝 역할을 결정하는 기둥 종류입니다.")]
-    [SerializeField] private BeamPillarType _pillarType;
-
-    [Header("Rotation")]
-    [Tooltip("진행 중 포인터 입력으로 이 기둥을 회전할 수 있는지 결정합니다.")]
-    [SerializeField] private bool _isRotatable;
-    [Tooltip("퍼즐을 열거나 닫을 때 복원할 Z축 최초 각도입니다.")]
-    [SerializeField] private float _initialRotationDegrees;
-    [Tooltip("한 번 입력할 때 시계방향으로 회전할 각도입니다.")]
-    [Min(0f), SerializeField] private float _rotationStepDegrees = 45f;
-    [Tooltip("기둥 회전 0도를 기준으로 한 각 출력의 로컬 각도입니다.")]
-    [SerializeField] private float[] _outputAnglesDegrees = new float[0];
-
+    [Tooltip("Inspector와 향후 외부 데이터 공급자가 공유하는 기둥 설정입니다.")]
+    [SerializeField] private BeamPillarSettings _settings = new BeamPillarSettings();
+    [Header("Colliders")]
+    [Tooltip("플레이어 이동을 막는 비 Trigger 몸체입니다. 수신 충돌체와 같아도 됩니다.")]
+    [SerializeField] private Collider2D _bodyCollider;
+    [Tooltip("광선 연결 판정에 명시적으로 사용하는 충돌체입니다.")]
+    [SerializeField] private Collider2D _receiverCollider;
+    [Tooltip("기존 플레이어 입력 탐지에 사용하는 별도 주변 Trigger입니다.")]
+    [SerializeField] private Collider2D _interactionTrigger;
     [Header("View")]
-    [Tooltip("연결 또는 끊김 색상을 표시할 기둥 Image입니다.")]
-    [SerializeField] private Image _pillarImage;
-    [Tooltip("빛이 닿지 않은 기둥의 색상입니다.")]
-    [SerializeField] private Color _disconnectedColor = Color.gray;
-    [Tooltip("빛이 닿은 기둥의 색상입니다.")]
-    [SerializeField] private Color _connectedColor = Color.white;
+    [Tooltip("교체 가능한 기둥 몸체 스프라이트 렌더러입니다.")]
+    [SerializeField] private SpriteRenderer _bodyRenderer;
+    [Tooltip("몸체와 화살표만 회전하는 표시 루트입니다. 물리 충돌체를 넣지 마세요.")]
+    [SerializeField] private Transform _directionRoot;
+    [Tooltip("출력 개수만큼 연결할 화살표 렌더러입니다. 항상 표시됩니다.")]
+    [SerializeField] private SpriteRenderer[] _outputArrows = new SpriteRenderer[0];
+    [Tooltip("빛이 닿지 않은 기둥의 표시 색상입니다.")]
+    [SerializeField] private Color _disconnectedColor = new Color(0.45f, 0.5f, 0.6f);
+    [Tooltip("빛이 닿은 기둥의 표시 색상입니다.")]
+    [SerializeField] private Color _connectedColor = new Color(0.4f, 1f, 0.8f);
+    [Tooltip("항상 보이는 방향 화살표의 색상입니다.")]
+    [SerializeField] private Color _arrowColor = new Color(1f, 0.8f, 0.2f);
 
+    // 소유권과 런타임 각도는 설정 데이터에 쓰지 않아 초기 설정을 보존합니다.
     private BeamPuzzleController _owner;
-    private Collider2D _pillarCollider;
-    private int _pillarIndex;
-    private int _rotationStepIndex;
+    private float _rotationDegrees;
+    private bool _isInitialized;
     private bool _isConnected;
 
-    /// <summary>퍼즐 안에서 사용하는 고유 기둥 ID입니다.</summary>
-    public string PillarId => _pillarId;
-    /// <summary>이 기둥의 역할과 출력 개수 규칙입니다.</summary>
-    public BeamPillarType PillarType => _pillarType;
-    /// <summary>현재 기둥을 회전할 수 있는지 여부입니다.</summary>
-    public bool IsRotatable => _isRotatable;
-    /// <summary>이 기둥이 가진 출력 방향 수입니다.</summary>
-    public int OutputCount => _outputAnglesDegrees == null ? 0 : _outputAnglesDegrees.Length;
-    /// <summary>광선 충돌에 사용하는 캐시된 Collider입니다.</summary>
-    public Collider2D PillarCollider => _pillarCollider;
-    /// <summary>현재 빛 연결 여부입니다.</summary>
+    /// <summary>퍼즐 내부 고유 ID입니다.</summary>
+    public string PillarId => _settings?.Id;
+    /// <summary>수신과 출력 규칙입니다.</summary>
+    public BeamPillarType PillarType => _settings != null ? _settings.Type : (BeamPillarType)(-1);
+    /// <summary>설정에 따른 회전 허용 여부입니다.</summary>
+    public bool IsRotatable => _settings != null && _settings.IsRotatable;
+    /// <summary>독립적으로 설정된 출력 개수입니다.</summary>
+    public int OutputCount => _settings?.OutputCount ?? 0;
+    /// <summary>명시적으로 연결한 수신 충돌체입니다.</summary>
+    public Collider2D PillarCollider => _receiverCollider;
+    /// <summary>플레이어 이동 충돌체입니다.</summary>
+    public Collider2D BodyCollider => _bodyCollider;
+    /// <summary>상호작용 탐지 Trigger입니다.</summary>
+    public Collider2D InteractionTrigger => _interactionTrigger;
+    /// <summary>현재 월드 XY 각도입니다. 0도는 오른쪽입니다.</summary>
+    public float RotationDegrees => _rotationDegrees;
+    /// <summary>현재 광선 연결 표시입니다.</summary>
     public bool IsConnected => _isConnected;
+    /// <summary>명시적으로 이 부품을 등록한 관리자입니다.</summary>
+    public BeamPuzzleController Owner => _owner;
 
-    /// <summary>컨트롤러와 고정 배열 인덱스를 연결하고 최초 상태로 초기화합니다.</summary>
-    public void Initialize(BeamPuzzleController owner, int pillarIndex)
+    /// <summary>설정 공급을 표시와 입력 처리에서 분리합니다. 초기화 전에 사용합니다.</summary>
+    public void Configure(BeamPillarSettings settings)
     {
+        if (_isInitialized || settings == null) return;
+        _settings = settings;
+    }
+
+    /// <summary>다른 관리자와 공유하지 않고 최초 각도를 한 번만 적용합니다.</summary>
+    public bool TryBind(BeamPuzzleController owner)
+    {
+        if (_owner != null && _owner != owner) return false;
         _owner = owner;
-        _pillarIndex = pillarIndex;
-        TryGetComponent(out _pillarCollider);
-        ResetState();
-    }
-
-    /// <summary>현재 회전이 반영된 월드 출력 각도를 반환합니다.</summary>
-    public float GetOutputAngleDegrees(int outputIndex)
-    {
-        return transform.eulerAngles.z + _outputAnglesDegrees[outputIndex];
-    }
-
-    /// <summary>회전 가능한 기둥을 한 단계 시계방향으로 회전합니다.</summary>
-    public bool TryRotateClockwise()
-    {
-        if (!_isRotatable)
-        {
-            return false;
-        }
-
-        _rotationStepIndex++;
-        ApplyRotation();
+        if (!_isInitialized) { _isInitialized = true; ResetState(); }
         return true;
     }
 
-    /// <summary>회전, 연결 표시를 직렬화된 최초 상태로 복원합니다.</summary>
-    public void ResetState()
+    /// <summary>누르기 입력 한 번을 전달합니다. 홀드 계약은 구현하지 않습니다.</summary>
+    public void Interact() => _owner?.TryRotatePillar(this);
+
+    /// <summary>현재 회전과 출력별 로컬 각도를 더한 월드 광선 방향입니다.</summary>
+    public float GetOutputAngleDegrees(int outputIndex) => _rotationDegrees + _settings.GetOutputAngle(outputIndex);
+
+    internal bool RotateClockwise(BeamPuzzleController owner)
     {
-        _rotationStepIndex = 0;
-        ApplyRotation();
-        SetConnected(false);
+        if (_owner != owner || !IsRotatable) return false;
+        SetRotation(_rotationDegrees - _settings.RotationStepDegrees);
+        return true;
     }
 
-    /// <summary>기둥 연결 상태와 표시 색상을 함께 변경합니다.</summary>
-    public void SetConnected(bool isConnected)
+    /// <summary>저장 상태의 각도를 적용하며 클리어 이벤트를 발생시키지 않습니다.</summary>
+    public void SetRotation(float degrees)
     {
-        _isConnected = isConnected;
-        if (_pillarImage != null)
-        {
-            _pillarImage.color = isConnected ? _connectedColor : _disconnectedColor;
-        }
+        if (!BeamPillarSettings.IsFinite(degrees)) return;
+        _rotationDegrees = Mathf.Repeat(degrees, 360f);
+        RefreshView();
     }
 
-    /// <summary>포인터 입력을 소유 컨트롤러의 회전 요청으로 전달합니다.</summary>
-    public void OnPointerClick(PointerEventData eventData)
+    /// <summary>씬에 설정한 최초 각도와 끊김 표시로 돌아갑니다.</summary>
+    public void ResetState() { SetRotation(_settings.InitialRotationDegrees); SetConnected(false); }
+
+    /// <summary>연결 색상만 바꿉니다. 화살표와 충돌체는 유지합니다.</summary>
+    public void SetConnected(bool connected)
     {
-        _owner?.TryRotatePillar(_pillarIndex);
+        _isConnected = connected;
+        if (_bodyRenderer != null) _bodyRenderer.color = connected ? _connectedColor : _disconnectedColor;
     }
 
-    internal bool TryValidate(out string error)
+    /// <summary>입력 탐지 구조, 이동 충돌, 표시와 설정을 검증합니다.</summary>
+    public bool TryValidate(out string error)
     {
         error = string.Empty;
-        if (string.IsNullOrWhiteSpace(_pillarId))
+        if (_settings == null) { error = "기둥 설정이 없습니다."; return false; }
+        if (!_settings.TryValidate(out error)) return false;
+        if (_bodyCollider == null || _receiverCollider == null || _interactionTrigger == null
+            || _bodyCollider.isTrigger || !_bodyCollider.enabled || !_receiverCollider.enabled
+            || !_interactionTrigger.isTrigger || !_interactionTrigger.enabled
+            || _interactionTrigger == _receiverCollider || _interactionTrigger == _bodyCollider)
         {
-            error = "기둥 ID가 비어 있습니다.";
+            error = "몸체(비 Trigger), 수신 충돌체, 별도 상호작용 Trigger를 확인하세요.";
             return false;
         }
-        if (_pillarImage == null || !TryGetComponent(out _pillarCollider))
+        if (!BelongsToPillar(_bodyCollider) || !BelongsToPillar(_receiverCollider) || !BelongsToPillar(_interactionTrigger))
+        { error = "충돌체는 이 기둥 오브젝트 또는 자식이어야 합니다."; return false; }
+        Rigidbody2D body = _interactionTrigger.attachedRigidbody;
+        if (!ReferenceEquals(_interactionTrigger.GetComponent<IInteractable>(), this)
+            && (body == null || !ReferenceEquals(body.GetComponent<IInteractable>(), this)))
+        { error = "Trigger 자신 또는 attachedRigidbody에서 기둥 IInteractable을 찾을 수 없습니다."; return false; }
+        if (_bodyCollider.attachedRigidbody != null && _bodyCollider.attachedRigidbody.bodyType == RigidbodyType2D.Dynamic)
+        { error = "기둥 몸체 Rigidbody는 Static 또는 Kinematic이어야 합니다."; return false; }
+        if (_bodyCollider.attachedRigidbody != null && !_bodyCollider.attachedRigidbody.simulated)
+        { error = "이동을 막으려면 기둥 몸체 Rigidbody의 Simulated가 켜져 있어야 합니다."; return false; }
+        if (_bodyRenderer == null || _bodyRenderer.sprite == null || _directionRoot == null
+            || _directionRoot == transform || !_directionRoot.IsChildOf(transform)
+            || _outputArrows == null || _outputArrows.Length != OutputCount)
+        { error = "몸체 Sprite와 별도 표시 루트, 출력 개수만큼의 화살표가 필요합니다."; return false; }
+        if (_bodyCollider.transform.IsChildOf(_directionRoot) || _receiverCollider.transform.IsChildOf(_directionRoot))
+        { error = "충돌체를 표시 루트 밖에 두세요."; return false; }
+        for (int i = 0; i < OutputCount; i++)
         {
-            error = "Image 또는 Collider2D가 연결되지 않았습니다.";
-            return false;
-        }
-        if (!IsFinite(_initialRotationDegrees)
-            || (_isRotatable && (!IsFinite(_rotationStepDegrees) || _rotationStepDegrees <= 0f)))
-        {
-            error = "최초 회전 또는 회전 단위가 올바르지 않습니다.";
-            return false;
-        }
-        if (!HasValidOutputs())
-        {
-            error = "기둥 종류와 출력 각도 개수가 일치하지 않거나 각도가 유효하지 않습니다.";
-            return false;
+            if (_outputArrows[i] == null || _outputArrows[i].sprite == null || !_outputArrows[i].transform.IsChildOf(_directionRoot))
+            { error = "모든 출력 화살표에 Sprite와 표시 루트 연결이 필요합니다."; return false; }
         }
         return true;
     }
 
-    private bool HasValidOutputs()
-    {
-        int expectedCount = GetExpectedOutputCount();
-        if (expectedCount == int.MinValue)
-        {
-            return false;
-        }
-        if (_outputAnglesDegrees == null
-            || (expectedCount < 0 ? _outputAnglesDegrees.Length == 0 : _outputAnglesDegrees.Length != expectedCount))
-        {
-            return false;
-        }
-        for (int i = 0; i < _outputAnglesDegrees.Length; i++)
-        {
-            if (!IsFinite(_outputAnglesDegrees[i]))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
+    private bool BelongsToPillar(Collider2D collider) => collider.transform == transform || collider.transform.IsChildOf(transform);
 
-    private int GetExpectedOutputCount()
+    private void RefreshView()
     {
-        switch (_pillarType)
+        // 부모가 서로 다르고 회전돼 있어도 데이터의 월드 각도와 표시가 일치합니다.
+        if (_directionRoot != null) _directionRoot.rotation = Quaternion.Euler(0f, 0f, _rotationDegrees);
+        if (_outputArrows == null) return;
+        for (int i = 0; i < Mathf.Min(OutputCount, _outputArrows.Length); i++)
         {
-            case BeamPillarType.BEAM_PILLAR_START: return -1;
-            case BeamPillarType.BEAM_PILLAR_TWO_WAY: return 1;
-            case BeamPillarType.BEAM_PILLAR_FOUR_WAY: return 3;
-            case BeamPillarType.BEAM_PILLAR_EIGHT_WAY: return 7;
-            case BeamPillarType.BEAM_PILLAR_END: return 0;
-            default: return int.MinValue;
+            SpriteRenderer arrow = _outputArrows[i];
+            if (arrow == null) continue;
+            arrow.transform.localRotation = Quaternion.Euler(0f, 0f, _settings.GetOutputAngle(i));
+            arrow.color = _arrowColor;
+            arrow.enabled = true;
         }
     }
-
-    private void ApplyRotation()
+#if UNITY_EDITOR
+    private void OnValidate()
     {
-        transform.localRotation = Quaternion.Euler(
-            0f, 0f, _initialRotationDegrees - _rotationStepIndex * _rotationStepDegrees);
+        if (Application.isPlaying || _settings == null) return;
+        _rotationDegrees = _settings.InitialRotationDegrees;
+        RefreshView();
+        SetConnected(false);
     }
-
-    private static bool IsFinite(float value)
-    {
-        return !float.IsNaN(value) && !float.IsInfinity(value);
-    }
+#endif
 }

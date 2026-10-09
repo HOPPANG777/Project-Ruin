@@ -1,9 +1,15 @@
+//=============================================================================
+// File:        CirclePuzzleTests.cs
+// Description: 기존 원형 UI 퍼즐과 월드 상호작용 클리어 연결을 검증합니다.
+// History:     10/07/2026 + EditMode의 Awake 호출을 Reflection으로 검증 -- Codex
+//=============================================================================
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 
+/// <summary>기존 원형 퍼즐 규칙과 한 번의 월드 클리어 전달을 검증합니다.</summary>
 public sealed class CirclePuzzleTests
 {
     private GameObject _root;
@@ -76,8 +82,9 @@ public sealed class CirclePuzzleTests
     [Test]
     public void MatchingColorIsNotHardcodedToYellow()
     {
-        foreach (UiCircleComponent ring in _rings)
+        for (int ringIndex = 0; ringIndex < _rings.Count; ringIndex++)
         {
+            UiCircleComponent ring = _rings[ringIndex];
             var serialized = new SerializedObject(ring.Pattern);
             var symbols = serialized.FindProperty("_symbols");
             for (int i = 0; i < symbols.arraySize; i++)
@@ -109,7 +116,9 @@ public sealed class CirclePuzzleTests
         var go = new GameObject("World puzzle", typeof(BoxCollider2D), typeof(UiPuzzleInteractable));
         go.transform.SetParent(_root.transform);
         var requester = go.GetComponent<UiPuzzleInteractable>();
-        requester.SendMessage("Awake");
+        // Unity 생명주기를 SendMessage로 실행하면 EditMode에서 ShouldRunBehaviour Assert가 발생합니다.
+        typeof(UiPuzzleInteractable).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
+            .Invoke(requester, null);
         var notify = typeof(UiPuzzleInteractable).GetMethod("NotifyPuzzleCleared",
             BindingFlags.Instance | BindingFlags.NonPublic);
         _manager.OnPuzzleClearedEvent += () => notify.Invoke(requester, null);

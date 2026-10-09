@@ -217,6 +217,11 @@ public sealed class PlayerInteractionController : MonoBehaviour
         {
             return;
         }
+        // 입력을 누른 채 새 대상을 선택한 경우에도 해당 플레이어를 전달합니다.
+        if (_currentHoldTarget is IInteractionContextReceiver holdContextReceiver)
+        {
+            holdContextReceiver.SetInteractionContext(this, _playerMoveController);
+        }
         _activeHoldTarget = _currentHoldTarget;
         _activeHoldTarget.OnHoldStarted();
     }

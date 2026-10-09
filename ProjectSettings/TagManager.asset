@@ -44,7 +44,7 @@ TagManager:
   - name: TileMap
     uniqueID: 1182642789
     locked: 0
-  - name: object
+  - name: Object
     uniqueID: 1776607161
     locked: 0
   m_RenderingLayers:
