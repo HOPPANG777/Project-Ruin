@@ -1,9 +1,10 @@
 //=============================================================================
 // File:        MazePlatePuzzleController.cs
 //
-// Description: 여러 미로 발판의 동시 압력과 최종 해결 상태를 관리합니다.
+// Description: 미로 발판의 눌림 조건과 최종 해결 상태를 관리합니다.
 //
 // History:     08/06/2026 + Created -- Codex
+//              10/11/2026 + 발판 입력으로 시작 및 수동 부품 연결 -- Codex
 //
 //=============================================================================
 
@@ -21,7 +22,7 @@ public enum MazePlatePuzzleState
 //=============================================================================
 //
 // Synopsis:   MazePlatePuzzleController;
-//                - 모든 발판이 동시에 눌린 경우에만 한 번 해결
+//                - 모든 발판의 눌림 조건을 충족하면 한 번 해결
 //                - 최종 해결 상태만 저장하고 보상 없는 복원 지원
 //
 //=============================================================================
@@ -35,15 +36,17 @@ public sealed class MazePlatePuzzleController : MonoBehaviour, ISceneStateContri
     [SerializeField] private string _objectId;
 
     [Header("Puzzle")]
-    [Tooltip("동시에 눌러야 하는 모든 미로 발판입니다.")]
-    [SerializeField] private MazePuzzlePlate[] _plates;
-    [Tooltip("해결 후 이동을 잠글 이 퍼즐 소속 돌입니다.")]
+    [Tooltip("클리어에 사용할 발판을 직접 등록합니다. 등록한 모든 발판의 눌림 조건을 충족해야 합니다.")]
+    [SerializeField] private MazePuzzlePlate[] _plates = new MazePuzzlePlate[0];
+    [Tooltip("첫 발판 입력으로 퍼즐을 시작합니다. 끄면 Begin Trigger로 먼저 시작해야 합니다.")]
+    [SerializeField] private bool _beginOnPlatePress = true;
+    [Tooltip("초기화와 완료 시 잠금에 사용할 돌을 직접 등록합니다. 플레이어 발판만 사용하면 비워 둡니다.")]
     [SerializeField] private PushableStone[] _stones = new PushableStone[0];
 
     [Header("Result")]
-    [Tooltip("퍼즐이 미해결일 때 표시할 문 또는 입구입니다.")]
+    [Tooltip("퍼즐이 미해결일 때 표시할 문 또는 입구입니다. 이벤트만 사용하면 비워도 됩니다.")]
     [SerializeField] private GameObject _unsolvedResultObject;
-    [Tooltip("퍼즐이 해결된 뒤 표시할 문 또는 입구입니다.")]
+    [Tooltip("퍼즐이 해결된 뒤 표시할 문 또는 입구입니다. 이벤트만 사용하면 비워도 됩니다.")]
     [SerializeField] private GameObject _solvedResultObject;
     [Tooltip("처음 해결될 때 문 개방 또는 보상을 한 번 실행합니다.")]
     [SerializeField] private UnityEvent _onSolved;
@@ -145,6 +148,12 @@ public sealed class MazePlatePuzzleController : MonoBehaviour, ISceneStateContri
     /// <summary>발판 상태가 변한 진행 퍼즐의 전체 해결 조건을 다시 검사합니다.</summary>
     internal void NotifyPlateStateChanged()
     {
+        if (!_isSetupValid) return;
+        if (_state == MazePlatePuzzleState.MAZE_PLATE_PUZZLE_INITIAL && _beginOnPlatePress)
+        {
+            TryBeginPuzzle();
+            return;
+        }
         if (_state == MazePlatePuzzleState.MAZE_PLATE_PUZZLE_IN_PROGRESS)
         {
             TryCompleteIfAllPressed();
@@ -189,8 +198,8 @@ public sealed class MazePlatePuzzleController : MonoBehaviour, ISceneStateContri
 
     private void ApplyResultState(bool isSolved)
     {
-        _unsolvedResultObject.SetActive(!isSolved);
-        _solvedResultObject.SetActive(isSolved);
+        if (_unsolvedResultObject != null) _unsolvedResultObject.SetActive(!isSolved);
+        if (_solvedResultObject != null) _solvedResultObject.SetActive(isSolved);
     }
 
     private void SetState(MazePlatePuzzleState state)
@@ -223,8 +232,8 @@ public sealed class MazePlatePuzzleController : MonoBehaviour, ISceneStateContri
         {
             return "ObjectId 또는 발판 목록이 비어 있습니다.";
         }
-        if (_stones == null || _unsolvedResultObject == null || _solvedResultObject == null
-            || _unsolvedResultObject == _solvedResultObject)
+        if (_stones == null || (_unsolvedResultObject != null
+            && _unsolvedResultObject == _solvedResultObject))
         {
             return "돌 목록 또는 해결 결과 오브젝트 설정이 올바르지 않습니다.";
         }

@@ -57,6 +57,81 @@ public sealed class MazePlatePuzzleTests
     }
 
     [Test]
+    public void PlayerOncePlateCompletesWithoutBeginTriggerAndStaysPressedAfterExit()
+    {
+        int solvedCount = 0;
+        UnityEvent onSolved = new UnityEvent();
+        onSolved.AddListener(() => solvedCount++);
+        PuzzleFixture fixture = CreateFixture(1, onSolved, beginOnPlatePress: true,
+            mode: MazePuzzlePlateMode.MAZE_PLATE_PLAYER_ONCE);
+        Collider2D player = CreatePlayerCollider();
+
+        Enter(fixture.Plates[0], CreateStoneCollider());
+        Assert.That(fixture.Controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_INITIAL));
+        Enter(fixture.Plates[0], player);
+        Exit(fixture.Plates[0], player);
+        Enter(fixture.Plates[0], player);
+
+        Assert.That(fixture.Plates[0].IsPressed, Is.True);
+        Assert.That(fixture.Controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_COMPLETED));
+        Assert.That(fixture.Solved.activeSelf, Is.True);
+        Assert.That(solvedCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void StoneOnlyPlateIgnoresPlayerAndInteractionSensorThenCompletesForBody()
+    {
+        PuzzleFixture fixture = CreateFixture(1, beginOnPlatePress: true,
+            mode: MazePuzzlePlateMode.MAZE_PLATE_STONE_ONLY);
+        PushableStone stone = CreateStone(Vector2.zero);
+        Collider2D sensor = CreateChildCollider(stone.gameObject, "InteractionSensor");
+        sensor.isTrigger = true;
+
+        Enter(fixture.Plates[0], CreatePlayerCollider());
+        Enter(fixture.Plates[0], sensor);
+        Assert.That(fixture.Plates[0].IsPressed, Is.False);
+        Assert.That(fixture.Controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_INITIAL));
+        Enter(fixture.Plates[0], stone.BodyCollider);
+
+        Assert.That(fixture.Controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_COMPLETED));
+        Assert.That(fixture.Controller.CaptureState(), Is.EqualTo("true"));
+    }
+
+    [Test]
+    public void PlayerOncePlateAndStonePlateCompleteTogetherAfterPlayerLeaves()
+    {
+        PuzzleFixture fixture = CreateFixture(2, beginOnPlatePress: true);
+        SetField(fixture.Plates[0], "_mode", MazePuzzlePlateMode.MAZE_PLATE_PLAYER_ONCE);
+        SetField(fixture.Plates[1], "_mode", MazePuzzlePlateMode.MAZE_PLATE_STONE_ONLY);
+        Collider2D player = CreatePlayerCollider();
+
+        Enter(fixture.Plates[0], player);
+        Exit(fixture.Plates[0], player);
+        Assert.That(fixture.Controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_IN_PROGRESS));
+        Enter(fixture.Plates[1], CreateStoneCollider());
+
+        Assert.That(fixture.Controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_COMPLETED));
+    }
+
+    [Test]
+    public void StayDoesNotDoubleCountAndDetectsRemainingBodyAfterReset()
+    {
+        PuzzleFixture fixture = CreateFixture(2, beginOnPlatePress: true);
+        Collider2D player = CreatePlayerCollider();
+        Enter(fixture.Plates[0], player);
+        Invoke(fixture.Plates[0], "OnTriggerStay2D", player);
+        Exit(fixture.Plates[0], player);
+        Assert.That(fixture.Plates[0].IsPressed, Is.False);
+
+        Enter(fixture.Plates[0], player);
+        Assert.That(fixture.Controller.TryResetPuzzle(), Is.True);
+        Assert.That(fixture.Plates[0].IsPressed, Is.False);
+        Invoke(fixture.Plates[0], "OnTriggerStay2D", player);
+        Assert.That(fixture.Plates[0].IsPressed, Is.True);
+        Assert.That(fixture.Controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_IN_PROGRESS));
+    }
+
+    [Test]
     public void ChildTriggerFindsInteractableOnAttachedRigidbody()
     {
         PushableStone stone = CreateStone(Vector2.zero);
@@ -195,7 +270,8 @@ public sealed class MazePlatePuzzleTests
     }
 
     private PuzzleFixture CreateFixture(int plateCount, UnityEvent onSolved = null,
-        PushableStone[] stones = null)
+        PushableStone[] stones = null, bool beginOnPlatePress = false,
+        MazePuzzlePlateMode mode = MazePuzzlePlateMode.MAZE_PLATE_ANY_OCCUPANT)
     {
         PuzzleFixture fixture = new PuzzleFixture
         {
@@ -208,9 +284,11 @@ public sealed class MazePlatePuzzleTests
         for (int i = 0; i < plateCount; i++)
         {
             fixture.Plates[i] = CreatePlate(i);
+            SetField(fixture.Plates[i], "_mode", mode);
         }
         SetField(fixture.Controller, "_objectId", "MAZE_PLATE_TEST");
         SetField(fixture.Controller, "_plates", fixture.Plates);
+        SetField(fixture.Controller, "_beginOnPlatePress", beginOnPlatePress);
         SetField(fixture.Controller, "_stones", stones ?? new PushableStone[0]);
         SetField(fixture.Controller, "_unsolvedResultObject", fixture.Unsolved);
         SetField(fixture.Controller, "_solvedResultObject", fixture.Solved);
