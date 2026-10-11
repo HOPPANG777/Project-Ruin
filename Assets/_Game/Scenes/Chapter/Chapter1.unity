@@ -171,6 +171,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Grid_1
       objectReference: {fileID: 0}
+    - target: {fileID: 8868464172266099021, guid: 97d2a2135f6b23f40894c34eb92aa455, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 5.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8868464172266099021, guid: 97d2a2135f6b23f40894c34eb92aa455, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -3.5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
