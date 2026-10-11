@@ -88,6 +88,8 @@ public class CameraController : MonoBehaviour
 
         // 새로 지정한 기본 추적 대상으로 카메라를 되돌립니다.
         RestoreDefaultTarget();
+        // 챕터 스폰 위치로 이동한 뒤 이전 씬의 카메라 위치에서 보간하지 않습니다.
+        if (_followCamera != null) _followCamera.PreviousStateIsValid = false;
     }
 
     // 카메라가 지정한 대상을 임시로 포커스합니다.

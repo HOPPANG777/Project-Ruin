@@ -265,8 +265,15 @@ public class SceneStateBridge : MonoBehaviour
         if (player != null)
         {
             player.transform.SetPositionAndRotation(spawnPoint.Position, spawnPoint.Rotation);
+            if (player.TryGetComponent(out Rigidbody2D body))
+            {
+                body.position = spawnPoint.Position;
+                body.rotation = spawnPoint.Rotation.eulerAngles.z;
+                body.linearVelocity = Vector2.zero;
+                body.angularVelocity = 0f;
+            }
 
-            if (GameRoot.Instance != null && GameRoot.Instance.CameraController != null)
+            if (GameRoot.HasInstance && GameRoot.Instance.CameraController != null)
             {
                 GameRoot.Instance.CameraController.Follow(player);
             }
@@ -275,7 +282,7 @@ public class SceneStateBridge : MonoBehaviour
         }
 
         // 플레이어가 없으면 카메라 기본 타겟을 스폰 위치로 이동합니다.
-        if (GameRoot.Instance != null && GameRoot.Instance.CameraController != null)
+        if (GameRoot.HasInstance && GameRoot.Instance.CameraController != null)
         {
             Debug.Log($"[SceneStateBridge] 플레이어 없음 — 스폰 위치 확인: {spawnPoint.Position}");
         }

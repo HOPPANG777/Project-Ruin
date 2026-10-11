@@ -25,6 +25,10 @@ MonoBehaviour:
     _sceneName: LJScene
     _sceneCategory: 0
     _stageNumber: 2
+  - _sceneId: Chapter0
+    _sceneName: Chapter0
+    _sceneCategory: 2
+    _stageNumber: 0
   - _sceneId: Chapter1
     _sceneName: Chapter1
     _sceneCategory: 2

@@ -4,9 +4,11 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-//==============================================================================
-// 기능: class::StageFlowController
-// 설명: 씬 전환 흐름을 오케스트레이션하는 독립 컨트롤러 (시각 연출은 SceneTransitionPresenter에 위임)
+//=============================================================================
+// File:        StageFlowController.cs
+// Description: 스테이지 저장, 이전 씬 해제와 목적지 씬 로드를 순서대로 처리합니다.
+// History:     10/11/2026 + 마지막 스테이지 씬 언로드 보호 및 직접 실행 상태 식별 -- Codex
+//              10/11/2026 + 스테이지 언로드 전 플레이어 보존 및 목적지 씬 이관 -- Codex
 //==============================================================================
 // NOTE:
 //  - 싱글톤이 아닙니다. 외부 접근은 반드시 GameRoot.Instance.StageFlow(IStageFlowService) 경유.
@@ -107,6 +109,7 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
     public void Init(IProgressService progressService)
     {
         _progressService = progressService;
+        UpdateCurrentStageNumber(SceneManager.GetActiveScene());
 
         // Presenter가 연결되지 않았으면 초기화할 대상이 없으므로 종료합니다.
         if (_sceneTransition == null)
@@ -267,11 +270,21 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
             return;
         }
 
+        // 로드할 수 없는 목적지 때문에 현재 스테이지부터 사라지는 상황을 막습니다.
+        if (!Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            Debug.LogError($"[StageFlowController] 빌드에 등록되지 않았거나 로드할 수 없는 씬입니다: {sceneName}");
+            return;
+        }
+
         if (!TryBeginTransition())
         {
             return;
         }
 
+        Scene previousScene = SceneManager.GetActiveScene();
+        Scene transitionScene = default;
+        GameObject transferredPlayer = null;
         try
         {
             // 1) 화면 암전: alpha 0 → 1 (로딩 UI는 아직 비활성).
@@ -280,6 +293,7 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
             // 2) Additive 스테이지 전환: 떠나기 전 현재 스테이지 상태를 Capture합니다.
             if (loadMode == LoadSceneMode.Additive)
             {
+                UpdateCurrentStageNumber(previousScene);
                 ExecuteStageCapture();
             }
 
@@ -291,7 +305,9 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
 
             if (loadMode == LoadSceneMode.Additive)
             {
-                await UnloadActiveSceneIfNeededAsync(token);
+                transferredPlayer = PreserveStagePlayer(previousScene);
+                transitionScene = CreateTransitionSceneIfNeeded(previousScene);
+                await UnloadSceneIfNeededAsync(previousScene, token);
             }
 
             // 3) 새 씬 로드: AsyncOperation을 Presenter가 모니터링하며 로딩 UI를 단계적으로 노출합니다.
@@ -301,7 +317,7 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
             // Additive 모드라면 방금 로드한 씬을 액티브 씬으로 지정합니다.
             if (loadMode == LoadSceneMode.Additive)
             {
-                SetActiveSceneIfLoaded(sceneName);
+                SetActiveSceneIfLoaded(sceneName, transferredPlayer);
             }
 
             // 4) Additive 전환 시 현재 스테이지 번호를 갱신합니다.
@@ -309,6 +325,12 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
             {
                 _currentStageNumber = destinationStageNumber;
             }
+            else if (loadMode == LoadSceneMode.Single)
+            {
+                _currentStageNumber = -1;
+            }
+
+            await ReleaseTransitionSceneAsync(transitionScene);
 
             // 5) 데이터 복구: 새 씬이 완전히 로드된 직후 복구 절차를 실행합니다.
             ExecuteDataRestoration(data, destinationStageNumber);
@@ -318,8 +340,15 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
         }
         finally
         {
-            // 예외/취소 여부와 무관하게 전환 플래그를 반드시 해제합니다.
-            IsTransitioning = false;
+            try
+            {
+                // 실패나 취소가 발생해도 다른 로드된 씬이 있으면 임시 씬을 정리합니다.
+                await ReleaseTransitionSceneAsync(transitionScene);
+            }
+            finally
+            {
+                IsTransitioning = false;
+            }
         }
     }
 
@@ -345,36 +374,86 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
         return true;
     }
 
-    /// <summary>
-    /// 현재 액티브 씬이 상시 씬이 아니라면 비동기로 언로드합니다.
-    /// </summary>
-    /// <param name="token">취소 토큰입니다.</param>
-    private async UniTask UnloadActiveSceneIfNeededAsync(CancellationToken token)
+    // 플레이어만 잠시 보존하여 맵은 제거하고 캐릭터의 체력·입력·카메라 참조는 유지합니다.
+    private GameObject PreserveStagePlayer(Scene previousScene)
     {
-        Scene activeScene = SceneManager.GetActiveScene();
+        if (!previousScene.IsValid() || !previousScene.isLoaded) return null;
+        foreach (GameObject root in previousScene.GetRootGameObjects())
+        {
+            UnitPlayer player = root.GetComponentInChildren<UnitPlayer>();
+            if (player == null) continue;
+            player.transform.SetParent(null, true);
+            DontDestroyOnLoad(player.gameObject);
+            return player.gameObject;
+        }
+        return null;
+    }
 
+    /// <summary>
+    /// 전환 시작 시 기록한 이전 씬이 상시 씬이 아니라면 비동기로 언로드합니다.
+    /// </summary>
+    /// <param name="previousScene">떠나는 스테이지 씬입니다.</param>
+    /// <param name="token">취소 토큰입니다.</param>
+    private async UniTask UnloadSceneIfNeededAsync(Scene previousScene, CancellationToken token)
+    {
         // 상시 씬(Scene_Persistent)은 시스템 매니저가 머무는 곳이므로 절대 언로드하지 않습니다.
-        if (activeScene.name == _persistentSceneName)
+        if (previousScene.name == _persistentSceneName)
         {
             return;
         }
 
         // 유효하게 로드된 씬일 때만 언로드를 시도합니다.
-        if (!activeScene.IsValid() || !activeScene.isLoaded)
+        if (!previousScene.IsValid() || !previousScene.isLoaded)
         {
             return;
         }
 
         // 이전 액티브 씬을 비동기로 내리고, 긴 언로드 시 Presenter가 로딩 UI를 표시합니다.
-        AsyncOperation unloadOperation = SceneManager.UnloadSceneAsync(activeScene);
+        AsyncOperation unloadOperation = SceneManager.UnloadSceneAsync(previousScene);
+        if (unloadOperation == null)
+        {
+            throw new InvalidOperationException($"[StageFlowController] 이전 씬을 언로드할 수 없습니다: {previousScene.name}");
+        }
         await _sceneTransition.MonitorTransitionAsync(unloadOperation, token);
+    }
+
+    // DontDestroyOnLoad의 GameRoot만 있어도 Unity는 마지막 일반 씬의 언로드를 허용하지 않습니다.
+    private Scene CreateTransitionSceneIfNeeded(Scene previousScene)
+    {
+        if (!previousScene.IsValid() || !previousScene.isLoaded
+            || previousScene.name == _persistentSceneName || SceneManager.sceneCount > 1)
+        {
+            return default;
+        }
+        return SceneManager.CreateScene("__StageFlowTransition_" + GetInstanceID());
+    }
+
+    // 이미 시작한 언로드는 전환 토큰이 취소되더라도 끝까지 정리합니다.
+    private static async UniTask ReleaseTransitionSceneAsync(Scene transitionScene)
+    {
+        if (!transitionScene.IsValid() || !transitionScene.isLoaded || SceneManager.sceneCount <= 1)
+            return;
+        AsyncOperation operation = SceneManager.UnloadSceneAsync(transitionScene);
+        if (operation != null) await operation.ToUniTask();
+    }
+
+    // Chapter 씬을 직접 실행한 첫 전환에서도 떠나는 스테이지 상태를 저장합니다.
+    private void UpdateCurrentStageNumber(Scene scene)
+    {
+        if (scene.IsValid() && _sceneCatalog != null
+            && _sceneCatalog.TryGetBySceneName(scene.name, out SceneCatalogSO.SceneEntry entry)
+            && entry.SceneCategory == SceneCategory.STAGE)
+        {
+            _currentStageNumber = entry.StageNumber;
+        }
     }
 
     /// <summary>
     /// 지정한 이름의 씬이 로드되어 있으면 액티브 씬으로 설정합니다.
     /// </summary>
     /// <param name="sceneName">액티브로 지정할 씬 이름입니다.</param>
-    private void SetActiveSceneIfLoaded(string sceneName)
+    /// <param name="transferredPlayer">이전 씬에서 보존한 플레이어입니다.</param>
+    private void SetActiveSceneIfLoaded(string sceneName, GameObject transferredPlayer)
     {
         Scene loadedScene = SceneManager.GetSceneByName(sceneName);
 
@@ -382,6 +461,8 @@ public class StageFlowController : MonoBehaviour, IStageFlowService
         if (loadedScene.IsValid() && loadedScene.isLoaded)
         {
             SceneManager.SetActiveScene(loadedScene);
+            if (transferredPlayer != null)
+                SceneManager.MoveGameObjectToScene(transferredPlayer, loadedScene);
         }
     }
 
