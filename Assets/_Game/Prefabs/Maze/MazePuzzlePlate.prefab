@@ -93,6 +93,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 649e63abb2473594a95ab4e8d057a772, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazePuzzlePlate
+  _mode: 0
   _releasedObject: {fileID: 8013863166802363995}
   _pressedObject: {fileID: 6881027470795678811}
 --- !u!1 &1838698457672119988
@@ -122,7 +123,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5.625, y: 5.625, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6996720380918009587}
@@ -176,7 +177,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: -4559932443770039424, guid: 2a085db50a616e14f90af1751910425f, type: 3}
   m_Color: {r: 0.2, g: 0.55, b: 0.85, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -213,7 +214,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4448761757131832415}
@@ -267,7 +268,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: -7350425694763549375, guid: 601e31c5061891740b34eede12b827a7, type: 3}
   m_Color: {r: 0.15, g: 0.95, b: 0.45, a: 1}
   m_FlipX: 0
   m_FlipY: 0
