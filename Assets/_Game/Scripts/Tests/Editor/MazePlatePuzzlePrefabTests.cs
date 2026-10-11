@@ -6,6 +6,8 @@ using UnityEngine;
 
 public sealed class MazePlatePuzzlePrefabTests
 {
+    private const string TEST_PREFAB_PATH = "Assets/_Game/Prefabs/Maze/TestMazePlatePuzzle.prefab";
+    private const string CONTROLLER_PREFAB_PATH = "Assets/_Game/Prefabs/Maze/MazePlatePuzzleController.prefab";
     private readonly List<GameObject> _created = new List<GameObject>();
 
     [TearDown]
@@ -17,9 +19,91 @@ public sealed class MazePlatePuzzlePrefabTests
     }
 
     [Test]
+    public void PlayerAndStonePrefabsHaveDistinctInputModes()
+    {
+        foreach (string name in new[] { "MazePlayerPlate", "MazeStonePlate" })
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Prefabs/Maze/" + name + ".prefab");
+            Assert.That(prefab, Is.Not.Null, name);
+            MazePuzzlePlate plate = prefab.GetComponent<MazePuzzlePlate>();
+            Assert.That(plate.Mode, Is.EqualTo(name == "MazePlayerPlate"
+                ? MazePuzzlePlateMode.MAZE_PLATE_PLAYER_ONCE : MazePuzzlePlateMode.MAZE_PLATE_STONE_ONLY));
+            Assert.That(Property(plate, "_releasedObject").objectReferenceValue, Is.Not.Null);
+            Assert.That(Property(plate, "_pressedObject").objectReferenceValue, Is.Not.Null);
+        }
+    }
+
+    [Test]
+    public void StandaloneControllerUsesOnlyManuallyRegisteredPlate()
+    {
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CONTROLLER_PREFAB_PATH);
+        Assert.That(prefab, Is.Not.Null);
+        GameObject root = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+        _created.Add(root);
+        GameObject platePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Prefabs/Maze/MazePlayerPlate.prefab");
+        GameObject registered = (GameObject)PrefabUtility.InstantiatePrefab(platePrefab);
+        _created.Add(registered);
+        GameObject unregistered = (GameObject)PrefabUtility.InstantiatePrefab(platePrefab, root.transform);
+        MazePlatePuzzleController controller = root.GetComponent<MazePlatePuzzleController>();
+        SerializedObject configuration = new SerializedObject(controller);
+        SerializedProperty plates = configuration.FindProperty("_plates");
+        plates.arraySize = 1;
+        plates.GetArrayElementAtIndex(0).objectReferenceValue = registered.GetComponent<MazePuzzlePlate>();
+        configuration.ApplyModifiedPropertiesWithoutUndo();
+        int solvedCount = 0;
+        UnityEngine.Events.UnityEvent onSolved = new UnityEngine.Events.UnityEvent();
+        onSolved.AddListener(() => solvedCount++);
+        typeof(MazePlatePuzzleController).GetField("_onSolved", BindingFlags.Instance | BindingFlags.NonPublic)
+            .SetValue(controller, onSolved);
+        Invoke(controller, "Awake");
+        Assert.That(Property(controller, "_plates").arraySize, Is.EqualTo(1));
+
+        GameObject player = new GameObject("Player", typeof(UnitPlayer), typeof(BoxCollider2D));
+        _created.Add(player);
+        MazePuzzlePlate unusedPlate = unregistered.GetComponent<MazePuzzlePlate>();
+        Invoke(unusedPlate, "Awake");
+        Invoke(unusedPlate, "OnTriggerEnter2D", player.GetComponent<BoxCollider2D>());
+        Assert.That(controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_INITIAL));
+        MazePuzzlePlate plate = registered.GetComponent<MazePuzzlePlate>();
+        Invoke(plate, "Awake");
+        Invoke(plate, "OnTriggerEnter2D", player.GetComponent<BoxCollider2D>());
+        Invoke(plate, "OnTriggerExit2D", player.GetComponent<BoxCollider2D>());
+
+        Assert.That(controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_COMPLETED));
+        Assert.That(plate.IsPressed, Is.True);
+        Assert.That(solvedCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ChapterZeroPlayerPlatesOpenTheirRegisteredResultWithoutBeginTrigger()
+    {
+        GameObject map = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Prefabs/Map/GridChapter0.prefab");
+        Assert.That(map, Is.Not.Null);
+        GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(map);
+        _created.Add(instance);
+        MazePlatePuzzleController[] controllers = instance.GetComponentsInChildren<MazePlatePuzzleController>(true);
+        Assert.That(controllers, Has.Length.EqualTo(2));
+        GameObject player = new GameObject("Player", typeof(UnitPlayer), typeof(BoxCollider2D));
+        _created.Add(player);
+        foreach (MazePlatePuzzleController controller in controllers)
+        {
+            Invoke(controller, "Awake");
+            Assert.That(Property(controller, "_beginOnPlatePress").boolValue, Is.True);
+            MazePuzzlePlate plate = (MazePuzzlePlate)Property(controller, "_plates").GetArrayElementAtIndex(0).objectReferenceValue;
+            Assert.That(plate.Mode, Is.EqualTo(MazePuzzlePlateMode.MAZE_PLATE_PLAYER_ONCE));
+            Invoke(plate, "OnTriggerEnter2D", player.GetComponent<BoxCollider2D>());
+            Invoke(plate, "OnTriggerExit2D", player.GetComponent<BoxCollider2D>());
+            Assert.That(controller.State, Is.EqualTo(MazePlatePuzzleState.MAZE_PLATE_PUZZLE_COMPLETED));
+            Assert.That(plate.IsPressed, Is.True);
+            Assert.That(((GameObject)Property(controller, "_unsolvedResultObject").objectReferenceValue).activeSelf, Is.False);
+            Assert.That(((GameObject)Property(controller, "_solvedResultObject").objectReferenceValue).activeSelf, Is.True);
+        }
+    }
+
+    [Test]
     public void PrefabHasCompleteLocalBindingsAndNoScenePlayerReference()
     {
-        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MazePlatePuzzlePrefabBuilder.PrefabPath);
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(TEST_PREFAB_PATH);
         Assert.That(prefab, Is.Not.Null);
         MazePlatePuzzleController controller = prefab.GetComponent<MazePlatePuzzleController>();
         Assert.That(controller, Is.Not.Null);
@@ -66,23 +150,6 @@ public sealed class MazePlatePuzzlePrefabTests
     }
 
     [Test]
-    public void ChildCollectionIncludesAddedPlateButExcludesNestedPuzzle()
-    {
-        GameObject outer = CreateInstance();
-        GameObject inner = CreateInstance();
-        inner.transform.SetParent(outer.transform);
-        GameObject plateAsset = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Prefabs/Maze/MazePuzzlePlate.prefab");
-        GameObject addedPlate = (GameObject)PrefabUtility.InstantiatePrefab(plateAsset, outer.transform);
-        addedPlate.SetActive(false);
-        MazePlatePuzzleController controller = outer.GetComponent<MazePlatePuzzleController>();
-        MazePlatePuzzleControllerEditor.ConnectChildren(controller);
-        Assert.That(Property(controller, "_plates").arraySize, Is.EqualTo(3));
-        Assert.That(Property(controller, "_stones").arraySize, Is.EqualTo(2));
-        foreach (MazePlatePuzzleTrigger trigger in inner.GetComponentsInChildren<MazePlatePuzzleTrigger>(true))
-            Assert.That(Property(trigger, "_puzzle").objectReferenceValue, Is.EqualTo(inner.GetComponent<MazePlatePuzzleController>()));
-    }
-
-    [Test]
     public void StoneUsesInteractionPlayerWithoutChangingPrefabReference()
     {
         PushableStone stone = CreateInstance().GetComponentInChildren<PushableStone>();
@@ -103,7 +170,7 @@ public sealed class MazePlatePuzzlePrefabTests
 
     private GameObject CreateInstance()
     {
-        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MazePlatePuzzlePrefabBuilder.PrefabPath);
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(TEST_PREFAB_PATH);
         Assert.That(prefab, Is.Not.Null);
         GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
         _created.Add(instance);

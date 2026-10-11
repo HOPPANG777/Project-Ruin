@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazePlatePuzzleController
   _objectId: MAZE_PLATE_PUZZLE_TEMPLATE
+  _beginOnPlatePress: 0
   _plates:
   - {fileID: 200004}
   - {fileID: 200018}
@@ -36,7 +37,7 @@ GameObject:
   - component: {fileID: 735792417}
   - component: {fileID: 735792416}
   m_Layer: 0
-  m_Name: MazePlatePuzzle
+  m_Name: TestMazePlatePuzzle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
