@@ -408,9 +408,21 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8581352544825122707, guid: 0c3d63ec45bffc640b8a2d873663cf01, type: 3}
+      propertyPath: _objectId
+      value: MAZE_6ecbc84bce724cb0a8b37423b80a17a9
+      objectReference: {fileID: 0}
+    - target: {fileID: 8581352544825122707, guid: 0c3d63ec45bffc640b8a2d873663cf01, type: 3}
+      propertyPath: _plates.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8581352544825122707, guid: 0c3d63ec45bffc640b8a2d873663cf01, type: 3}
       propertyPath: _solvedResultObject
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 8581352544825122707, guid: 0c3d63ec45bffc640b8a2d873663cf01, type: 3}
+      propertyPath: '_plates.Array.data[0]'
+      value: 
+      objectReference: {fileID: 1088396448}
     - target: {fileID: 8581352544825122707, guid: 0c3d63ec45bffc640b8a2d873663cf01, type: 3}
       propertyPath: _unsolvedResultObject
       value: 
