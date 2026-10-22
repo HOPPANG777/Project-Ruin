@@ -1,3 +1,8 @@
+//=============================================================================
+// File: SceneUiEditModeVisibility.cs
+// Description: 편집 중 게임 UI를 숨기되 타이틀과 프리팹 편집은 유지한다.
+// History: 10/16/2026 + 타이틀 Presenter 참조 반영 -- Codex
+//=============================================================================
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -64,6 +69,9 @@ internal static class SceneUiEditModeVisibility
     internal static bool ShouldHide(CanvasRenderer renderer)
     {
         if (renderer == null || EditorUtility.IsPersistent(renderer)) return false;
+
+        // 타이틀은 UI 자체가 씬 콘텐츠이므로 편집 중에도 배치를 확인할 수 있어야 합니다.
+        if (renderer.GetComponentInParent<TitleScreenPresenter>(true) != null) return false;
 
         var scene = renderer.gameObject.scene;
         return scene.IsValid()

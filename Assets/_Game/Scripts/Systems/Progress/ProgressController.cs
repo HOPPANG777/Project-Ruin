@@ -131,6 +131,24 @@ public sealed class ProgressController : MonoBehaviour, IProgressService, IProgr
     /// <summary>메모리 상태가 마지막 디스크 저장 이후 변경되었는지 여부입니다.</summary>
     public bool IsDirty => _isDirty;
 
+    /// <summary>타이틀에서 불러올 수 있는 기존 Progress 저장 Key가 있는지 확인합니다.</summary>
+    public bool HasSavedData
+    {
+        get
+        {
+            try
+            {
+                ES3.Init();
+                return ES3.KeyExists(SAVE_KEY_PROGRESS_DATA, CreateSaveSettings());
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[ProgressController] 저장 기록 확인에 실패했습니다. {exception.Message}");
+                return false;
+            }
+        }
+    }
+
     /// <summary>실제 저장의 Dirty 검사 전에 현재 씬 상태를 메모리에 수집하는 이벤트입니다.</summary>
     public event Action BeforeSaveRequested;
     /// <summary>실제 불러오기를 마친 뒤 현재 씬 상태를 보상 없이 복원하는 이벤트입니다.</summary>
