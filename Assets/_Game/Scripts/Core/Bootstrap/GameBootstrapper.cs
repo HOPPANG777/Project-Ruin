@@ -148,6 +148,10 @@ internal sealed class GameBootstrapper
                 _gameplayModule.Shop, _gameplayModule.Inventory,
                 _gameplayModule.Dialogue);
 
+            if (!_gameplayModule.TryInitializeBrewing()) return false;
+            _uiModule.InitializeBrewing(
+                _gameplayModule.Brewing, _gameplayModule.Inventory);
+
             if (!_gameplayModule.TryInitializeQuestAndDialogue(
                     _coreModule.GameData, _coreModule.Localization,
                     _coreModule.Progress)) return false;

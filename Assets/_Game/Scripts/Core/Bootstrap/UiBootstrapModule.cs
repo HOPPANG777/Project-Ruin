@@ -4,6 +4,7 @@
 // Description: 전역 Presenter 참조, 단계별 UI 연결과 플레이어 메뉴 바인딩을 소유한다.
 //
 // History:     09/23/2026 + GameRoot UI 책임 분리 -- Codex
+//              10/22/2026 + 술 제조 Presenter 연결 추가 -- Claude
 //
 //=============================================================================
 
@@ -35,10 +36,15 @@ internal sealed class UiBootstrapModule
     [Tooltip("상점 목록, 설명과 거래 창 입력을 중개하는 Presenter입니다.")]
     [SerializeField] private ShopPresenter _shopPresenter;
 
+    [Tooltip("술 제조 팝업 입력을 중개하는 Presenter입니다.")]
+    [SerializeField] private BrewingPresenter _brewingPresenter;
+
     /// <summary>씬 술병 상호작용이 사용할 선택 UI Presenter입니다.</summary>
     internal MuseumBottlePresenter MuseumBottlePresenter => _museumBottlePresenter;
     /// <summary>씬 전시대가 사용할 유물 전용 선택 UI Presenter입니다.</summary>
     internal MuseumRelicPresenter MuseumRelicPresenter => _museumRelicPresenter;
+    /// <summary>술 제조 팝업을 여는 Presenter입니다.</summary>
+    internal BrewingPresenter BrewingPresenter => _brewingPresenter;
 
     /// <summary>기술 반환 UI에 재건·Progress·Localization 서비스를 연결합니다.</summary>
     internal void InitializeAltar(
@@ -75,6 +81,12 @@ internal sealed class UiBootstrapModule
         IDialogueService dialogue)
     {
         _shopPresenter?.Init(shop, inventory, dialogue);
+    }
+
+    /// <summary>술 제조 UI에 제조 서비스와 인벤토리를 연결합니다.</summary>
+    internal void InitializeBrewing(IBrewingService brewing, IInventoryService inventory)
+    {
+        _brewingPresenter?.Init(brewing, inventory);
     }
 
     /// <summary>필수 도감 UI와 인벤토리 전환 연결을 마지막 단계에서 활성화합니다.</summary>

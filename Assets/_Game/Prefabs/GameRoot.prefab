@@ -381,6 +381,8 @@ MonoBehaviour:
     _questController: {fileID: 4612708442974497604}
     _inventoryController: {fileID: 9012345678901234567}
     _shopController: {fileID: 9123456789012345603}
+    _brewingController: {fileID: 0}
+    _brewingRecipeCatalog: {fileID: 0}
     _dialogueController: {fileID: 4782930481786250027}
   _museumModule:
     _museumController: {fileID: 8566200193277963}
@@ -395,6 +397,7 @@ MonoBehaviour:
     _codexNavigationPresenter: {fileID: 2258372966527634154}
     _currencyHudPresenter: {fileID: 11145833404629036}
     _shopPresenter: {fileID: 0}
+    _brewingPresenter: {fileID: 0}
   _sceneFlowModule:
     _cameraController: {fileID: 3506346225531343242}
     _stageFlowController: {fileID: 6413104067889454956}

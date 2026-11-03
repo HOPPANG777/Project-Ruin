@@ -4,13 +4,14 @@
 // Description: 전역 Gameplay Controller 참조와 단계별 초기화를 소유한다.
 //
 // History:     09/23/2026 + GameRoot Gameplay 책임 분리 -- Codex
+//              10/22/2026 + 술 제조 컨트롤러 조립 추가 -- Claude
 //
 //=============================================================================
 
 using System;
 using UnityEngine;
 
-/// <summary>Inventory, Skill, Codex, Quest, Dialogue, Shop 조립을 소유합니다.</summary>
+/// <summary>Inventory, Skill, Codex, Quest, Dialogue, Shop, Brewing 조립을 소유합니다.</summary>
 [Serializable]
 internal sealed class GameplayBootstrapModule
 {
@@ -32,6 +33,12 @@ internal sealed class GameplayBootstrapModule
     [Tooltip("상점 재고와 구매·판매 거래를 관리하는 컨트롤러입니다.")]
     [SerializeField] private ShopController _shopController;
 
+    [Tooltip("술 제조 슬롯 등록과 제조·회수를 관리하는 컨트롤러입니다.")]
+    [SerializeField] private BrewingController _brewingController;
+
+    [Tooltip("술 제조 레시피 데이터입니다.")]
+    [SerializeField] private BrewingRecipeCatalogSO _brewingRecipeCatalog;
+
     [Tooltip("NPC 대화 그래프 진행과 대화 UI를 관리하는 컨트롤러입니다.")]
     [SerializeField] private DialogueController _dialogueController;
 
@@ -47,6 +54,8 @@ internal sealed class GameplayBootstrapModule
     internal IInventoryService Inventory => _inventoryController;
     /// <summary>상점 재고와 거래를 관리하는 컨트롤러입니다.</summary>
     internal ShopController Shop => _shopController;
+    /// <summary>술 제조 시스템의 외부 공개 계약입니다.</summary>
+    internal IBrewingService Brewing => _brewingController;
     /// <summary>대화 시스템의 외부 공개 계약입니다.</summary>
     internal IDialogueService Dialogue => _dialogueController;
 
@@ -142,6 +151,24 @@ internal sealed class GameplayBootstrapModule
         }
 
         _shopController.Init(gameData, _inventoryController, progress);
+        return true;
+    }
+
+    /// <summary>인벤토리와 레시피 데이터를 술 제조에 연결합니다.</summary>
+    internal bool TryInitializeBrewing()
+    {
+        if (_brewingController == null)
+        {
+            return true;
+        }
+
+        if (_inventoryController == null || _brewingRecipeCatalog == null)
+        {
+            Debug.LogError("[GameplayBootstrapModule] 술 제조 초기화 의존성이 누락됐습니다.");
+            return false;
+        }
+
+        _brewingController.Init(_inventoryController, _brewingRecipeCatalog);
         return true;
     }
 

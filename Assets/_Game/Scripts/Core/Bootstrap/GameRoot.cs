@@ -5,6 +5,7 @@
 //
 // History:     09/01/2026 + 도감 초기화 및 플레이어 메뉴 참조 연결 -- Codex
 //              09/23/2026 + 기능 모듈과 Bootstrapper로 초기화 책임 분리 -- Codex
+//              10/22/2026 + 술 제조 서비스·Presenter 공개 프로퍼티 추가 -- Claude
 //
 //=============================================================================
 
@@ -35,7 +36,7 @@ public sealed class GameRoot : Singleton<GameRoot>
     [Tooltip("게임 데이터와 Progress 저장 복구를 소유하는 Core 모듈입니다.")]
     [SerializeField] private CoreBootstrapModule _coreModule = new CoreBootstrapModule();
 
-    [Tooltip("Inventory, Skill, Codex, Quest, Dialogue, Shop 조립을 소유하는 모듈입니다.")]
+    [Tooltip("Inventory, Skill, Codex, Quest, Dialogue, Shop, Brewing 조립을 소유하는 모듈입니다.")]
     [SerializeField] private GameplayBootstrapModule _gameplayModule =
         new GameplayBootstrapModule();
 
@@ -91,6 +92,10 @@ public sealed class GameRoot : Singleton<GameRoot>
     public IInventoryService Inventory => _gameplayModule?.Inventory;
     /// <summary>상점 재고와 거래를 관리하는 컨트롤러입니다.</summary>
     public ShopController Shop => _gameplayModule?.Shop;
+    /// <summary>술 제조 슬롯 상태와 제조 실행 시스템의 외부 공개 계약입니다.</summary>
+    public IBrewingService Brewing => _gameplayModule?.Brewing;
+    /// <summary>술 제조 팝업을 여는 Presenter입니다.</summary>
+    public BrewingPresenter BrewingPresenter => _uiModule?.BrewingPresenter;
     /// <summary>대화 시스템의 외부 공개 계약입니다.</summary>
     public IDialogueService Dialogue => _gameplayModule?.Dialogue;
     /// <summary>스테이지 전환 시스템의 외부 공개 계약입니다.</summary>
