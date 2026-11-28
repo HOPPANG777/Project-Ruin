@@ -13,6 +13,9 @@ public sealed class DialogueController : MonoBehaviour, IDialogueService
     /// <summary>검증된 shop_id를 대화 종료 후 전달합니다.</summary>
     public event Action<string> ShopOpenRequested;
 
+    /// <summary>대화가 완전히 종료된 뒤 종료된 그래프 ID를 전달합니다.</summary>
+    public event Action<string> DialogueEnded;
+
     //==============================================================================
     // 직렬화 필드
     //==============================================================================
@@ -303,6 +306,7 @@ public sealed class DialogueController : MonoBehaviour, IDialogueService
             return;
         }
 
+        string endedGraphId = _currentGraph != null ? _currentGraph.GraphId : string.Empty;
         _isDialogueOpen = false;
         _currentGraph = null;
         _actorOverrideId = string.Empty;
@@ -314,6 +318,7 @@ public sealed class DialogueController : MonoBehaviour, IDialogueService
         }
 
         SetPlayerControl(true);
+        DialogueEnded?.Invoke(endedGraphId);
     }
 
     //==============================================================================

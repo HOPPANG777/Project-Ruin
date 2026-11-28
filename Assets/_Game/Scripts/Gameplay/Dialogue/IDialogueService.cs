@@ -9,6 +9,9 @@ public interface IDialogueService
     /// <summary>검증된 shop_id를 대화 종료 후 전달합니다.</summary>
     event Action<string> ShopOpenRequested;
 
+    /// <summary>대화가 완전히 종료된 뒤 종료된 대화 그래프 ID를 전달합니다.</summary>
+    event Action<string> DialogueEnded;
+
     /// <summary>현재 대화창이 열려 있는지 여부입니다.</summary>
     bool IsDialogueOpen { get; }
 
