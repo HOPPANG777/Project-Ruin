@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f255936ce4e228946a02721d04397e1d, type: 3}
+  m_Name: CIRCLE_STAGE_03_ConstellationSettings
+  m_EditorClassIdentifier: Assembly-CSharp::CircleConstellationSettingsSO
+  _outerToInner:
+  - _patternPrefab: {fileID: 2239358689825986634, guid: 79537ebfeb54f2f46914b0b4a3d8bf22, type: 3}
+    _answerId: PLACEHOLDER_OUTER
+    _alignmentDegrees: 90
+    _initialRotationDegrees: 135
+    _rotationStepDegrees: 45
+  - _patternPrefab: {fileID: 9153401582580731449, guid: c3816e31604efde41a9dbab9ed40d2a7, type: 3}
+    _answerId: PLACEHOLDER_2
+    _alignmentDegrees: 90
+    _initialRotationDegrees: -135
+    _rotationStepDegrees: 45
+  - _patternPrefab: {fileID: 1124841099211987398, guid: 14809dd75cc0ab246afb7125c369d9cf, type: 3}
+    _answerId: PLACEHOLDER_3
+    _alignmentDegrees: 90
+    _initialRotationDegrees: -45
+    _rotationStepDegrees: 45
+  - _patternPrefab: {fileID: 8686901458079794116, guid: a5ba2e586d638a148afd56bce6be29ec, type: 3}
+    _answerId: PLACEHOLDER_INNER
+    _alignmentDegrees: 90
+    _initialRotationDegrees: 180
+    _rotationStepDegrees: 45

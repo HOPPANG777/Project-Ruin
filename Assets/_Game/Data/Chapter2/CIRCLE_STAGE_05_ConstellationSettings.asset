@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f255936ce4e228946a02721d04397e1d, type: 3}
+  m_Name: CIRCLE_STAGE_05_ConstellationSettings
+  m_EditorClassIdentifier: Assembly-CSharp::CircleConstellationSettingsSO
+  _outerToInner:
+  - _patternPrefab: {fileID: 3175507981318617584, guid: efe94f2a3339eda428a9de48f3d55120, type: 3}
+    _answerId: LEO
+    _alignmentDegrees: 90
+    _initialRotationDegrees: 135
+    _rotationStepDegrees: 45
+  - _patternPrefab: {fileID: 4459052013918501232, guid: 1052c6af965a4f94a9101e35ccaa7a42, type: 3}
+    _answerId: LIBRA
+    _alignmentDegrees: 90
+    _initialRotationDegrees: -135
+    _rotationStepDegrees: 45
+  - _patternPrefab: {fileID: 8900618113327547849, guid: 6023963b53cff614c959d096970ba49b, type: 3}
+    _answerId: CAPRICORN
+    _alignmentDegrees: 90
+    _initialRotationDegrees: -45
+    _rotationStepDegrees: 45
+  - _patternPrefab: {fileID: 972830635160763641, guid: 10472b6d4b569374aa5ebbccc5834343, type: 3}
+    _answerId: SAGITTARIUS
+    _alignmentDegrees: 90
+    _initialRotationDegrees: 180
+    _rotationStepDegrees: 45
